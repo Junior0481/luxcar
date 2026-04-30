@@ -47,7 +47,11 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
         onClose();
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Erro ao enviar mensagem');
+      if (err.code === '42P01') {
+        setError('O modulo de leads ainda nao foi configurado no banco. Execute o SQL complementar antes de usar este formulario.');
+      } else {
+        setError(err.message || 'Erro ao enviar mensagem');
+      }
     } finally {
       setLoading(false);
     }

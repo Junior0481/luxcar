@@ -69,15 +69,15 @@ export function Negotiations() {
 
   const getStageBadge = (stage: string) => {
     const stages: Record<string, { label: string; className: string }> = {
-      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-gray-100 text-gray-800' },
-      avaliacao: { label: 'Avaliação', className: 'bg-blue-100 text-blue-800' },
-      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-purple-100 text-purple-800' },
-      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-indigo-100 text-indigo-800' },
-      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-cyan-100 text-cyan-800' },
-      negociacao_preco: { label: 'Negociação Preço', className: 'bg-amber-100 text-amber-800' },
-      aprovacao_credito: { label: 'Aprovação Crédito', className: 'bg-orange-100 text-orange-800' },
-      documentacao: { label: 'Documentação', className: 'bg-lime-100 text-lime-800' },
-      finalizado: { label: 'Finalizado', className: 'bg-green-100 text-green-800' },
+      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-[#f3f3f3] text-[#555459]' },
+      avaliacao: { label: 'Avaliação', className: 'bg-[#fff2df] text-[#010101]' },
+      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-[#efefef] text-[#555459]' },
+      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-[#ffe3be] text-[#010101]' },
+      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-[#fff2df] text-[#010101]' },
+      negociacao_preco: { label: 'Negociação Preço', className: 'bg-[#efefef] text-[#555459]' },
+      aprovacao_credito: { label: 'Aprovação Crédito', className: 'bg-[#ffe3be] text-[#010101]' },
+      documentacao: { label: 'Documentação', className: 'bg-[#f3f3f3] text-[#555459]' },
+      finalizado: { label: 'Finalizado', className: 'bg-[#010101] text-white' },
       perdido: { label: 'Perdido', className: 'bg-red-100 text-red-800' }
     };
     const badge = stages[stage] || stages.primeiro_contato;
@@ -87,8 +87,8 @@ export function Negotiations() {
   const getPriorityBadge = (priority: string) => {
     const badges = {
       alta: { label: 'Alta', className: 'bg-red-100 text-red-800' },
-      media: { label: 'Média', className: 'bg-amber-100 text-amber-800' },
-      baixa: { label: 'Baixa', className: 'bg-gray-100 text-gray-800' }
+      media: { label: 'Média', className: 'bg-[#fff2df] text-[#010101]' },
+      baixa: { label: 'Baixa', className: 'bg-[#f3f3f3] text-[#555459]' }
     };
     const badge = badges[priority as keyof typeof badges] || badges.media;
     return <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>{badge.label}</span>;

@@ -61,9 +61,9 @@ export function Dashboard() {
   }
 
   const statusData = [
-    { name: 'Disponíveis', value: metrics?.vehicles_available || 0, color: '#10b981' },
-    { name: 'Em Negociação', value: metrics?.vehicles_in_negotiation || 0, color: '#f59e0b' },
-    { name: 'Vendidos', value: metrics?.vehicles_sold || 0, color: '#3b82f6' }
+    { name: 'Disponíveis', value: metrics?.vehicles_available || 0, color: '#f8a746' },
+    { name: 'Em Negociação', value: metrics?.vehicles_in_negotiation || 0, color: '#919294' },
+    { name: 'Vendidos', value: metrics?.vehicles_sold || 0, color: '#010101' }
   ];
 
   const statCards = [
@@ -71,41 +71,37 @@ export function Dashboard() {
       title: 'Veículos Disponíveis',
       value: metrics?.vehicles_available || 0,
       icon: Car,
-      color: 'bg-green-500',
-      textColor: 'text-green-600',
-      bgColor: 'bg-green-50'
+      textColor: 'text-[#f8a746]',
+      bgColor: 'bg-[#fff2df]'
     },
     {
       title: 'Em Negociação',
       value: metrics?.vehicles_in_negotiation || 0,
       icon: Clock,
-      color: 'bg-amber-500',
-      textColor: 'text-amber-600',
-      bgColor: 'bg-amber-50'
+      textColor: 'text-[#555459]',
+      bgColor: 'bg-[#efefef]'
     },
     {
       title: 'Negociações Ativas',
       value: metrics?.active_negotiations || 0,
       icon: Handshake,
-      color: 'bg-blue-500',
-      textColor: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      textColor: 'text-[#010101]',
+      bgColor: 'bg-[#f3f3f3]'
     },
     {
       title: 'Lucro Potencial',
       value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics?.potential_profit || 0),
       icon: TrendingUp,
-      color: 'bg-purple-500',
-      textColor: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      textColor: 'text-white',
+      bgColor: 'bg-[#555459]'
     }
   ];
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      disponivel: { label: 'Disponível', className: 'bg-green-100 text-green-800' },
-      em_negociacao: { label: 'Em Negociação', className: 'bg-amber-100 text-amber-800' },
-      vendido: { label: 'Vendido', className: 'bg-blue-100 text-blue-800' }
+      disponivel: { label: 'Disponível', className: 'bg-[#fff2df] text-[#010101]' },
+      em_negociacao: { label: 'Em Negociação', className: 'bg-[#efefef] text-[#555459]' },
+      vendido: { label: 'Vendido', className: 'bg-[#010101] text-white' }
     };
     const badge = badges[status as keyof typeof badges] || badges.disponivel;
     return <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>{badge.label}</span>;
@@ -113,15 +109,15 @@ export function Dashboard() {
 
   const getStageBadge = (stage: string) => {
     const stages: Record<string, { label: string; className: string }> = {
-      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-gray-100 text-gray-800' },
-      avaliacao: { label: 'Avaliação', className: 'bg-blue-100 text-blue-800' },
-      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-purple-100 text-purple-800' },
-      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-indigo-100 text-indigo-800' },
-      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-cyan-100 text-cyan-800' },
-      negociacao_preco: { label: 'Negociação Preço', className: 'bg-amber-100 text-amber-800' },
-      aprovacao_credito: { label: 'Aprovação Crédito', className: 'bg-orange-100 text-orange-800' },
-      documentacao: { label: 'Documentação', className: 'bg-lime-100 text-lime-800' },
-      finalizado: { label: 'Finalizado', className: 'bg-green-100 text-green-800' },
+      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-[#f3f3f3] text-[#555459]' },
+      avaliacao: { label: 'Avaliação', className: 'bg-[#fff2df] text-[#010101]' },
+      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-[#efefef] text-[#555459]' },
+      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-[#ffe3be] text-[#010101]' },
+      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-[#fff2df] text-[#010101]' },
+      negociacao_preco: { label: 'Negociação Preço', className: 'bg-[#efefef] text-[#555459]' },
+      aprovacao_credito: { label: 'Aprovação Crédito', className: 'bg-[#ffe3be] text-[#010101]' },
+      documentacao: { label: 'Documentação', className: 'bg-[#f3f3f3] text-[#555459]' },
+      finalizado: { label: 'Finalizado', className: 'bg-[#010101] text-white' },
       perdido: { label: 'Perdido', className: 'bg-red-100 text-red-800' }
     };
     const badge = stages[stage] || stages.primeiro_contato;
@@ -246,8 +242,8 @@ export function Dashboard() {
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${
                         negotiation.priority === 'alta' ? 'bg-red-100 text-red-800' :
-                        negotiation.priority === 'media' ? 'bg-amber-100 text-amber-800' :
-                        'bg-gray-100 text-gray-800'
+                        negotiation.priority === 'media' ? 'bg-[#fff2df] text-[#010101]' :
+                        'bg-[#f3f3f3] text-[#555459]'
                       }`}>
                         {negotiation.priority}
                       </span>

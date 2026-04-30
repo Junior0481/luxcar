@@ -16,25 +16,9 @@ export function ClientLogin() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // Verifica se o usuário é um cliente (existe na tabela customers)
-      if (data.user) {
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('id', data.user.id)
-          .single();
-
-        if (!customer) {
-          setError('Esta conta não é de cliente. Use o login de lojista.');
-          await supabase.auth.signOut();
-          return;
-        }
-      }
-
-      // Redireciona para a home pública após login bem-sucedido
       navigate('/', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
@@ -105,7 +89,7 @@ export function ClientLogin() {
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-600">
-        Não tem uma conta?{' '}
+        Nao tem uma conta?{' '}
         <Link to="/client/register" className="text-blue-600 hover:text-blue-700 font-medium">
           Criar conta
         </Link>

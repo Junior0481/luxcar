@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile, InteractionHistory, TradeInVehicle } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import {
   ArrowLeft,
-  User,
   Phone,
   Mail,
   FileText,
   DollarSign,
-  Calendar,
   AlertCircle,
+  CheckCircle,
   Plus,
   MessageSquare,
-  Edit,
   Car
 } from 'lucide-react';
 import { InteractionForm } from '../components/InteractionForm';
@@ -30,7 +27,6 @@ type InteractionWithUser = InteractionHistory & {
 
 export function NegotiationDetails() {
   const { id } = useParams();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [negotiation, setNegotiation] = useState<NegotiationWithDetails | null>(null);
   const [interactions, setInteractions] = useState<InteractionWithUser[]>([]);
@@ -39,6 +35,8 @@ export function NegotiationDetails() {
   const [showInteractionForm, setShowInteractionForm] = useState(false);
   const [showTradeInForm, setShowTradeInForm] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [tradeInAvailable, setTradeInAvailable] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -48,7 +46,7 @@ export function NegotiationDetails() {
 
   const loadNegotiationDetails = async () => {
     try {
-      const [negotiationRes, interactionsRes, tradeInRes] = await Promise.all([
+      const [negotiationRes, interactionsRes] = await Promise.all([
         supabase
           .from('negotiations')
           .select(`
@@ -65,17 +63,27 @@ export function NegotiationDetails() {
             user:profiles(*)
           `)
           .eq('negotiation_id', id)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('trade_in_vehicles')
-          .select('*')
-          .eq('negotiation_id', id)
           .order('created_at', { ascending: false })
       ]);
 
       if (negotiationRes.data) setNegotiation(negotiationRes.data);
       if (interactionsRes.data) setInteractions(interactionsRes.data);
-      if (tradeInRes.data) setTradeInVehicles(tradeInRes.data);
+
+      const tradeInRes = await supabase
+        .from('trade_in_vehicles')
+        .select('*')
+        .eq('negotiation_id', id)
+        .order('created_at', { ascending: false });
+
+      if (tradeInRes.error?.code === '42P01') {
+        setTradeInAvailable(false);
+        setTradeInVehicles([]);
+      } else if (tradeInRes.error) {
+        throw tradeInRes.error;
+      } else {
+        setTradeInAvailable(true);
+        setTradeInVehicles(tradeInRes.data || []);
+      }
     } catch (error) {
       console.error('Error loading negotiation details:', error);
     } finally {
@@ -83,9 +91,57 @@ export function NegotiationDetails() {
     }
   };
 
+  const syncVehicleAndSaleForStage = async (nextStage: string, current: NegotiationWithDetails) => {
+    if (nextStage === 'finalizado') {
+      const { error: vehicleError } = await supabase
+        .from('vehicles')
+        .update({ status: 'vendido' })
+        .eq('id', current.vehicle_id);
+
+      if (vehicleError) throw vehicleError;
+
+      const { data: existingSale, error: saleLookupError } = await supabase
+        .from('sales')
+        .select('id')
+        .eq('negotiation_id', current.id)
+        .maybeSingle();
+
+      if (saleLookupError) throw saleLookupError;
+
+      if (!existingSale) {
+        const { error: saleInsertError } = await supabase
+          .from('sales')
+          .insert([{
+            negotiation_id: current.id,
+            vehicle_id: current.vehicle_id,
+            seller_id: current.seller_id,
+            final_price: current.offered_price || current.vehicle?.sale_price || 0,
+            payment_method: 'a_definir',
+            commission: null,
+            sale_date: new Date().toISOString().split('T')[0]
+          }]);
+
+        if (saleInsertError) throw saleInsertError;
+      }
+
+      return;
+    }
+
+    const nextVehicleStatus = nextStage === 'perdido' ? 'disponivel' : 'em_negociacao';
+
+    const { error: vehicleError } = await supabase
+      .from('vehicles')
+      .update({ status: nextVehicleStatus })
+      .eq('id', current.vehicle_id);
+
+    if (vehicleError) throw vehicleError;
+  };
+
   const handleStageUpdate = async (newStage: string) => {
     if (!negotiation) return;
+
     setUpdating(true);
+    setMessage(null);
 
     try {
       const { error } = await supabase
@@ -95,39 +151,11 @@ export function NegotiationDetails() {
 
       if (error) throw error;
 
-      if (newStage === 'finalizado') {
-        // Atualizar status do veículo
-        await supabase
-          .from('vehicles')
-          .update({ status: 'vendido' })
-          .eq('id', negotiation.vehicle_id);
-
-        // Criar registro de venda
-        const saleData = {
-          company_id: negotiation.company_id,
-          vehicle_id: negotiation.vehicle_id,
-          seller_id: negotiation.seller_id,
-          buyer_name: negotiation.client_name,
-          buyer_phone: negotiation.client_phone || null,
-          buyer_email: negotiation.client_email || null,
-          buyer_cpf: negotiation.client_cpf || null,
-          final_price: negotiation.offered_price || negotiation.vehicle?.sale_price || 0,
-          sale_date: new Date().toISOString().split('T')[0],
-          payment_method: 'a_definir',
-          notes: negotiation.notes || null
-        };
-
-        await supabase.from('sales').insert([saleData]);
-      } else if (newStage === 'perdido') {
-        await supabase
-          .from('vehicles')
-          .update({ status: 'disponivel' })
-          .eq('id', negotiation.vehicle_id);
-      }
-
-      loadNegotiationDetails();
+      await syncVehicleAndSaleForStage(newStage, negotiation);
+      setMessage({ type: 'success', text: 'Estagio atualizado com sucesso.' });
+      await loadNegotiationDetails();
     } catch (error: any) {
-      alert('Erro ao atualizar estágio: ' + error.message);
+      setMessage({ type: 'error', text: error.message || 'Erro ao atualizar estagio.' });
     } finally {
       setUpdating(false);
     }
@@ -136,6 +164,8 @@ export function NegotiationDetails() {
   const handlePriorityUpdate = async (newPriority: 'baixa' | 'media' | 'alta') => {
     if (!negotiation) return;
 
+    setMessage(null);
+
     try {
       const { error } = await supabase
         .from('negotiations')
@@ -143,9 +173,11 @@ export function NegotiationDetails() {
         .eq('id', negotiation.id);
 
       if (error) throw error;
-      loadNegotiationDetails();
+
+      setMessage({ type: 'success', text: 'Prioridade atualizada com sucesso.' });
+      await loadNegotiationDetails();
     } catch (error: any) {
-      alert('Erro ao atualizar prioridade: ' + error.message);
+      setMessage({ type: 'error', text: error.message || 'Erro ao atualizar prioridade.' });
     }
   };
 
@@ -161,9 +193,9 @@ export function NegotiationDetails() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Negociação não encontrada</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Negociacao nao encontrada</h2>
         <Link to="/dashboard/negotiations" className="text-blue-600 hover:text-blue-700">
-          Voltar para negociações
+          Voltar para negociacoes
         </Link>
       </div>
     );
@@ -171,34 +203,54 @@ export function NegotiationDetails() {
 
   const getStageBadge = (stage: string) => {
     const stages: Record<string, { label: string; className: string }> = {
-      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-gray-100 text-gray-800' },
-      avaliacao: { label: 'Avaliação', className: 'bg-blue-100 text-blue-800' },
-      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-purple-100 text-purple-800' },
-      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-indigo-100 text-indigo-800' },
-      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-cyan-100 text-cyan-800' },
-      negociacao_preco: { label: 'Negociação Preço', className: 'bg-amber-100 text-amber-800' },
-      aprovacao_credito: { label: 'Aprovação Crédito', className: 'bg-orange-100 text-orange-800' },
-      documentacao: { label: 'Documentação', className: 'bg-lime-100 text-lime-800' },
-      finalizado: { label: 'Finalizado', className: 'bg-green-100 text-green-800' },
+      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-[#f3f3f3] text-[#555459]' },
+      avaliacao: { label: 'Avaliacao', className: 'bg-[#fff2df] text-[#010101]' },
+      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-[#efefef] text-[#555459]' },
+      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-[#ffe3be] text-[#010101]' },
+      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-[#fff2df] text-[#010101]' },
+      negociacao_preco: { label: 'Negociacao de Preco', className: 'bg-[#efefef] text-[#555459]' },
+      aprovacao_credito: { label: 'Aprovacao de Credito', className: 'bg-[#ffe3be] text-[#010101]' },
+      documentacao: { label: 'Documentacao', className: 'bg-[#f3f3f3] text-[#555459]' },
+      finalizado: { label: 'Finalizado', className: 'bg-[#010101] text-white' },
       perdido: { label: 'Perdido', className: 'bg-red-100 text-red-800' }
     };
+
     const badge = stages[stage] || stages.primeiro_contato;
     return <span className={`px-3 py-1 text-sm font-medium rounded-full ${badge.className}`}>{badge.label}</span>;
   };
 
   const interactionTypeLabels: Record<string, string> = {
-    ligacao: 'Ligação',
+    ligacao: 'Ligacao',
     whatsapp: 'WhatsApp',
     email: 'Email',
     visita: 'Visita',
     test_drive: 'Test Drive',
     proposta: 'Proposta',
-    observacao: 'Observação',
+    observacao: 'Observacao',
     outro: 'Outro'
   };
 
   return (
     <div className="space-y-6">
+      {message && (
+        <div className={`p-4 rounded-lg flex items-start gap-3 ${
+          message.type === 'success'
+            ? 'bg-green-50 border border-green-200'
+            : 'bg-red-50 border border-red-200'
+        }`}>
+          {message.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          )}
+          <p className={`text-sm ${
+            message.type === 'success' ? 'text-green-800' : 'text-red-800'
+          }`}>
+            {message.text}
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/dashboard/negotiations')}
@@ -218,7 +270,7 @@ export function NegotiationDetails() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Informações do Cliente</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Informacoes do Cliente</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {negotiation.client_phone && (
                 <div className="flex items-center gap-3">
@@ -231,10 +283,11 @@ export function NegotiationDetails() {
                   </div>
                 </div>
               )}
+
               {negotiation.client_email && (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-green-600" />
+                  <div className="w-10 h-10 bg-[#fff2df] rounded-lg flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-[#f8a746]" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Email</p>
@@ -242,10 +295,11 @@ export function NegotiationDetails() {
                   </div>
                 </div>
               )}
+
               {negotiation.client_cpf && (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-purple-600" />
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-gray-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">CPF</p>
@@ -253,10 +307,11 @@ export function NegotiationDetails() {
                   </div>
                 </div>
               )}
+
               {negotiation.offered_price && (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-amber-600" />
+                  <div className="w-10 h-10 bg-[#fff2df] rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-[#f8a746]" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Valor Proposto</p>
@@ -267,9 +322,10 @@ export function NegotiationDetails() {
                 </div>
               )}
             </div>
+
             {negotiation.notes && (
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Observações</p>
+                <p className="text-sm text-gray-600 mb-1">Observacoes</p>
                 <p className="text-gray-900">{negotiation.notes}</p>
               </div>
             )}
@@ -277,7 +333,7 @@ export function NegotiationDetails() {
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Histórico de Interações</h2>
+              <h2 className="text-xl font-bold text-gray-900">Historico de Interacoes</h2>
               <button
                 onClick={() => setShowInteractionForm(true)}
                 className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
@@ -286,8 +342,9 @@ export function NegotiationDetails() {
                 Adicionar
               </button>
             </div>
+
             {interactions.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">Nenhuma interação registrada</p>
+              <p className="text-gray-500 text-sm text-center py-8">Nenhuma interacao registrada</p>
             ) : (
               <div className="space-y-4">
                 {interactions.map((interaction) => (
@@ -301,7 +358,7 @@ export function NegotiationDetails() {
                           {interactionTypeLabels[interaction.interaction_type]}
                         </span>
                         <span className="text-xs text-gray-500">•</span>
-                        <span className="text-xs text-gray-500">{interaction.user?.full_name}</span>
+                        <span className="text-xs text-gray-500">{interaction.user?.full_name || 'Usuario'}</span>
                       </div>
                       <p className="text-sm text-gray-700">{interaction.description}</p>
                       <p className="text-xs text-gray-500 mt-1">
@@ -317,7 +374,7 @@ export function NegotiationDetails() {
 
         <div className="space-y-6">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-4">Atualizar Estágio</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">Atualizar Estagio</h3>
             <select
               value={negotiation.stage}
               onChange={(e) => handleStageUpdate(e.target.value)}
@@ -325,13 +382,13 @@ export function NegotiationDetails() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
             >
               <option value="primeiro_contato">Primeiro Contato</option>
-              <option value="avaliacao">Avaliação</option>
+              <option value="avaliacao">Avaliacao</option>
               <option value="test_drive_agendado">Test Drive Agendado</option>
               <option value="test_drive_realizado">Test Drive Realizado</option>
               <option value="proposta_enviada">Proposta Enviada</option>
-              <option value="negociacao_preco">Negociação Preço</option>
-              <option value="aprovacao_credito">Aprovação Crédito</option>
-              <option value="documentacao">Documentação</option>
+              <option value="negociacao_preco">Negociacao Preco</option>
+              <option value="aprovacao_credito">Aprovacao Credito</option>
+              <option value="documentacao">Documentacao</option>
               <option value="finalizado">Finalizado</option>
               <option value="perdido">Perdido</option>
             </select>
@@ -347,8 +404,8 @@ export function NegotiationDetails() {
                       ? priority === 'alta'
                         ? 'bg-red-100 text-red-800'
                         : priority === 'media'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-[#fff2df] text-[#010101]'
+                        : 'bg-[#f3f3f3] text-[#555459]'
                       : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
@@ -360,25 +417,29 @@ export function NegotiationDetails() {
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Veículos na Troca</h3>
+              <h3 className="font-semibold text-gray-900">Veiculos na Troca</h3>
               <button
                 onClick={() => setShowTradeInForm(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                disabled={!tradeInAvailable}
+                className="flex items-center gap-2 px-3 py-2 bg-[#555459] text-white rounded-lg hover:bg-[#3e3d41] transition-colors text-sm"
               >
                 <Plus className="w-4 h-4" />
                 Adicionar
               </button>
             </div>
 
-            {tradeInVehicles.length === 0 ? (
+            {!tradeInAvailable ? (
               <p className="text-sm text-gray-600">
-                Registre o veículo usado que o cliente quer dar como parte do pagamento
+                Modulo de troca ainda nao configurado no banco. Execute o SQL complementar para habilitar esta area.
+              </p>
+            ) : tradeInVehicles.length === 0 ? (
+              <p className="text-sm text-gray-600">
+                Registre o veiculo usado que o cliente quer dar como parte do pagamento.
               </p>
             ) : (
               <div className="space-y-4">
                 {tradeInVehicles.map((vehicle) => (
                   <div key={vehicle.id} className="border border-gray-200 rounded-lg p-4">
-                    {/* Mobile: Layout Vertical */}
                     <div className="md:hidden space-y-3">
                       <div className="flex items-start gap-3">
                         <Car className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
@@ -405,27 +466,8 @@ export function NegotiationDetails() {
                           <span className="ml-1 font-medium capitalize">{vehicle.color}</span>
                         </div>
                       </div>
-                      {vehicle.evaluated_value && (
-                        <div className="pt-2 border-t border-gray-200">
-                          <div className="text-sm">
-                            <span className="text-gray-600">Avaliado:</span>
-                            <span className="ml-2 font-semibold text-green-600">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.evaluated_value)}
-                            </span>
-                          </div>
-                          {vehicle.offered_value && (
-                            <div className="text-sm mt-1">
-                              <span className="text-gray-600">Ofertado:</span>
-                              <span className="ml-2 font-semibold text-blue-600">
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.offered_value)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
 
-                    {/* Desktop: Layout Horizontal (Tabela) */}
                     <div className="hidden md:grid md:grid-cols-6 md:gap-4 md:items-center">
                       <div className="col-span-2">
                         <p className="font-semibold text-gray-900">{vehicle.brand} {vehicle.model}</p>
@@ -441,7 +483,7 @@ export function NegotiationDetails() {
                       </div>
                       <div className="text-sm">
                         <p className="text-gray-600">Avaliado</p>
-                        <p className="font-semibold text-green-600">
+                        <p className="font-semibold text-[#f8a746]">
                           {vehicle.evaluated_value
                             ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.evaluated_value)
                             : 'Pendente'}
@@ -449,7 +491,7 @@ export function NegotiationDetails() {
                       </div>
                       <div className="text-sm">
                         <p className="text-gray-600">Ofertado</p>
-                        <p className="font-semibold text-blue-600">
+                        <p className="font-semibold text-gray-900">
                           {vehicle.offered_value
                             ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.offered_value)
                             : '-'}
@@ -463,7 +505,7 @@ export function NegotiationDetails() {
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-4">Veículo</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">Veiculo</h3>
             {negotiation.vehicle ? (
               <div>
                 <p className="font-medium text-gray-900 mb-1">
@@ -477,17 +519,17 @@ export function NegotiationDetails() {
                   to={`/dashboard/vehicles/${negotiation.vehicle.id}`}
                   className="mt-4 block text-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                 >
-                  Ver Detalhes do Veículo
+                  Ver Detalhes do Veiculo
                 </Link>
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">Veículo não encontrado</p>
+              <p className="text-gray-500 text-sm">Veiculo nao encontrado</p>
             )}
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-4">Vendedor Responsável</h3>
-            <p className="text-gray-900">{negotiation.seller?.full_name || 'Não atribuído'}</p>
+            <h3 className="font-semibold text-gray-900 mb-4">Vendedor Responsavel</h3>
+            <p className="text-gray-900">{negotiation.seller?.full_name || 'Nao atribuido'}</p>
             <p className="text-sm text-gray-500 mt-1 capitalize">{negotiation.seller?.role}</p>
           </div>
         </div>

@@ -20,39 +20,18 @@ export function ClientRegister() {
     setLoading(true);
 
     try {
-      // Cria o usuário no auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            user_type: 'customer'
+            phone: phone || null
           }
         }
       });
 
       if (authError) throw authError;
-
-      // Cria o perfil de cliente
-      if (authData.user) {
-        const { error: customerError } = await supabase
-          .from('customers')
-          .insert([{
-            id: authData.user.id,
-            user_id: authData.user.id,
-            full_name: fullName,
-            email: email,
-            phone: phone || null
-          }]);
-
-        if (customerError) {
-          // Se já existe devido à trigger, ignora o erro
-          if (!customerError.message.includes('duplicate')) {
-            throw customerError;
-          }
-        }
-      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -99,7 +78,7 @@ export function ClientRegister() {
               onChange={(e) => setFullName(e.target.value)}
               required
               className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="João Silva"
+              placeholder="Joao Silva"
             />
           </div>
         </div>
@@ -162,7 +141,7 @@ export function ClientRegister() {
               placeholder="••••••••"
             />
           </div>
-          <p className="mt-1 text-xs text-gray-500">Mínimo de 6 caracteres</p>
+          <p className="mt-1 text-xs text-gray-500">Minimo de 6 caracteres</p>
         </div>
 
         <button
@@ -175,7 +154,7 @@ export function ClientRegister() {
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-600">
-        Já tem uma conta?{' '}
+        Ja tem uma conta?{' '}
         <Link to="/client/login" className="text-blue-600 hover:text-blue-700 font-medium">
           Fazer login
         </Link>

@@ -3,42 +3,42 @@
 :root {
   --font-size: 16px;
   --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
+  --foreground: #010101;
   --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
+  --card-foreground: #010101;
+  --popover: #ffffff;
+  --popover-foreground: #010101;
+  --primary: #f8a746;
+  --primary-foreground: #010101;
+  --secondary: #919294;
+  --secondary-foreground: #010101;
+  --muted: #f4f4f4;
+  --muted-foreground: #555459;
+  --accent: #fff2df;
+  --accent-foreground: #010101;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
+  --border: rgba(85, 84, 89, 0.2);
   --input: transparent;
-  --input-background: #f3f3f5;
-  --switch-background: #cbced4;
+  --input-background: #ffffff;
+  --switch-background: #919294;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --ring: rgba(248, 167, 70, 0.45);
+  --chart-1: #f8a746;
+  --chart-2: #919294;
+  --chart-3: #555459;
+  --chart-4: #010101;
+  --chart-5: #ffd2a0;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #010101;
+  --sidebar-primary: #f8a746;
+  --sidebar-primary-foreground: #010101;
+  --sidebar-accent: #fff2df;
+  --sidebar-accent-foreground: #010101;
+  --sidebar-border: rgba(85, 84, 89, 0.15);
+  --sidebar-ring: rgba(248, 167, 70, 0.45);
 }
 
 .dark {
@@ -177,5 +177,118 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+}
+
+@layer utilities {
+  .bg-blue-50 {
+    background-color: #fff2df !important;
+  }
+
+  .bg-blue-100 {
+    background-color: #ffe3be !important;
+  }
+
+  .bg-blue-600 {
+    background-color: #f8a746 !important;
+  }
+
+  .text-blue-600 {
+    color: #f8a746 !important;
+  }
+
+  .border-blue-200 {
+    border-color: rgba(248, 167, 70, 0.3) !important;
+  }
+
+  .border-blue-300,
+  .border-blue-400 {
+    border-color: rgba(248, 167, 70, 0.5) !important;
+  }
+
+  .from-blue-50 {
+    --tw-gradient-from: #fff2df var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(255, 242, 223, 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  .to-indigo-100 {
+    --tw-gradient-to: #f1f1f1 var(--tw-gradient-to-position) !important;
+  }
+
+  .hover\:bg-blue-50:hover,
+  .hover\:bg-blue-100:hover {
+    background-color: #ffe3be !important;
+  }
+
+  .hover\:bg-blue-700:hover {
+    background-color: #e09337 !important;
+  }
+
+  .hover\:text-blue-700:hover {
+    color: #e09337 !important;
+  }
+
+  .hover\:border-blue-300:hover,
+  .hover\:border-blue-400:hover {
+    border-color: #f8a746 !important;
+  }
+
+  .focus\:ring-blue-500:focus {
+    --tw-ring-color: rgba(248, 167, 70, 0.35) !important;
+  }
+
+  .bg-gray-50 {
+    background-color: #f6f6f6 !important;
+  }
+
+  .bg-gray-100 {
+    background-color: #efefef !important;
+  }
+
+  .bg-gray-200 {
+    background-color: #e3e3e4 !important;
+  }
+
+  .border-gray-100 {
+    border-color: rgba(145, 146, 148, 0.15) !important;
+  }
+
+  .border-gray-200 {
+    border-color: rgba(145, 146, 148, 0.22) !important;
+  }
+
+  .border-gray-300 {
+    border-color: rgba(145, 146, 148, 0.35) !important;
+  }
+
+  .text-gray-400 {
+    color: #919294 !important;
+  }
+
+  .text-gray-500,
+  .text-gray-600 {
+    color: #555459 !important;
+  }
+
+  .text-gray-700 {
+    color: #3e3d41 !important;
+  }
+
+  .text-gray-800,
+  .text-gray-900 {
+    color: #010101 !important;
+  }
+
+  .hover\:bg-gray-50:hover {
+    background-color: #f1f1f1 !important;
+  }
+
+  .hover\:bg-gray-100:hover {
+    background-color: #e8e8e8 !important;
+  }
+
+  .hover\:bg-gray-200:hover {
+    background-color: #dcdcdc !important;
   }
 }

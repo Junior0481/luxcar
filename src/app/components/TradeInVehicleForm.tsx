@@ -135,7 +135,11 @@ export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, 
 
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Erro ao salvar veículo de troca');
+      if (err.code === '42P01') {
+        setError('A tabela de veiculos na troca ainda nao existe no banco. Execute o SQL complementar para habilitar este modulo.');
+      } else {
+        setError(err.message || 'Erro ao salvar veículo de troca');
+      }
     } finally {
       setLoading(false);
     }
