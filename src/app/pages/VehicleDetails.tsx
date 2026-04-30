@@ -78,9 +78,9 @@ export function VehicleDetails() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      disponivel: { label: 'Disponível', className: 'bg-green-100 text-green-800' },
-      em_negociacao: { label: 'Em Negociação', className: 'bg-amber-100 text-amber-800' },
-      vendido: { label: 'Vendido', className: 'bg-blue-100 text-blue-800' }
+      disponivel: { label: 'Disponível', className: 'bg-[#fff2df] text-[#010101]' },
+      em_negociacao: { label: 'Em Negociação', className: 'bg-[#efefef] text-[#555459]' },
+      vendido: { label: 'Vendido', className: 'bg-[#010101] text-white' }
     };
     const badge = badges[status as keyof typeof badges] || badges.disponivel;
     return <span className={`px-3 py-1 text-sm font-medium rounded-full ${badge.className}`}>{badge.label}</span>;
@@ -112,12 +112,12 @@ export function VehicleDetails() {
       </div>
 
       {activeNegotiations.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <div className="bg-[#fff2df] border border-[#f8a746]/30 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-[#f8a746] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-amber-900">Veículo em negociação</p>
-              <p className="text-sm text-amber-800 mt-1">
+              <p className="font-medium text-[#010101]">Veículo em negociação</p>
+              <p className="text-sm text-[#555459] mt-1">
                 Este veículo possui {activeNegotiations.length} negociação(ões) ativa(s).{' '}
                 <Link to="/dashboard/negotiations" className="underline">
                   Ver negociações
@@ -158,7 +158,7 @@ export function VehicleDetails() {
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
-            <Wrench className="w-5 h-5 text-orange-600" />
+            <Wrench className="w-5 h-5 text-[#555459]" />
             <span className="text-sm text-gray-600">Custos Adicionais</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">
@@ -168,7 +168,7 @@ export function VehicleDetails() {
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
+            <DollarSign className="w-5 h-5 text-[#010101]" />
             <span className="text-sm text-gray-600">Valor de Venda</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">
@@ -178,10 +178,10 @@ export function VehicleDetails() {
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="w-5 h-5 text-purple-600" />
+            <DollarSign className="w-5 h-5 text-[#555459]" />
             <span className="text-sm text-gray-600">Lucro Estimado</span>
           </div>
-          <p className={`text-2xl font-bold ${potentialProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-2xl font-bold ${potentialProfit >= 0 ? 'text-[#f8a746]' : 'text-red-600'}`}>
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(potentialProfit)}
           </p>
         </div>

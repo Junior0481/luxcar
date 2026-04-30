@@ -33,20 +33,10 @@ export function PublicVehicleDetails() {
         .eq('id', id)
         .single();
 
-      // Se a view não existir, carrega direto da tabela
       if (error && error.code === '42P01') {
         const result = await supabase
           .from('vehicles')
-          .select(`
-            *,
-            companies:company_id (
-              name,
-              slug,
-              city,
-              state,
-              phone
-            )
-          `)
+          .select('*')
           .eq('id', id)
           .single();
 
@@ -54,11 +44,11 @@ export function PublicVehicleDetails() {
 
         data = {
           ...result.data,
-          company_name: result.data.companies?.name,
-          company_slug: result.data.companies?.slug,
-          company_city: result.data.companies?.city,
-          company_state: result.data.companies?.state,
-          company_phone: result.data.companies?.phone
+          company_name: null,
+          company_slug: null,
+          company_city: null,
+          company_state: null,
+          company_phone: null
         };
       } else if (error) {
         throw error;
@@ -145,7 +135,7 @@ export function PublicVehicleDetails() {
                           key={index}
                           onClick={() => setSelectedImage(index)}
                           className={`aspect-video rounded-lg overflow-hidden border-2 ${
-                            selectedImage === index ? 'border-blue-600' : 'border-gray-200'
+                            selectedImage === index ? 'border-[#f8a746]' : 'border-gray-200'
                           }`}
                         >
                           <img src={img} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
@@ -245,7 +235,7 @@ export function PublicVehicleDetails() {
                   href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium mb-4 flex items-center justify-center gap-2"
+                  className="w-full px-6 py-3 bg-[#555459] text-white rounded-lg hover:bg-[#3e3d41] transition-colors font-medium mb-4 flex items-center justify-center gap-2"
                 >
                   <Phone className="w-5 h-5" />
                   WhatsApp

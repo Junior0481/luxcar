@@ -120,15 +120,15 @@ export function Vehicles() {
     const badges = {
       disponivel: {
         label: "Disponível",
-        className: "bg-green-100 text-green-800",
+        className: "bg-[#fff2df] text-[#010101]",
       },
       em_negociacao: {
         label: "Em Negociação",
-        className: "bg-amber-100 text-amber-800",
+        className: "bg-[#efefef] text-[#555459]",
       },
       vendido: {
         label: "Vendido",
-        className: "bg-blue-100 text-blue-800",
+        className: "bg-[#010101] text-white",
       },
     };
     const badge =

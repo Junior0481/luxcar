@@ -122,33 +122,29 @@ export function Reports() {
       title: 'Total de Vendas',
       value: metrics.totalSales,
       icon: Handshake,
-      color: 'bg-blue-500',
-      textColor: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      textColor: 'text-[#f8a746]',
+      bgColor: 'bg-[#fff2df]'
     },
     {
       title: 'Receita Total',
       value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.totalRevenue),
       icon: DollarSign,
-      color: 'bg-green-500',
-      textColor: 'text-green-600',
-      bgColor: 'bg-green-50'
+      textColor: 'text-[#010101]',
+      bgColor: 'bg-[#f3f3f3]'
     },
     {
       title: 'Lucro Total',
       value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.totalProfit),
       icon: TrendingUp,
-      color: 'bg-purple-500',
-      textColor: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      textColor: 'text-white',
+      bgColor: 'bg-[#555459]'
     },
     {
       title: 'Taxa de Conversão',
       value: `${metrics.conversionRate.toFixed(1)}%`,
       icon: Car,
-      color: 'bg-amber-500',
-      textColor: 'text-amber-600',
-      bgColor: 'bg-amber-50'
+      textColor: 'text-[#555459]',
+      bgColor: 'bg-[#efefef]'
     }
   ];
 
@@ -227,7 +223,7 @@ export function Reports() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="vendas" stroke="#3b82f6" strokeWidth={2} name="Vendas" />
+                <Line type="monotone" dataKey="vendas" stroke="#f8a746" strokeWidth={2} name="Vendas" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -250,7 +246,7 @@ export function Reports() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="count" fill="#10b981" name="Vendas" />
+                  <Bar dataKey="count" fill="#919294" name="Vendas" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -272,7 +268,7 @@ export function Reports() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="vendas" fill="#8b5cf6" name="Vendas" />
+                  <Bar dataKey="vendas" fill="#010101" name="Vendas" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

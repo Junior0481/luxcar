@@ -47,6 +47,16 @@
    - Vá em "Storage" no menu lateral
    - Você deve ver o bucket "vehicles" criado
 
+6. **Habilitar módulos avançados**
+   - Abra o arquivo `supabase-feature-alignment.sql`
+   - Execute o conteúdo completo no SQL Editor
+   - Esse passo cria estruturas extras usadas pelo frontend:
+     - `companies`
+     - `customers`
+     - `leads`
+     - `trade_in_vehicles`
+     - view `public_vehicles`
+
 ### 2️⃣ Configurar Variáveis de Ambiente
 
 1. **Criar arquivo .env**

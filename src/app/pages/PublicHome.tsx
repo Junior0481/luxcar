@@ -37,39 +37,28 @@ export function PublicHome() {
 
   const loadVehicles = async () => {
     try {
-      // Tenta carregar da view primeiro, se falhar, carrega direto da tabela
       let { data, error } = await supabase
         .from('public_vehicles')
         .select('*')
+        .eq('status', 'disponivel')
         .order('created_at', { ascending: false });
 
-      // Se a view não existir, carrega direto da tabela vehicles
       if (error && error.code === '42P01') {
         const result = await supabase
           .from('vehicles')
-          .select(`
-            *,
-            companies:company_id (
-              name,
-              slug,
-              city,
-              state,
-              phone
-            )
-          `)
+          .select('*')
           .eq('status', 'disponivel')
           .order('created_at', { ascending: false });
 
         if (result.error) throw result.error;
 
-        // Mapear para o formato esperado
         data = (result.data || []).map((v: any) => ({
           ...v,
-          company_name: v.companies?.name,
-          company_slug: v.companies?.slug,
-          company_city: v.companies?.city,
-          company_state: v.companies?.state,
-          company_phone: v.companies?.phone
+          company_name: null,
+          company_slug: null,
+          company_city: null,
+          company_state: null,
+          company_phone: null
         }));
       } else if (error) {
         throw error;
