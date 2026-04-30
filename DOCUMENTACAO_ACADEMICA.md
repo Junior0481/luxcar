@@ -1,5 +1,62 @@
 # 3.4 Casos de uso
 
+```mermaid
+flowchart LR
+    Admin["Administrador"]
+    Seller["Vendedor"]
+    Customer["Cliente"]
+    Fipe["API FIPE"]
+    Supabase["Supabase Auth/DB"]
+
+    UC01(["Login interno"])
+    UC02(["Cadastrar veículo"])
+    UC03(["Consultar estoque"])
+    UC04(["Registrar custos"])
+    UC05(["Criar negociação"])
+    UC06(["Atualizar estágio"])
+    UC07(["Registrar interação"])
+    UC08(["Registrar veículo na troca"])
+    UC09(["Consultar relatórios"])
+    UC10(["Gerenciar configurações"])
+    UC11(["Consultar vitrine pública"])
+    UC12(["Enviar lead"])
+    UC13(["Cadastrar cliente"])
+    UC14(["Login de cliente"])
+    UC15(["Consultar valor FIPE"])
+
+    Admin --> UC01
+    Admin --> UC02
+    Admin --> UC03
+    Admin --> UC04
+    Admin --> UC05
+    Admin --> UC06
+    Admin --> UC07
+    Admin --> UC08
+    Admin --> UC09
+    Admin --> UC10
+
+    Seller --> UC01
+    Seller --> UC03
+    Seller --> UC04
+    Seller --> UC05
+    Seller --> UC06
+    Seller --> UC07
+    Seller --> UC08
+    Seller --> UC15
+
+    Customer --> UC11
+    Customer --> UC12
+    Customer --> UC13
+    Customer --> UC14
+
+    UC01 --> Supabase
+    UC02 --> Supabase
+    UC05 --> Supabase
+    UC12 --> Supabase
+    UC13 --> Supabase
+    UC15 --> Fipe
+```
+
 ## Visão geral
 O projeto **LuxCar / AutoGest** é um sistema web para gerenciamento de concessionárias e lojas de veículos. A aplicação atende dois públicos principais: equipe interna da loja e clientes externos. Internamente, o sistema permite controlar estoque, custos, negociações, vendas e indicadores. Externamente, o cliente pode consultar veículos disponíveis, criar conta e demonstrar interesse em um automóvel.
 
@@ -416,6 +473,30 @@ classDiagram
 ```
 
 # 3.9 Modelagem do banco de dados
+
+```mermaid
+erDiagram
+    COMPANIES ||--o{ PROFILES : possui
+    COMPANIES ||--o{ VEHICLES : possui
+    COMPANIES ||--o{ NEGOTIATIONS : centraliza
+    COMPANIES ||--o{ SALES : registra
+    COMPANIES ||--o{ LEADS : recebe
+    COMPANIES ||--o{ TRADE_IN_VEHICLES : avalia
+
+    VEHICLES ||--o{ VEHICLE_COSTS : gera
+    VEHICLES ||--o{ NEGOTIATIONS : participa
+    VEHICLES ||--o{ LEADS : referencia
+
+    PROFILES ||--o{ NEGOTIATIONS : conduz
+    PROFILES ||--o{ INTERACTION_HISTORY : registra
+    PROFILES ||--o{ SALES : realiza
+
+    NEGOTIATIONS ||--o{ INTERACTION_HISTORY : possui
+    NEGOTIATIONS ||--o{ TRADE_IN_VEHICLES : recebe
+    NEGOTIATIONS ||--o| SALES : conclui
+
+    CUSTOMERS ||--o{ LEADS : origina
+```
 
 ## Abordagem adotada
 O projeto utiliza o **Supabase**, que por baixo opera sobre **PostgreSQL**. A modelagem é relacional e foi construída para suportar:
