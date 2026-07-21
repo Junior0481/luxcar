@@ -122,7 +122,7 @@ export function PublicVehicleDetails() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
+        <Link to="/estoque" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="w-5 h-5" />
           Voltar para a busca
         </Link>

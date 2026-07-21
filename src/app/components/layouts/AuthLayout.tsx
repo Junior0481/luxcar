@@ -12,7 +12,7 @@ export function AuthLayout() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate(location.pathname.startsWith('/client') ? '/' : '/dashboard', { replace: true });
+      navigate(location.pathname.startsWith('/client') ? '/estoque' : '/dashboard', { replace: true });
     }
   }, [user, loading, navigate, location.pathname]);
 

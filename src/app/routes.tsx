@@ -12,6 +12,7 @@ import { NegotiationDetails } from './pages/NegotiationDetails';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { NotFound } from './pages/NotFound';
+import { Landing } from './pages/Landing';
 import { PublicHome } from './pages/PublicHome';
 import { PublicVehicleDetails } from './pages/PublicVehicleDetails';
 import { ClientLogin } from './pages/ClientLogin';
@@ -24,6 +25,10 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
+        Component: Landing
+      },
+      {
+        path: 'estoque',
         Component: PublicHome
       },
       {
