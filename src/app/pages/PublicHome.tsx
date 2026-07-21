@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { Search, SlidersHorizontal, MapPin, Car, Calendar, Gauge, Mail, Phone, Heart } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 type PublicVehicle = Vehicle & {
   company_name?: string;
@@ -143,6 +144,7 @@ export function PublicHome() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <Link
                 to="/auth/login"
                 className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"

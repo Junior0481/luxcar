@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Car } from 'lucide-react';
+import { ThemeToggle } from '../ThemeToggle';
 
 export function AuthLayout() {
   const { user, loading } = useAuth();
@@ -24,6 +25,9 @@ export function AuthLayout() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-[#f8a746]/20">

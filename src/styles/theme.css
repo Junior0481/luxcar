@@ -42,40 +42,42 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --background: #0f1115;
+  --foreground: #f4f5f7;
+  --card: #171a21;
+  --card-foreground: #f4f5f7;
+  --popover: #171a21;
+  --popover-foreground: #f4f5f7;
+  --primary: #f8a746;
+  --primary-foreground: #1a1206;
+  --secondary: #2c323f;
+  --secondary-foreground: #f4f5f7;
+  --muted: #1b1f27;
+  --muted-foreground: #a1a3ab;
+  --accent: #2a2013;
+  --accent-foreground: #ffd2a0;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.12);
+  --input-background: #171a21;
+  --switch-background: #3a4150;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --ring: rgba(248, 167, 70, 0.5);
+  --chart-1: #f8a746;
+  --chart-2: #ffd2a0;
+  --chart-3: #a1a3ab;
+  --chart-4: #6b7280;
+  --chart-5: #e09337;
+  --sidebar: #131620;
+  --sidebar-foreground: #f4f5f7;
+  --sidebar-primary: #f8a746;
+  --sidebar-primary-foreground: #1a1206;
+  --sidebar-accent: #2a2013;
+  --sidebar-accent-foreground: #ffd2a0;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(248, 167, 70, 0.5);
 }
 
 @theme inline {
@@ -290,5 +292,95 @@
 
   .hover\:bg-gray-200:hover {
     background-color: #dcdcdc !important;
+  }
+
+  /* ===== Dark mode: remapeia as cores fixas usadas nas páginas ===== */
+  .dark .bg-white {
+    background-color: #171a21 !important;
+  }
+
+  .dark .bg-gray-50 {
+    background-color: #12151b !important;
+  }
+
+  .dark .bg-gray-100 {
+    background-color: #1f242e !important;
+  }
+
+  .dark .bg-gray-200,
+  .dark .bg-gray-300 {
+    background-color: #2c323f !important;
+  }
+
+  .dark .text-gray-400 {
+    color: #8a8c94 !important;
+  }
+
+  .dark .text-gray-500,
+  .dark .text-gray-600 {
+    color: #a1a3ab !important;
+  }
+
+  .dark .text-gray-700 {
+    color: #d0d2d8 !important;
+  }
+
+  .dark .text-gray-800,
+  .dark .text-gray-900 {
+    color: #f4f5f7 !important;
+  }
+
+  .dark .border-gray-100 {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .dark .border-gray-200 {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .dark .border-gray-300 {
+    border-color: rgba(255, 255, 255, 0.16) !important;
+  }
+
+  .dark .hover\:bg-gray-50:hover {
+    background-color: #1f242e !important;
+  }
+
+  .dark .hover\:bg-gray-100:hover {
+    background-color: #262c37 !important;
+  }
+
+  .dark .hover\:bg-gray-200:hover {
+    background-color: #333a48 !important;
+  }
+
+  /* Âmbar (classes "blue-*") em superfícies escuras */
+  .dark .bg-blue-50 {
+    background-color: rgba(248, 167, 70, 0.14) !important;
+  }
+
+  .dark .bg-blue-100 {
+    background-color: rgba(248, 167, 70, 0.22) !important;
+  }
+
+  .dark .hover\:bg-blue-50:hover,
+  .dark .hover\:bg-blue-100:hover {
+    background-color: rgba(248, 167, 70, 0.24) !important;
+  }
+
+  /* Gradiente das telas de auth */
+  .dark .from-blue-50 {
+    --tw-gradient-from: #12151b var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(18, 21, 27, 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  .dark .to-indigo-100 {
+    --tw-gradient-to: #0f1115 var(--tw-gradient-to-position) !important;
+  }
+
+  /* Destaques destrutivos (logout / excluir) */
+  .dark .hover\:bg-red-50:hover {
+    background-color: rgba(212, 24, 61, 0.16) !important;
   }
 }
