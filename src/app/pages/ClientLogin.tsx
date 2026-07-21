@@ -23,7 +23,7 @@ export function ClientLogin() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      navigate('/', { replace: true });
+      navigate('/estoque', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
