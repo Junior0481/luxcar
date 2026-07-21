@@ -6,13 +6,22 @@ import {
   Car,
   Handshake,
   TrendingUp,
-  DollarSign,
-  AlertCircle,
-  CheckCircle,
   Clock,
-  Users
+  Plus,
+  ArrowUpRight
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '../components/ui/table';
 
 type DashboardMetrics = {
   vehicles_available: number;
@@ -21,6 +30,28 @@ type DashboardMetrics = {
   active_negotiations: number;
   monthly_revenue: number;
   potential_profit: number;
+};
+
+const brl = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+
+const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+  disponivel: { label: 'Disponível', variant: 'default' },
+  em_negociacao: { label: 'Em Negociação', variant: 'secondary' },
+  vendido: { label: 'Vendido', variant: 'outline' }
+};
+
+const stageBadge: Record<string, string> = {
+  primeiro_contato: 'Primeiro Contato',
+  avaliacao: 'Avaliação',
+  test_drive_agendado: 'Test Drive Agendado',
+  test_drive_realizado: 'Test Drive Realizado',
+  proposta_enviada: 'Proposta Enviada',
+  negociacao_preco: 'Negociação Preço',
+  aprovacao_credito: 'Aprovação Crédito',
+  documentacao: 'Documentação',
+  finalizado: 'Finalizado',
+  perdido: 'Perdido'
 };
 
 export function Dashboard() {
@@ -55,209 +86,195 @@ export function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
 
   const statusData = [
-    { name: 'Disponíveis', value: metrics?.vehicles_available || 0, color: '#f8a746' },
-    { name: 'Em Negociação', value: metrics?.vehicles_in_negotiation || 0, color: '#919294' },
-    { name: 'Vendidos', value: metrics?.vehicles_sold || 0, color: '#010101' }
+    { name: 'Disponíveis', value: metrics?.vehicles_available || 0, color: 'var(--primary)' },
+    { name: 'Em Negociação', value: metrics?.vehicles_in_negotiation || 0, color: 'var(--muted-foreground)' },
+    { name: 'Vendidos', value: metrics?.vehicles_sold || 0, color: 'var(--foreground)' }
   ];
 
   const statCards = [
-    {
-      title: 'Veículos Disponíveis',
-      value: metrics?.vehicles_available || 0,
-      icon: Car,
-      textColor: 'text-[#f8a746]',
-      bgColor: 'bg-[#fff2df]'
-    },
-    {
-      title: 'Em Negociação',
-      value: metrics?.vehicles_in_negotiation || 0,
-      icon: Clock,
-      textColor: 'text-[#555459]',
-      bgColor: 'bg-[#efefef]'
-    },
-    {
-      title: 'Negociações Ativas',
-      value: metrics?.active_negotiations || 0,
-      icon: Handshake,
-      textColor: 'text-[#010101]',
-      bgColor: 'bg-[#f3f3f3]'
-    },
-    {
-      title: 'Lucro Potencial',
-      value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics?.potential_profit || 0),
-      icon: TrendingUp,
-      textColor: 'text-white',
-      bgColor: 'bg-[#555459]'
-    }
+    { title: 'Veículos Disponíveis', value: metrics?.vehicles_available ?? 0, icon: Car, accent: true },
+    { title: 'Em Negociação', value: metrics?.vehicles_in_negotiation ?? 0, icon: Clock, accent: false },
+    { title: 'Negociações Ativas', value: metrics?.active_negotiations ?? 0, icon: Handshake, accent: false },
+    { title: 'Lucro Potencial', value: brl(metrics?.potential_profit || 0), icon: TrendingUp, accent: false }
   ];
 
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      disponivel: { label: 'Disponível', className: 'bg-[#fff2df] text-[#010101]' },
-      em_negociacao: { label: 'Em Negociação', className: 'bg-[#efefef] text-[#555459]' },
-      vendido: { label: 'Vendido', className: 'bg-[#010101] text-white' }
-    };
-    const badge = badges[status as keyof typeof badges] || badges.disponivel;
-    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>{badge.label}</span>;
-  };
-
-  const getStageBadge = (stage: string) => {
-    const stages: Record<string, { label: string; className: string }> = {
-      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-[#f3f3f3] text-[#555459]' },
-      avaliacao: { label: 'Avaliação', className: 'bg-[#fff2df] text-[#010101]' },
-      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-[#efefef] text-[#555459]' },
-      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-[#ffe3be] text-[#010101]' },
-      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-[#fff2df] text-[#010101]' },
-      negociacao_preco: { label: 'Negociação Preço', className: 'bg-[#efefef] text-[#555459]' },
-      aprovacao_credito: { label: 'Aprovação Crédito', className: 'bg-[#ffe3be] text-[#010101]' },
-      documentacao: { label: 'Documentação', className: 'bg-[#f3f3f3] text-[#555459]' },
-      finalizado: { label: 'Finalizado', className: 'bg-[#010101] text-white' },
-      perdido: { label: 'Perdido', className: 'bg-red-100 text-red-800' }
-    };
-    const badge = stages[stage] || stages.primeiro_contato;
-    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>{badge.label}</span>;
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Bem-vindo, {profile?.full_name}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Bem-vindo, {profile?.full_name}</p>
         </div>
-        <Link
-          to="/dashboard/vehicles"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Cadastrar Veículo
-        </Link>
+        <Button asChild size="lg">
+          <Link to="/dashboard/vehicles">
+            <Plus className="w-4 h-4" />
+            Cadastrar Veículo
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((stat) => (
+          <Card key={stat.title} className="transition-shadow hover:shadow-md">
+            <CardContent className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">{stat.title}</p>
+                <p className="text-2xl font-bold text-foreground mt-1 truncate">{stat.value}</p>
               </div>
-              <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
+              <div
+                className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                  stat.accent ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                <stat.icon className="w-6 h-6" />
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
+      {/* Charts + recent vehicles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Status dos Veículos</h3>
-          <div style={{ width: '100%', height: 256 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name}: ${value}`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Status dos Veículos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div style={{ width: '100%', height: 256 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${value}`}
+                    innerRadius={48}
+                    outerRadius={84}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--card)" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--popover)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      color: 'var(--popover-foreground)'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Veículos Recentes</h3>
-          <div className="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Veículos Recentes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             {recentVehicles.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">Nenhum veículo cadastrado ainda</p>
+              <p className="text-muted-foreground text-sm text-center py-8">Nenhum veículo cadastrado ainda</p>
             ) : (
-              recentVehicles.map((vehicle) => (
-                <Link
-                  key={vehicle.id}
-                  to={`/dashboard/vehicles/${vehicle.id}`}
-                  className="block p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">{vehicle.brand} {vehicle.model}</p>
-                      <p className="text-sm text-gray-500">{vehicle.year}</p>
+              recentVehicles.map((vehicle) => {
+                const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
+                return (
+                  <Link
+                    key={vehicle.id}
+                    to={`/dashboard/vehicles/${vehicle.id}`}
+                    className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-accent transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">
+                        {vehicle.brand} {vehicle.model}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{vehicle.year}</p>
                     </div>
-                    {getStatusBadge(vehicle.status)}
-                  </div>
-                </Link>
-              ))
+                    <Badge variant={b.variant}>{b.label}</Badge>
+                  </Link>
+                );
+              })
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Negociações Recentes</h3>
-          <Link to="/dashboard/negotiations" className="text-sm text-blue-600 hover:text-blue-700">
-            Ver todas
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
+      {/* Recent negotiations */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Negociações Recentes</CardTitle>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/dashboard/negotiations">
+              Ver todas
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
           {recentNegotiations.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-8">Nenhuma negociação iniciada ainda</p>
+            <p className="text-muted-foreground text-sm text-center py-8">Nenhuma negociação iniciada ainda</p>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estágio</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prioridade</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {recentNegotiations.map((negotiation) => (
-                  <tr key={negotiation.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <Link
-                        to={`/dashboard/negotiations/${negotiation.id}`}
-                        className="text-sm font-medium text-gray-900 hover:text-blue-600"
-                      >
-                        {negotiation.client_name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">{getStageBadge(negotiation.stage)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                        negotiation.priority === 'alta' ? 'bg-red-100 text-red-800' :
-                        negotiation.priority === 'media' ? 'bg-[#fff2df] text-[#010101]' :
-                        'bg-[#f3f3f3] text-[#555459]'
-                      }`}>
-                        {negotiation.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {new Date(negotiation.created_at).toLocaleDateString('pt-BR')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Estágio</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                    <TableHead>Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentNegotiations.map((negotiation) => (
+                    <TableRow key={negotiation.id}>
+                      <TableCell>
+                        <Link
+                          to={`/dashboard/negotiations/${negotiation.id}`}
+                          className="font-medium text-foreground hover:text-primary transition-colors"
+                        >
+                          {negotiation.client_name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            negotiation.priority === 'alta'
+                              ? 'destructive'
+                              : negotiation.priority === 'media'
+                              ? 'default'
+                              : 'outline'
+                          }
+                          className="capitalize"
+                        >
+                          {negotiation.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(negotiation.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
