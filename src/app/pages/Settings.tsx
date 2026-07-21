@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { User, Shield, Bell, Database, AlertCircle, CheckCircle } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
 
 type MessageState = {
   type: 'success' | 'error';
@@ -29,8 +34,8 @@ export function Settings() {
 
   const tabs = [
     { id: 'profile', label: 'Perfil', icon: User },
-    { id: 'security', label: 'Seguranca', icon: Shield },
-    { id: 'notifications', label: 'Notificacoes', icon: Bell },
+    { id: 'security', label: 'Segurança', icon: Shield },
+    { id: 'notifications', label: 'Notificações', icon: Bell },
     { id: 'system', label: 'Sistema', icon: Database }
   ];
 
@@ -119,7 +124,7 @@ export function Settings() {
         }
 
         if (securityForm.newPassword !== securityForm.confirmPassword) {
-          throw new Error('A confirmacao da senha nao confere.');
+          throw new Error('A confirmação da senha não confere.');
         }
 
         const { error } = await supabase.auth.updateUser({
@@ -142,14 +147,14 @@ export function Settings() {
           JSON.stringify(notificationsForm)
         );
 
-        showMessage('success', 'Preferencias de notificacao salvas.');
+        showMessage('success', 'Preferências de notificação salvas.');
       }
 
       if (activeTab === 'system') {
-        showMessage('success', 'Nenhuma configuracao editavel nesta aba.');
+        showMessage('success', 'Nenhuma configuração editável nesta aba.');
       }
     } catch (error: any) {
-      showMessage('error', error.message || 'Nao foi possivel salvar.');
+      showMessage('error', error.message || 'Não foi possível salvar.');
     } finally {
       setSaving(false);
     }
@@ -207,9 +212,9 @@ export function Settings() {
         sales: salesRes.data || []
       });
 
-      showMessage('success', mode === 'backup' ? 'Backup gerado com sucesso.' : 'Exportacao gerada com sucesso.');
+      showMessage('success', mode === 'backup' ? 'Backup gerado com sucesso.' : 'Exportação gerada com sucesso.');
     } catch (error: any) {
-      showMessage('error', error.message || 'Nao foi possivel exportar os dados.');
+      showMessage('error', error.message || 'Não foi possível exportar os dados.');
     } finally {
       setSaving(false);
     }
@@ -224,30 +229,36 @@ export function Settings() {
       sessionStorage.clear();
       showMessage('success', 'Cache local limpo com sucesso.');
     } catch (error: any) {
-      showMessage('error', error.message || 'Nao foi possivel limpar o cache.');
+      showMessage('error', error.message || 'Não foi possível limpar o cache.');
     }
   };
+
+  const notificationRows = [
+    { key: 'newNegotiations' as const, title: 'Novas Negociações', desc: 'Receber alertas quando houver novas negociações' },
+    { key: 'vehicleUpdates' as const, title: 'Atualizações de Veículos', desc: 'Notificar sobre mudanças no estoque' },
+    { key: 'weeklyReports' as const, title: 'Relatórios Semanais', desc: 'Receber resumo semanal de vendas' }
+  ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Configuracoes</h1>
-        <p className="text-gray-600 mt-1">Gerencie suas preferencias e configuracoes do sistema</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Configurações</h1>
+        <p className="text-muted-foreground mt-1">Gerencie suas preferências e configurações do sistema</p>
       </div>
 
       {message && (
-        <div className={`p-4 rounded-lg flex items-start gap-3 ${
+        <div className={`p-4 rounded-lg flex items-start gap-3 border ${
           message.type === 'success'
-            ? 'bg-green-50 border border-green-200'
-            : 'bg-red-50 border border-red-200'
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-destructive/10 border-destructive/30'
         }`}>
           {message.type === 'success' ? (
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
           )}
           <p className={`text-sm ${
-            message.type === 'success' ? 'text-green-800' : 'text-red-800'
+            message.type === 'success' ? 'text-emerald-700 dark:text-emerald-300' : 'text-destructive'
           }`}>
             {message.text}
           </p>
@@ -256,222 +267,163 @@ export function Settings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <Card className="py-2 overflow-hidden">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-3 transition-colors border-l-2 ${
                   activeTab === tab.id
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
-                    : 'text-gray-700 hover:bg-gray-50 border-l-4 border-transparent'
+                    ? 'bg-accent text-primary border-primary'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground border-transparent'
                 }`}
               >
                 <tab.icon className="w-5 h-5" />
                 <span className="font-medium">{tab.label}</span>
               </button>
             ))}
-          </div>
+          </Card>
         </div>
 
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            {activeTab === 'profile' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Informacoes do Perfil</h2>
+          <Card>
+            <CardContent>
+              {activeTab === 'profile' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-foreground">Informações do Perfil</h2>
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nome Completo
-                      </label>
-                      <input
-                        type="text"
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Nome Completo</Label>
+                      <Input
+                        id="fullName"
                         value={profileForm.fullName}
                         onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email
-                      </label>
-                      <input
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
                         type="email"
                         value={profileForm.email}
                         onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tipo de Conta
-                      </label>
-                      <input
-                        type="text"
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Tipo de Conta</Label>
+                      <Input
+                        id="role"
                         value={profile?.role === 'administrador' ? 'Administrador' : 'Vendedor'}
                         disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
                       />
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'security' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Seguranca</h2>
+              {activeTab === 'security' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-foreground">Segurança</h2>
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nova Senha
-                      </label>
-                      <input
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">Nova Senha</Label>
+                      <Input
+                        id="newPassword"
                         type="password"
                         value={securityForm.newPassword}
                         onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Minimo de 6 caracteres"
+                        placeholder="Mínimo de 6 caracteres"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Confirmar Nova Senha
-                      </label>
-                      <input
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                      <Input
+                        id="confirmPassword"
                         type="password"
                         value={securityForm.confirmPassword}
                         onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Repita a nova senha"
                       />
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'notifications' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Preferencias de Notificacao</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                      <div>
-                        <p className="font-medium text-gray-900">Novas Negociacoes</p>
-                        <p className="text-sm text-gray-500">Receber alertas quando houver novas negociacoes</p>
+              {activeTab === 'notifications' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-foreground">Preferências de Notificação</h2>
+                  <div className="divide-y divide-border">
+                    {notificationRows.map((row) => (
+                      <div key={row.key} className="flex items-center justify-between gap-4 py-4">
+                        <div>
+                          <p className="font-medium text-foreground">{row.title}</p>
+                          <p className="text-sm text-muted-foreground">{row.desc}</p>
+                        </div>
+                        <Switch
+                          checked={notificationsForm[row.key]}
+                          onCheckedChange={(checked) =>
+                            setNotificationsForm({ ...notificationsForm, [row.key]: checked })
+                          }
+                        />
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={notificationsForm.newNegotiations}
-                        onChange={(e) => setNotificationsForm({ ...notificationsForm, newNegotiations: e.target.checked })}
-                        className="w-5 h-5 text-blue-600"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                      <div>
-                        <p className="font-medium text-gray-900">Atualizacoes de Veiculos</p>
-                        <p className="text-sm text-gray-500">Notificar sobre mudancas no estoque</p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={notificationsForm.vehicleUpdates}
-                        onChange={(e) => setNotificationsForm({ ...notificationsForm, vehicleUpdates: e.target.checked })}
-                        className="w-5 h-5 text-blue-600"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between py-3 border-b border-gray-200">
-                      <div>
-                        <p className="font-medium text-gray-900">Relatorios Semanais</p>
-                        <p className="text-sm text-gray-500">Receber resumo semanal de vendas</p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={notificationsForm.weeklyReports}
-                        onChange={(e) => setNotificationsForm({ ...notificationsForm, weeklyReports: e.target.checked })}
-                        className="w-5 h-5 text-blue-600"
-                      />
-                    </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'system' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Configuracoes do Sistema</h2>
+              {activeTab === 'system' && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-foreground">Configurações do Sistema</h2>
                   <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        <strong>Versao:</strong> 1.0.0
-                      </p>
-                      <p className="text-sm text-blue-800 mt-1">
-                        <strong>Banco de Dados:</strong> Supabase
-                      </p>
-                      <p className="text-sm text-blue-800 mt-1">
-                        <strong>Usuario:</strong> {profile?.full_name || 'Nao identificado'}
-                      </p>
+                    <div className="p-4 bg-accent border border-border rounded-lg space-y-1 text-sm text-foreground">
+                      <p><strong>Versão:</strong> 1.0.0</p>
+                      <p><strong>Banco de Dados:</strong> Supabase</p>
+                      <p><strong>Usuário:</strong> {profile?.full_name || 'Não identificado'}</p>
                     </div>
-                    <div className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-2">Acoes do Sistema</h3>
+                    <div className="pt-2">
+                      <h3 className="font-semibold text-foreground mb-3">Ações do Sistema</h3>
                       <div className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => handleExportData('export')}
-                          className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-left"
-                        >
+                        <Button variant="secondary" className="w-full justify-start" onClick={() => handleExportData('export')}>
                           Exportar Dados
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleExportData('backup')}
-                          className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-left"
-                        >
+                        </Button>
+                        <Button variant="secondary" className="w-full justify-start" onClick={() => handleExportData('backup')}>
                           Backup do Sistema
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-destructive hover:text-destructive"
                           onClick={handleClearCache}
-                          className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-left"
                         >
                           Limpar Cache
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className="flex gap-3 pt-6 border-t border-gray-200 mt-6">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {saving ? 'Salvando...' : 'Salvar Alteracoes'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileForm({
-                    fullName: profile?.full_name || '',
-                    email: profile?.email || user?.email || ''
-                  });
-                  setSecurityForm({
-                    newPassword: '',
-                    confirmPassword: ''
-                  });
-                }}
-                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
+              <div className="flex gap-3 pt-6 border-t border-border mt-6">
+                <Button onClick={handleSave} disabled={saving}>
+                  {saving ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setProfileForm({
+                      fullName: profile?.full_name || '',
+                      email: profile?.email || user?.email || ''
+                    });
+                    setSecurityForm({
+                      newPassword: '',
+                      confirmPassword: ''
+                    });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
