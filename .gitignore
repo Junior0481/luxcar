@@ -1,1 +1,14 @@
 node_modules
+dist
+
+# Env / secrets — nunca commitar
+.env
+.env.*
+!.env.example
+*.env
+
+# Editor / OS
+.DS_Store
+.vscode
+.idea
+.claude
