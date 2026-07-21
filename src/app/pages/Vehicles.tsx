@@ -181,40 +181,48 @@ export function Vehicles() {
           {filteredVehicles.map((vehicle) => {
             const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
             return (
-              <Card key={vehicle.id} className="overflow-hidden pt-0 gap-0 transition-shadow hover:shadow-md">
-                <div className="h-48 bg-gradient-to-br from-muted to-accent flex items-center justify-center overflow-hidden">
+              <Card
+                key={vehicle.id}
+                className="group overflow-hidden pt-0 gap-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/30"
+              >
+                <div className="relative h-52 overflow-hidden">
                   {vehicle.images && vehicle.images.length > 0 ? (
                     <img
                       src={vehicle.images[0]}
                       alt={`${vehicle.brand} ${vehicle.model}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <Car className="w-16 h-16 text-muted-foreground" />
+                    <div className="w-full h-full bg-gradient-to-br from-muted to-accent flex items-center justify-center">
+                      <Car className="w-16 h-16 text-muted-foreground/50" />
+                    </div>
                   )}
+                  {/* overlay para legibilidade */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10" />
+                  {/* badge flutuante */}
+                  <div className="absolute top-3 right-3">
+                    <Badge variant={b.variant} className="shadow-lg backdrop-blur">{b.label}</Badge>
+                  </div>
+                  {/* nome + ano sobre a imagem */}
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <h3 className="font-semibold text-white text-lg truncate drop-shadow">
+                      {vehicle.brand} {vehicle.model}
+                    </h3>
+                    <p className="text-sm text-white/75 truncate">
+                      {vehicle.year}
+                      {vehicle.version ? ` • ${vehicle.version}` : ""}
+                    </p>
+                  </div>
                 </div>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {vehicle.brand} {vehicle.model}
-                      </h3>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {vehicle.year}
-                        {vehicle.version ? ` • ${vehicle.version}` : ""}
-                      </p>
+                  <div className="flex items-end justify-between gap-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Venda</p>
+                      <p className="text-2xl font-bold text-foreground leading-tight">{brl(vehicle.sale_price)}</p>
                     </div>
-                    <Badge variant={b.variant}>{b.label}</Badge>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-border space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Compra:</span>
-                      <span className="font-medium text-foreground">{brl(vehicle.purchase_price)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Venda:</span>
-                      <span className="font-semibold text-primary">{brl(vehicle.sale_price)}</span>
-                    </div>
+                    <p className="text-xs text-muted-foreground pb-1">
+                      Compra {brl(vehicle.purchase_price)}
+                    </p>
                   </div>
                   <div className="mt-4 flex gap-2">
                     <Button asChild variant="secondary" size="sm" className="flex-1">
