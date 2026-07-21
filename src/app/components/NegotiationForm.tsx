@@ -2,10 +2,20 @@ import { useState, useEffect } from 'react';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { X, AlertCircle } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 
 type NegotiationFormProps = {
   onClose: () => void;
 };
+
+const brl = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+const selectClass =
+  'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
 export function NegotiationForm({ onClose }: NegotiationFormProps) {
   const { user, profile } = useAuth();
@@ -80,113 +90,95 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Nova Negociação</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-2xl my-8">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-2xl font-bold text-foreground">Nova Negociação</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label htmlFor="vehicle_id" className="block text-sm font-medium text-gray-700 mb-2">
-                Veículo *
-              </label>
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="vehicle_id">Veículo *</Label>
               <select
                 id="vehicle_id"
                 value={formData.vehicle_id}
                 onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={selectClass}
               >
                 <option value="">Selecione um veículo</option>
                 {vehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.brand} {vehicle.model} {vehicle.year} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.sale_price)}
+                    {vehicle.brand} {vehicle.model} {vehicle.year} - {brl(vehicle.sale_price)}
                   </option>
                 ))}
               </select>
               {vehicles.length === 0 && (
-                <p className="mt-1 text-xs text-amber-600">Nenhum veículo disponível para negociação</p>
+                <p className="text-xs text-primary">Nenhum veículo disponível para negociação</p>
               )}
             </div>
 
-            <div className="md:col-span-2">
-              <label htmlFor="client_name" className="block text-sm font-medium text-gray-700 mb-2">
-                Nome do Cliente *
-              </label>
-              <input
-                type="text"
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="client_name">Nome do Cliente *</Label>
+              <Input
                 id="client_name"
                 value={formData.client_name}
                 onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="João Silva"
               />
             </div>
 
-            <div>
-              <label htmlFor="client_phone" className="block text-sm font-medium text-gray-700 mb-2">
-                Telefone
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="client_phone">Telefone</Label>
+              <Input
                 type="tel"
                 id="client_phone"
                 value={formData.client_phone}
                 onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="(11) 99999-9999"
               />
             </div>
 
-            <div>
-              <label htmlFor="client_email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="client_email">Email</Label>
+              <Input
                 type="email"
                 id="client_email"
                 value={formData.client_email}
                 onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="cliente@email.com"
               />
             </div>
 
-            <div>
-              <label htmlFor="client_cpf" className="block text-sm font-medium text-gray-700 mb-2">
-                CPF
-              </label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="client_cpf">CPF</Label>
+              <Input
                 id="client_cpf"
                 value={formData.client_cpf}
                 onChange={(e) => setFormData({ ...formData, client_cpf: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="000.000.000-00"
               />
             </div>
 
-            <div>
-              <label htmlFor="stage" className="block text-sm font-medium text-gray-700 mb-2">
-                Estágio *
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="stage">Estágio *</Label>
               <select
                 id="stage"
                 value={formData.stage}
                 onChange={(e) => setFormData({ ...formData, stage: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={selectClass}
               >
                 <option value="primeiro_contato">Primeiro Contato</option>
                 <option value="avaliacao">Avaliação</option>
@@ -199,15 +191,13 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
               </select>
             </div>
 
-            <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
-                Prioridade *
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="priority">Prioridade *</Label>
               <select
                 id="priority"
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={selectClass}
               >
                 <option value="baixa">Baixa</option>
                 <option value="media">Média</option>
@@ -215,52 +205,38 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
               </select>
             </div>
 
-            <div>
-              <label htmlFor="offered_price" className="block text-sm font-medium text-gray-700 mb-2">
-                Valor Proposto (R$)
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="offered_price">Valor Proposto (R$)</Label>
+              <Input
                 type="number"
                 id="offered_price"
                 value={formData.offered_price}
                 onChange={(e) => setFormData({ ...formData, offered_price: e.target.value })}
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="55000.00"
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Observações
-              </label>
-              <textarea
+            <div className="md:col-span-2 space-y-2">
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Anotações sobre a negociação..."
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
+          <div className="flex gap-3 pt-4 border-t border-border">
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading || vehicles.length === 0}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            </Button>
+            <Button type="submit" disabled={loading || vehicles.length === 0} className="flex-1">
               {loading ? 'Criando...' : 'Criar Negociação'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

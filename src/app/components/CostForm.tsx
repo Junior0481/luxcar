@@ -2,11 +2,18 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { X, AlertCircle } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 
 type CostFormProps = {
   vehicleId: string;
   onClose: () => void;
 };
+
+const selectClass =
+  'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
 export function CostForm({ vehicleId, onClose }: CostFormProps) {
   const { user } = useAuth();
@@ -47,32 +54,30 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Adicionar Custo/Manutenção</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-md">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-bold text-foreground">Adicionar Custo/Manutenção</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label htmlFor="cost_type" className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo de Custo *
-            </label>
+          <div className="space-y-2">
+            <Label htmlFor="cost_type">Tipo de Custo *</Label>
             <select
               id="cost_type"
               value={formData.cost_type}
               onChange={(e) => setFormData({ ...formData, cost_type: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={selectClass}
             >
               <option value="manutencao">Manutenção</option>
               <option value="estetica">Estética</option>
@@ -83,26 +88,21 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
             </select>
           </div>
 
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Descrição *
-            </label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição *</Label>
+            <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Descreva o serviço realizado..."
             />
           </div>
 
-          <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
-              Valor (R$) *
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="amount">Valor (R$) *</Label>
+            <Input
               type="number"
               id="amount"
               value={formData.amount}
@@ -110,39 +110,27 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
               required
               step="0.01"
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="150.00"
             />
           </div>
 
-          <div>
-            <label htmlFor="service_date" className="block text-sm font-medium text-gray-700 mb-2">
-              Data do Serviço
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="service_date">Data do Serviço</Label>
+            <Input
               type="date"
               id="service_date"
               value={formData.service_date}
               onChange={(e) => setFormData({ ...formData, service_date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            </Button>
+            <Button type="submit" disabled={loading} className="flex-1">
               {loading ? 'Salvando...' : 'Salvar'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
