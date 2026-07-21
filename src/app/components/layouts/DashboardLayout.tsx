@@ -12,6 +12,7 @@ import {
   X,
   User
 } from 'lucide-react';
+import { ThemeToggle } from '../ThemeToggle';
 
 export function DashboardLayout() {
   const { user, profile, loading, signOut } = useAuth();
@@ -92,6 +93,7 @@ export function DashboardLayout() {
               <p className="text-sm font-medium text-gray-900 truncate">{profile.full_name}</p>
               <p className="text-xs text-gray-500 capitalize">{profile.role}</p>
             </div>
+            <ThemeToggle />
           </div>
           <button
             onClick={handleSignOut}
@@ -179,7 +181,7 @@ export function DashboardLayout() {
             </div>
             <span className="font-bold text-gray-900">LuxCar</span>
           </div>
-          <div className="w-6" />
+          <ThemeToggle />
         </header>
 
         {/* Page Content */}
