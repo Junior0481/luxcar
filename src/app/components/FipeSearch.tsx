@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useFipe, FipeBrand, FipeModel, FipeYear } from '../../hooks/useFipe';
 import { Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { Label } from './ui/label';
+
+const brl = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+const selectClass =
+  'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50';
 
 type FipeSearchProps = {
   onValueFound?: (value: number, fipeCode: string) => void;
@@ -68,70 +75,49 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
   };
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
       <div className="flex items-center gap-2 mb-4">
-        <Search className="w-5 h-5 text-blue-600" />
-        <h3 className="font-semibold text-blue-900">Consultar Tabela FIPE</h3>
+        <Search className="w-5 h-5 text-primary" />
+        <h3 className="font-semibold text-foreground">Consultar Tabela FIPE</h3>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
       <div className="space-y-3">
-        <div>
-          <label className="block text-sm font-medium text-blue-900 mb-1">Marca</label>
-          <select
-            value={selectedBrand}
-            onChange={(e) => handleBrandChange(e.target.value)}
-            disabled={loading}
-            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-          >
+        <div className="space-y-1">
+          <Label>Marca</Label>
+          <select value={selectedBrand} onChange={(e) => handleBrandChange(e.target.value)} disabled={loading} className={selectClass}>
             <option value="">Selecione a marca</option>
             {brands.map((brand) => (
-              <option key={brand.codigo} value={brand.codigo}>
-                {brand.nome}
-              </option>
+              <option key={brand.codigo} value={brand.codigo}>{brand.nome}</option>
             ))}
           </select>
         </div>
 
         {models.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-blue-900 mb-1">Modelo</label>
-            <select
-              value={selectedModel}
-              onChange={(e) => handleModelChange(e.target.value)}
-              disabled={loading}
-              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
+          <div className="space-y-1">
+            <Label>Modelo</Label>
+            <select value={selectedModel} onChange={(e) => handleModelChange(e.target.value)} disabled={loading} className={selectClass}>
               <option value="">Selecione o modelo</option>
               {models.map((model) => (
-                <option key={model.codigo} value={model.codigo}>
-                  {model.nome}
-                </option>
+                <option key={model.codigo} value={model.codigo}>{model.nome}</option>
               ))}
             </select>
           </div>
         )}
 
         {years.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-blue-900 mb-1">Ano</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => handleYearChange(e.target.value)}
-              disabled={loading}
-              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
+          <div className="space-y-1">
+            <Label>Ano</Label>
+            <select value={selectedYear} onChange={(e) => handleYearChange(e.target.value)} disabled={loading} className={selectClass}>
               <option value="">Selecione o ano</option>
               {years.map((year) => (
-                <option key={year.codigo} value={year.codigo}>
-                  {year.nome}
-                </option>
+                <option key={year.codigo} value={year.codigo}>{year.nome}</option>
               ))}
             </select>
           </div>
@@ -139,27 +125,25 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
 
         {loading && (
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
           </div>
         )}
 
         {fipeResult && (
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
             <div className="flex items-start gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-green-900">Valor FIPE encontrado</p>
-                <p className="text-2xl font-bold text-green-700 mt-1">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(fipeResult.value)}
-                </p>
-                <p className="text-xs text-green-600 mt-1">Código FIPE: {fipeResult.code}</p>
+                <p className="text-sm font-medium text-foreground">Valor FIPE encontrado</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{brl(fipeResult.value)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Código FIPE: {fipeResult.code}</p>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <p className="text-xs text-blue-600 mt-4">
+      <p className="text-xs text-muted-foreground mt-4">
         💡 Os valores são consultados em tempo real da Tabela FIPE oficial
       </p>
     </div>
