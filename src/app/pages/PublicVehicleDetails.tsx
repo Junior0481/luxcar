@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
-import { ArrowLeft, Car, Calendar, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, Mail, Heart, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Car, Calendar, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle } from 'lucide-react';
 import { LeadForm } from '../components/LeadForm';
+import { ThemeToggle } from '../components/ThemeToggle';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 
 type PublicVehicle = Vehicle & {
   company_name?: string;
@@ -11,6 +14,9 @@ type PublicVehicle = Vehicle & {
   company_state?: string;
   company_phone?: string;
 };
+
+const brl = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 export function PublicVehicleDetails() {
   const { id } = useParams();
@@ -64,19 +70,19 @@ export function PublicVehicleDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!vehicle) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <Car className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Veículo não encontrado</h2>
-          <Link to="/" className="text-blue-600 hover:text-blue-700">
+          <Car className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Veículo não encontrado</h2>
+          <Link to="/" className="text-primary hover:underline">
             Voltar para a página inicial
           </Link>
         </div>
@@ -86,30 +92,37 @@ export function PublicVehicleDetails() {
 
   const images = vehicle.images && vehicle.images.length > 0 ? vehicle.images : [];
 
+  const specs = [
+    vehicle.year && { icon: Calendar, label: 'Ano', value: String(vehicle.year) },
+    vehicle.mileage && { icon: Gauge, label: 'KM', value: vehicle.mileage.toLocaleString('pt-BR') },
+    vehicle.fuel_type && { icon: Fuel, label: 'Combustível', value: vehicle.fuel_type, capitalize: true },
+    vehicle.transmission && { icon: SettingsIcon, label: 'Câmbio', value: vehicle.transmission, capitalize: true }
+  ].filter(Boolean) as { icon: any; label: string; value: string; capitalize?: boolean }[];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+      <header className="bg-card/80 backdrop-blur border-b border-border sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <Link to="/" className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
-                <Car className="w-6 h-6 text-white" />
+              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
+                <Car className="w-6 h-6 text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">LuxCar</h1>
+              <h1 className="text-2xl font-bold text-foreground">LuxCar</h1>
             </Link>
-            <Link
-              to="/client/login"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              Entrar
-            </Link>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <ThemeToggle />
+              <Button asChild>
+                <Link to="/client/login">Entrar</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
+        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="w-5 h-5" />
           Voltar para a busca
         </Link>
@@ -118,10 +131,10 @@ export function PublicVehicleDetails() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image Gallery */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <Card className="overflow-hidden py-0">
               {images.length > 0 ? (
                 <>
-                  <div className="relative h-96 bg-gray-100">
+                  <div className="relative h-96 bg-muted">
                     <img
                       src={images[selectedImage]}
                       alt={`${vehicle.brand} ${vehicle.model}`}
@@ -134,8 +147,8 @@ export function PublicVehicleDetails() {
                         <button
                           key={index}
                           onClick={() => setSelectedImage(index)}
-                          className={`aspect-video rounded-lg overflow-hidden border-2 ${
-                            selectedImage === index ? 'border-[#f8a746]' : 'border-gray-200'
+                          className={`aspect-video rounded-lg overflow-hidden border-2 transition-colors ${
+                            selectedImage === index ? 'border-primary' : 'border-border'
                           }`}
                         >
                           <img src={img} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
@@ -145,127 +158,95 @@ export function PublicVehicleDetails() {
                   )}
                 </>
               ) : (
-                <div className="h-96 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <Car className="w-24 h-24 text-gray-400" />
+                <div className="h-96 bg-gradient-to-br from-muted to-accent flex items-center justify-center">
+                  <Car className="w-24 h-24 text-muted-foreground" />
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Vehicle Info */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <Card>
+              <CardContent className="p-6">
+                <div className="mb-4">
+                  <h1 className="text-3xl font-bold text-foreground mb-2">
                     {vehicle.brand} {vehicle.model}
                   </h1>
-                  <p className="text-xl text-gray-600">{vehicle.version}</p>
+                  <p className="text-xl text-muted-foreground">{vehicle.version}</p>
                 </div>
-                <button className="p-3 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors">
-                  <Heart className="w-6 h-6 text-gray-600" />
-                </button>
-              </div>
 
-              <p className="text-4xl font-bold text-blue-600 mb-6">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(vehicle.sale_price)}
-              </p>
+                <p className="text-4xl font-bold text-primary mb-6">{brl(vehicle.sale_price)}</p>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {vehicle.year && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Calendar className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="text-xs text-gray-500">Ano</p>
-                      <p className="font-semibold text-gray-900">{vehicle.year}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  {specs.map((spec) => (
+                    <div key={spec.label} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <spec.icon className="w-5 h-5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">{spec.label}</p>
+                        <p className={`font-semibold text-foreground truncate ${spec.capitalize ? 'capitalize' : ''}`}>
+                          {spec.value}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {vehicle.mileage && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Gauge className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="text-xs text-gray-500">KM</p>
-                      <p className="font-semibold text-gray-900">{vehicle.mileage.toLocaleString('pt-BR')}</p>
-                    </div>
-                  </div>
-                )}
-                {vehicle.fuel_type && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Fuel className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="text-xs text-gray-500">Combustível</p>
-                      <p className="font-semibold text-gray-900 capitalize">{vehicle.fuel_type}</p>
-                    </div>
-                  </div>
-                )}
-                {vehicle.transmission && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <SettingsIcon className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="text-xs text-gray-500">Câmbio</p>
-                      <p className="font-semibold text-gray-900 capitalize">{vehicle.transmission}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {vehicle.description && (
-                <div className="pt-6 border-t border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">Descrição</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{vehicle.description}</p>
+                  ))}
                 </div>
-              )}
-            </div>
+
+                {vehicle.description && (
+                  <div className="pt-6 border-t border-border">
+                    <h3 className="font-semibold text-foreground mb-3">Descrição</h3>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{vehicle.description}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar - Contact */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
-              <h3 className="font-bold text-gray-900 mb-4">Interessado?</h3>
+            <Card className="sticky top-24">
+              <CardContent className="p-6">
+                <h3 className="font-bold text-foreground mb-4">Interessado?</h3>
 
-              <button
-                onClick={() => setShowLeadForm(true)}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium mb-3 flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="w-5 h-5" />
-                Enviar Mensagem
-              </button>
-
-              {vehicle.company_phone && (
-                <a
-                  href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full px-6 py-3 bg-[#555459] text-white rounded-lg hover:bg-[#3e3d41] transition-colors font-medium mb-4 flex items-center justify-center gap-2"
-                >
-                  <Phone className="w-5 h-5" />
-                  WhatsApp
-                </a>
-              )}
-
-              <div className="pt-4 border-t border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-3">Anunciante</h4>
-
-                {vehicle.company_name && (
-                  <div className="mb-3">
-                    <p className="font-medium text-gray-900">{vehicle.company_name}</p>
-                  </div>
-                )}
-
-                {vehicle.company_city && vehicle.company_state && (
-                  <div className="flex items-start gap-2 text-gray-600 mb-2">
-                    <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p>{vehicle.company_city} - {vehicle.company_state}</p>
-                  </div>
-                )}
+                <Button className="w-full mb-3" size="lg" onClick={() => setShowLeadForm(true)}>
+                  <MessageCircle className="w-5 h-5" />
+                  Enviar Mensagem
+                </Button>
 
                 {vehicle.company_phone && (
-                  <div className="flex items-start gap-2 text-gray-600">
-                    <Phone className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p>{vehicle.company_phone}</p>
-                  </div>
+                  <Button asChild variant="secondary" size="lg" className="w-full mb-4">
+                    <a
+                      href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Phone className="w-5 h-5" />
+                      WhatsApp
+                    </a>
+                  </Button>
                 )}
-              </div>
-            </div>
+
+                <div className="pt-4 border-t border-border">
+                  <h4 className="font-semibold text-foreground mb-3">Anunciante</h4>
+
+                  {vehicle.company_name && (
+                    <p className="font-medium text-foreground mb-3">{vehicle.company_name}</p>
+                  )}
+
+                  {vehicle.company_city && vehicle.company_state && (
+                    <div className="flex items-start gap-2 text-muted-foreground mb-2">
+                      <MapPin className="w-5 h-5 shrink-0 mt-0.5" />
+                      <p>{vehicle.company_city} - {vehicle.company_state}</p>
+                    </div>
+                  )}
+
+                  {vehicle.company_phone && (
+                    <div className="flex items-start gap-2 text-muted-foreground">
+                      <Phone className="w-5 h-5 shrink-0 mt-0.5" />
+                      <p>{vehicle.company_phone}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
