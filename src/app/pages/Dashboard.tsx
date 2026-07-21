@@ -123,7 +123,12 @@ export function Dashboard() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => (
-          <Card key={stat.title} className="transition-shadow hover:shadow-md">
+          <Card
+            key={stat.title}
+            className={`transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 ${
+              stat.accent ? 'bg-gradient-to-br from-primary/[0.07] to-transparent border-primary/20' : ''
+            }`}
+          >
             <CardContent className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm text-muted-foreground truncate">{stat.title}</p>
@@ -131,7 +136,7 @@ export function Dashboard() {
               </div>
               <div
                 className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
-                  stat.accent ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                  stat.accent ? 'bg-primary/15 text-primary ring-1 ring-primary/20' : 'bg-muted text-muted-foreground'
                 }`}
               >
                 <stat.icon className="w-6 h-6" />
