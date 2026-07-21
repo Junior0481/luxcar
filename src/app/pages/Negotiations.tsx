@@ -1,12 +1,46 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile } from '../../lib/supabase';
-import { Plus, Search, Filter, Handshake, AlertCircle } from 'lucide-react';
+import { Plus, Search, Filter, Handshake } from 'lucide-react';
 import { NegotiationForm } from '../components/NegotiationForm';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '../components/ui/table';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
   seller?: Profile;
+};
+
+const stageLabels: Record<string, string> = {
+  primeiro_contato: 'Primeiro Contato',
+  avaliacao: 'Avaliação',
+  test_drive_agendado: 'Test Drive Agendado',
+  test_drive_realizado: 'Test Drive Realizado',
+  proposta_enviada: 'Proposta Enviada',
+  negociacao_preco: 'Negociação Preço',
+  aprovacao_credito: 'Aprovação Crédito',
+  documentacao: 'Documentação',
+  finalizado: 'Finalizado',
+  perdido: 'Perdido'
+};
+
+const stageVariant = (stage: string): 'default' | 'secondary' | 'outline' | 'destructive' =>
+  stage === 'finalizado' ? 'default' : stage === 'perdido' ? 'destructive' : 'secondary';
+
+const priorityMeta: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' }> = {
+  alta: { label: 'Alta', variant: 'destructive' },
+  media: { label: 'Média', variant: 'default' },
+  baixa: { label: 'Baixa', variant: 'outline' }
 };
 
 export function Negotiations() {
@@ -67,37 +101,10 @@ export function Negotiations() {
     setFilteredNegotiations(filtered);
   };
 
-  const getStageBadge = (stage: string) => {
-    const stages: Record<string, { label: string; className: string }> = {
-      primeiro_contato: { label: 'Primeiro Contato', className: 'bg-[#f3f3f3] text-[#555459]' },
-      avaliacao: { label: 'Avaliação', className: 'bg-[#fff2df] text-[#010101]' },
-      test_drive_agendado: { label: 'Test Drive Agendado', className: 'bg-[#efefef] text-[#555459]' },
-      test_drive_realizado: { label: 'Test Drive Realizado', className: 'bg-[#ffe3be] text-[#010101]' },
-      proposta_enviada: { label: 'Proposta Enviada', className: 'bg-[#fff2df] text-[#010101]' },
-      negociacao_preco: { label: 'Negociação Preço', className: 'bg-[#efefef] text-[#555459]' },
-      aprovacao_credito: { label: 'Aprovação Crédito', className: 'bg-[#ffe3be] text-[#010101]' },
-      documentacao: { label: 'Documentação', className: 'bg-[#f3f3f3] text-[#555459]' },
-      finalizado: { label: 'Finalizado', className: 'bg-[#010101] text-white' },
-      perdido: { label: 'Perdido', className: 'bg-red-100 text-red-800' }
-    };
-    const badge = stages[stage] || stages.primeiro_contato;
-    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>{badge.label}</span>;
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    const badges = {
-      alta: { label: 'Alta', className: 'bg-red-100 text-red-800' },
-      media: { label: 'Média', className: 'bg-[#fff2df] text-[#010101]' },
-      baixa: { label: 'Baixa', className: 'bg-[#f3f3f3] text-[#555459]' }
-    };
-    const badge = badges[priority as keyof typeof badges] || badges.media;
-    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>{badge.label}</span>;
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -106,36 +113,32 @@ export function Negotiations() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Negociações</h1>
-          <p className="text-gray-600 mt-1">Acompanhe todas as negociações em andamento</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Negociações</h1>
+          <p className="text-muted-foreground mt-1">Acompanhe todas as negociações em andamento</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
+        <Button size="lg" onClick={() => setShowForm(true)}>
+          <Plus className="w-4 h-4" />
           Nova Negociação
-        </button>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <Card>
+        <CardContent className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
               placeholder="Buscar por cliente ou veículo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-10"
             />
           </div>
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+              className="h-9 pl-10 pr-8 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
             >
               <option value="active">Ativas</option>
               <option value="all">Todas</option>
@@ -151,90 +154,92 @@ export function Negotiations() {
               <option value="perdido">Perdido</option>
             </select>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {filteredNegotiations.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
-          <Handshake className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhuma negociação encontrada</h3>
-          <p className="text-gray-600 mb-6">
-            {searchTerm || stageFilter !== 'active'
-              ? 'Tente ajustar os filtros de busca'
-              : 'Comece criando sua primeira negociação'}
-          </p>
-          {!searchTerm && stageFilter === 'active' && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Nova Negociação
-            </button>
-          )}
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Handshake className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Nenhuma negociação encontrada</h3>
+            <p className="text-muted-foreground mb-6">
+              {searchTerm || stageFilter !== 'active'
+                ? 'Tente ajustar os filtros de busca'
+                : 'Comece criando sua primeira negociação'}
+            </p>
+            {!searchTerm && stageFilter === 'active' && (
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="w-4 h-4" />
+                Nova Negociação
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <Card className="py-0 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Veículo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendedor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estágio</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prioridade</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredNegotiations.map((negotiation) => (
-                  <tr key={negotiation.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{negotiation.client_name}</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Veículo</TableHead>
+                  <TableHead>Vendedor</TableHead>
+                  <TableHead>Estágio</TableHead>
+                  <TableHead>Prioridade</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredNegotiations.map((negotiation) => {
+                  const p = priorityMeta[negotiation.priority] ?? priorityMeta.media;
+                  return (
+                    <TableRow key={negotiation.id}>
+                      <TableCell>
+                        <p className="font-medium text-foreground">{negotiation.client_name}</p>
                         {negotiation.client_phone && (
-                          <p className="text-sm text-gray-500">{negotiation.client_phone}</p>
+                          <p className="text-sm text-muted-foreground">{negotiation.client_phone}</p>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {negotiation.vehicle ? (
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {negotiation.vehicle.brand} {negotiation.vehicle.model}
-                          </p>
-                          <p className="text-sm text-gray-500">{negotiation.vehicle.year}</p>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900">{negotiation.seller?.full_name || '-'}</p>
-                    </td>
-                    <td className="px-6 py-4">{getStageBadge(negotiation.stage)}</td>
-                    <td className="px-6 py-4">{getPriorityBadge(negotiation.priority)}</td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-500">
+                      </TableCell>
+                      <TableCell>
+                        {negotiation.vehicle ? (
+                          <>
+                            <p className="font-medium text-foreground">
+                              {negotiation.vehicle.brand} {negotiation.vehicle.model}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{negotiation.vehicle.year}</p>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-foreground">{negotiation.seller?.full_name || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={stageVariant(negotiation.stage)}>
+                          {stageLabels[negotiation.stage] ?? negotiation.stage}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={p.variant}>{p.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
                         {new Date(negotiation.created_at).toLocaleDateString('pt-BR')}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link
-                        to={`/dashboard/negotiations/${negotiation.id}`}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                      >
-                        Ver detalhes
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to={`/dashboard/negotiations/${negotiation.id}`}
+                          className="text-primary hover:underline text-sm font-medium"
+                        >
+                          Ver detalhes
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
-        </div>
+        </Card>
       )}
 
       {showForm && (
