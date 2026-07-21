@@ -1,12 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://txjcxytzjgindzysakns.supabase.co';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const supabaseAnonKey =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4amN4eXR6amdpbmR6eXNha25zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNDg4NTYsImV4cCI6MjA5MjcyNDg1Nn0._7vpYZkza-14saGZcGEaWlwWXHP9C8cHXoTb-A3aH8U';
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Supabase não configurado: defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env (veja .env.example).'
+  );
+}
 
-export const FIPE_API_URL =
-'https://parallelum.com.br/fipe/api/v1';
+export const FIPE_API_URL = 'https://parallelum.com.br/fipe/api/v1';
 
 export const supabase = createClient(
   supabaseUrl,
