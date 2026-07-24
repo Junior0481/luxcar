@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile, InteractionHistory, TradeInVehicle } from '../../lib/supabase';
 import {
@@ -328,7 +328,7 @@ export function NegotiationDetails() {
                           <span className="text-sm font-medium text-foreground">
                             {interactionTypeLabels[interaction.interaction_type]}
                           </span>
-                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground">â€¢</span>
                           <span className="text-xs text-muted-foreground">{interaction.user?.full_name || 'Usuário'}</span>
                         </div>
                         <p className="text-sm text-foreground">{interaction.description}</p>
@@ -481,3 +481,6 @@ export function NegotiationDetails() {
     </div>
   );
 }
+
+
+

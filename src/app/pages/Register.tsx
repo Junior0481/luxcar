@@ -1,7 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { Mail, Lock, User, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { AlertCircle, CheckCircle, Info, Lock, Mail, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -30,30 +30,30 @@ export function Register() {
         navigate('/auth/login');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Erro ao criar conta. Tente novamente.');
+      setError(err.message || 'Não foi possivel criar a conta. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="shadow-xl">
+    <Card className="shadow-lux-lg">
       <CardHeader>
-        <CardTitle className="text-2xl">Criar nova conta</CardTitle>
-        <CardDescription>Cadastre-se como vendedor da loja</CardDescription>
+        <CardTitle className="text-2xl">Criar acesso</CardTitle>
+        <CardDescription>Entre na operação da loja com perfil de vendedor.</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="mb-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <p className="text-sm text-emerald-700 dark:text-emerald-300">Conta criada com sucesso! Redirecionando...</p>
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-primary/20 bg-accent p-4">
+            <CheckCircle className="mt-0.5 size-5 shrink-0 text-primary" />
+            <p className="text-sm text-accent-foreground">Conta criada. Redirecionando para o login...</p>
           </div>
         )}
 
@@ -61,47 +61,72 @@ export function Register() {
           <div className="space-y-2">
             <Label htmlFor="fullName">Nome completo</Label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="pl-10" placeholder="João Silva" />
+              <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                className="pl-10"
+                placeholder="Nome e sobrenome"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10" placeholder="seu@email.com" />
+              <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="pl-10"
+                placeholder="seu@email.com"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="pl-10" placeholder="••••••••" />
+              <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="pl-10"
+                placeholder="Minimo de 6 caracteres"
+              />
             </div>
-            <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres</p>
           </div>
 
-          <div className="flex items-start gap-3 text-sm text-muted-foreground bg-accent border border-border rounded-lg p-3">
-            <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 rounded-2xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+            <Info className="mt-0.5 size-4 shrink-0 text-primary" />
             <p>
-              Você será registrado como <strong className="text-foreground">Vendedor</strong>. Para se tornar administrador, entre em contato com o dono da sua empresa.
+              Este acesso entra como <strong className="text-foreground">vendedor</strong>. Permissões administrativas devem ser ajustadas pelo responsável da loja.
             </p>
           </div>
 
           <Button type="submit" disabled={loading || success} className="w-full" size="lg">
-            {loading ? 'Criando conta...' : 'Criar conta'}
+            {loading ? 'Criando acesso...' : 'Criar acesso'}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Já tem uma conta?{' '}
-          <Link to="/auth/login" className="text-primary hover:underline font-medium">
-            Fazer login
+          Já tem acesso?{' '}
+          <Link to="/auth/login" className="font-medium text-primary hover:underline">
+            Entrar
           </Link>
         </p>
       </CardContent>
     </Card>
   );
 }
+
+

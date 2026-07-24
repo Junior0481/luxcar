@@ -13,6 +13,9 @@ import {
   User
 } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
+import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
+import { cn } from '../ui/utils';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -23,11 +26,12 @@ const navItems = [
 ];
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors ${
+  cn(
+    'flex min-h-11 items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all duration-200 ease-out motion-reduce:transition-none',
     isActive
-      ? 'bg-accent text-primary font-medium'
-      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-  }`;
+      ? 'bg-accent text-primary shadow-lux-sm'
+      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
+  );
 
 export function DashboardLayout() {
   const { user, profile, loading, signOut } = useAuth();
@@ -42,8 +46,23 @@ export function DashboardLayout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="flex min-h-screen bg-background">
+        <aside className="hidden w-72 border-r border-sidebar-border bg-sidebar p-4 md:block">
+          <Skeleton className="mb-8 h-12 w-40" />
+          <div className="space-y-2">
+            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-11 w-full" />
+          </div>
+        </aside>
+        <main className="flex-1 p-4 md:p-8">
+          <Skeleton className="mb-6 h-12 w-full max-w-xl" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-36" />
+            <Skeleton className="h-36" />
+            <Skeleton className="h-36" />
+          </div>
+        </main>
       </div>
     );
   }
@@ -59,46 +78,48 @@ export function DashboardLayout() {
 
   const brand = (
     <div className="flex items-center gap-3">
-      <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-xl shadow-lg shadow-primary/20">
-        <Car className="w-6 h-6 text-primary-foreground" />
+      <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
+        <Car className="size-6" />
       </div>
       <div>
-        <h1 className="text-xl font-bold text-foreground">LuxCar</h1>
-        <p className="text-xs text-muted-foreground">Painel da loja</p>
+        <h1 className="text-lg font-medium leading-tight text-sidebar-foreground">LuxCar</h1>
+        <p className="text-xs text-sidebar-foreground/60">Centro da loja</p>
       </div>
     </div>
   );
 
   const userCard = (
-    <div className="flex items-center gap-3 px-3 py-2.5 bg-accent/50 rounded-xl">
-      <div className="flex items-center justify-center w-9 h-9 bg-primary/15 text-primary rounded-full shrink-0">
-        <User className="w-5 h-5" />
+    <div className="flex items-center gap-3 rounded-2xl border border-sidebar-border bg-sidebar-accent/50 px-3 py-3">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+        <User className="size-5" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{profile.full_name}</p>
-        <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>
+        <p className="truncate text-sm font-medium text-sidebar-foreground">{profile.full_name}</p>
+        <p className="text-xs capitalize text-sidebar-foreground/60">{profile.role}</p>
       </div>
       <ThemeToggle />
     </div>
   );
 
   const signOutBtn = (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
       onClick={handleSignOut}
-      className="flex items-center gap-3 w-full px-4 py-2.5 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+      className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
     >
-      <LogOut className="w-5 h-5" />
-      <span className="font-medium">Sair</span>
-    </button>
+      <LogOut className="size-5" />
+      <span>Sair</span>
+    </Button>
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen lux-gradient">
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:w-64 bg-sidebar border-r border-sidebar-border">
-        <div className="flex items-center px-6 py-5 border-b border-sidebar-border">{brand}</div>
+      <aside className="z-sidebar hidden border-r border-sidebar-border bg-sidebar/95 backdrop-blur-xl md:fixed md:inset-y-0 md:flex md:w-72 md:flex-col">
+        <div className="flex items-center border-b border-sidebar-border px-6 py-5">{brand}</div>
 
-        <nav className="flex-1 px-3 py-6 space-y-1">
+        <nav className="flex-1 space-y-1 px-3 py-6">
           {navItems.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} className={navClass}>
               <item.icon className="w-5 h-5" />
@@ -107,7 +128,7 @@ export function DashboardLayout() {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-sidebar-border space-y-2">
+        <div className="space-y-2 border-t border-sidebar-border p-3">
           {userCard}
           {signOutBtn}
         </div>
@@ -117,15 +138,15 @@ export function DashboardLayout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 w-64 bg-sidebar border-r border-sidebar-border shadow-xl flex flex-col">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-sidebar-border">
+          <aside className="fixed inset-y-0 left-0 flex w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-lux-lg">
+            <div className="flex items-center justify-between border-b border-sidebar-border px-6 py-5">
               {brand}
-              <button onClick={() => setSidebarOpen(false)} aria-label="Fechar">
-                <X className="w-6 h-6 text-muted-foreground" />
-              </button>
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} aria-label="Fechar menu">
+                <X className="size-5" />
+              </Button>
             </div>
 
-            <nav className="flex-1 px-3 py-6 space-y-1">
+            <nav className="flex-1 space-y-1 px-3 py-6">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
@@ -140,7 +161,7 @@ export function DashboardLayout() {
               ))}
             </nav>
 
-            <div className="p-3 border-t border-sidebar-border space-y-2">
+            <div className="space-y-2 border-t border-sidebar-border p-3">
               {userCard}
               {signOutBtn}
             </div>
@@ -149,25 +170,23 @@ export function DashboardLayout() {
       )}
 
       {/* Main Content */}
-      <div className="md:pl-64">
+      <div className="md:pl-72">
         {/* Mobile Header */}
-        <header className="md:hidden sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-background/80 backdrop-blur border-b border-border">
-          <button onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
-            <Menu className="w-6 h-6 text-foreground" />
-          </button>
+        <header className="z-header sticky top-0 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl md:hidden">
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
+            <Menu className="size-5" />
+          </Button>
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
-              <Car className="w-5 h-5 text-primary-foreground" />
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Car className="size-5" />
             </div>
-            <span className="font-bold text-foreground">LuxCar</span>
+            <span className="font-medium text-foreground">LuxCar</span>
           </div>
           <ThemeToggle />
         </header>
 
-        {/* Page Content com glow sutil no topo */}
         <div className="relative">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_60%_100%_at_50%_0%,rgba(248,167,70,0.06),transparent_70%)]" />
-          <main className="relative p-4 md:p-8">
+          <main className="relative mx-auto w-full max-w-7xl p-4 md:p-8">
             <Outlet />
           </main>
         </div>

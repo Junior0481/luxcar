@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Car } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
+import { Skeleton } from '../ui/skeleton';
 import loginImg from '../../../assets/login_img.png';
 
 export function AuthLayout() {
@@ -18,58 +19,52 @@ export function AuthLayout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md space-y-4">
+          <Skeleton className="mx-auto size-16 rounded-2xl" />
+          <Skeleton className="h-96" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-2 bg-background">
-      {/* Painel visual (esquerda) — some no mobile */}
-      <aside className="relative hidden lg:block overflow-hidden">
-        <img
-          src={loginImg}
-          alt="LuxCar"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        {/* Gradientes para legibilidade e profundidade */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/40" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(248,167,70,0.25),transparent_55%)]" />
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+      <aside className="relative hidden overflow-hidden lg:block">
+        <img src={loginImg} alt="Showroom automotivo LuxCar" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/55" />
+        <div className="absolute inset-0 lux-gradient opacity-25" />
 
-        {/* Logo topo-esquerda */}
-        <Link to="/" className="absolute top-8 left-8 flex items-center gap-3 z-10">
-          <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg shadow-lg shadow-primary/30">
-            <Car className="w-6 h-6 text-primary-foreground" />
+        <Link to="/" className="absolute left-8 top-8 z-10 flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
+            <Car className="size-6" />
           </div>
-          <span className="text-2xl font-bold text-white">LuxCar</span>
+          <span className="text-2xl font-medium text-white">LuxCar</span>
         </Link>
 
-        {/* Frase de venda embaixo */}
-        <div className="absolute bottom-12 left-8 right-8 z-10">
-          <p className="text-3xl font-bold text-white leading-tight max-w-md">
-            A plataforma que organiza e escala sua concessionária.
-          </p>
-          <p className="mt-3 text-white/70 max-w-md">
-            Estoque, negociações, clientes e vendedores — tudo em um só lugar, com a sua marca.
+        <div className="absolute bottom-12 left-8 right-8 z-10 max-w-xl">
+          <p className="text-sm font-medium uppercase text-white/55">SaaS white label para lojas automotivas</p>
+          <h1 className="mt-3 text-4xl font-medium leading-tight text-white">
+            Sua operação organizada para vender com mais controle.
+          </h1>
+          <p className="mt-4 max-w-md text-white/70">
+            Estoque, pipeline, relatórios e equipe em uma única plataforma com aparência de produto premium.
           </p>
         </div>
       </aside>
 
-      {/* Painel do formulário (direita) */}
-      <main className="relative flex items-center justify-center p-6 sm:p-10 min-h-screen lg:min-h-0">
-        <div className="absolute top-4 right-4">
+      <main className="relative flex min-h-screen items-center justify-center p-6 sm:p-10 lg:min-h-0">
+        <div className="absolute right-4 top-4">
           <ThemeToggle />
         </div>
 
         <div className="w-full max-w-md">
-          {/* Logo (aparece no mobile e reforça no desktop) */}
-          <div className="text-center mb-8 lg:hidden">
-            <Link to="/" className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/25">
-              <Car className="w-8 h-8 text-primary-foreground" />
+          <div className="mb-8 text-center lg:hidden">
+            <Link to="/" className="mb-4 inline-flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
+              <Car className="size-8" />
             </Link>
-            <h1 className="text-3xl font-bold text-foreground">LuxCar</h1>
-            <p className="text-muted-foreground mt-2">Sistema de Gerenciamento de Concessionária</p>
+            <h1 className="text-3xl font-medium text-foreground">LuxCar</h1>
+            <p className="mt-2 text-muted-foreground">Centro de comando da sua loja.</p>
           </div>
 
           <Outlet />
@@ -78,3 +73,5 @@ export function AuthLayout() {
     </div>
   );
 }
+
+
