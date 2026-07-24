@@ -1,14 +1,22 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, DollarSign, Car, Handshake } from 'lucide-react';
+import { BarChart3, Car, DollarSign, Handshake, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
+import { EmptyState } from '../components/ui/empty-state';
+import { MetricCard } from '../components/ui/metric-card';
+import { PageHeader } from '../components/ui/page-header';
+import { Skeleton } from '../components/ui/skeleton';
+
+type MonthSale = { id: string; month: string; vendas: number };
+type SellerSale = { id: string; name: string; count: number; revenue: number };
+type VehicleSale = { id: string; veículo: string; vendas: number };
 
 const brl = (v: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
 const axisStyle = { fill: 'var(--muted-foreground)', fontSize: 12 };
 const tooltipStyle = {
@@ -32,9 +40,9 @@ export function Reports() {
     avgDaysToSell: 0,
     conversionRate: 0
   });
-  const [salesByMonth, setSalesByMonth] = useState<any[]>([]);
-  const [salesBySeller, setSalesBySeller] = useState<any[]>([]);
-  const [topVehicles, setTopVehicles] = useState<any[]>([]);
+  const [salesByMonth, setSalesByMonth] = useState<MonthSale[]>([]);
+  const [salesBySeller, setSalesBySeller] = useState<SellerSale[]>([]);
+  const [topVehicles, setTopVehicles] = useState<VehicleSale[]>([]);
 
   useEffect(() => {
     loadReports();
@@ -80,7 +88,7 @@ export function Reports() {
           totalRevenue,
           totalProfit,
           avgDaysToSell: 0,
-          conversionRate: negotiations ? (sales.length / negotiations.length) * 100 : 0
+          conversionRate: negotiations && negotiations.length > 0 ? (sales.length / negotiations.length) * 100 : 0
         });
 
         const salesByMonthMap = new Map<string, number>();
@@ -88,11 +96,12 @@ export function Reports() {
           const month = new Date(sale.sale_date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
           salesByMonthMap.set(month, (salesByMonthMap.get(month) || 0) + 1);
         });
-        const monthData = Array.from(salesByMonthMap.entries())
-          .map(([month, count]) => ({ month, vendas: count }))
-          .sort((a, b) => a.month.localeCompare(b.month))
-          .map((item, index) => ({ ...item, id: `month-${index}` }));
-        setSalesByMonth(monthData);
+        setSalesByMonth(
+          Array.from(salesByMonthMap.entries())
+            .map(([month, count]) => ({ month, vendas: count }))
+            .sort((a, b) => a.month.localeCompare(b.month))
+            .map((item, index) => ({ ...item, id: `month-${index}` }))
+        );
 
         const sellerMap = new Map<string, { name: string; count: number; revenue: number }>();
         sales.forEach(sale => {
@@ -102,23 +111,25 @@ export function Reports() {
           existing.revenue += Number(sale.final_price);
           sellerMap.set(sellerName, existing);
         });
-        const sellerData = Array.from(sellerMap.values())
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10)
-          .map((seller, index) => ({ ...seller, id: `seller-${index}` }));
-        setSalesBySeller(sellerData);
+        setSalesBySeller(
+          Array.from(sellerMap.values())
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10)
+            .map((seller, index) => ({ ...seller, id: `seller-${index}` }))
+        );
 
         const vehicleMap = new Map<string, number>();
         sales.forEach(sale => {
           const vehicleName = sale.vehicle ? `${sale.vehicle.brand} ${sale.vehicle.model}` : 'Desconhecido';
           vehicleMap.set(vehicleName, (vehicleMap.get(vehicleName) || 0) + 1);
         });
-        const vehicleData = Array.from(vehicleMap.entries())
-          .map(([name, count]) => ({ veiculo: name, vendas: count }))
-          .sort((a, b) => b.vendas - a.vendas)
-          .slice(0, 10)
-          .map((item, index) => ({ ...item, id: `vehicle-${index}` }));
-        setTopVehicles(vehicleData);
+        setTopVehicles(
+          Array.from(vehicleMap.entries())
+            .map(([name, count]) => ({ veículo: name, vendas: count }))
+            .sort((a, b) => b.vendas - a.vendas)
+            .slice(0, 10)
+            .map((item, index) => ({ ...item, id: `vehicle-${index}` }))
+        );
       }
     } catch (error) {
       console.error('Error loading reports:', error);
@@ -128,37 +139,50 @@ export function Reports() {
   };
 
   const statCards = [
-    { title: 'Total de Vendas', value: metrics.totalSales, icon: Handshake, accent: true },
-    { title: 'Receita Total', value: brl(metrics.totalRevenue), icon: DollarSign, accent: false },
-    { title: 'Lucro Total', value: brl(metrics.totalProfit), icon: TrendingUp, accent: false },
-    { title: 'Taxa de Conversão', value: `${metrics.conversionRate.toFixed(1)}%`, icon: Car, accent: false }
+    { title: 'Vendas no período', value: metrics.totalSales, icon: Handshake, accent: true, description: 'Negocios fechados' },
+    { title: 'Receita', value: brl(metrics.totalRevenue), icon: DollarSign, accent: false, description: 'Valor vendido' },
+    { title: 'Lucro estimado', value: brl(metrics.totalProfit), icon: TrendingUp, accent: false, description: 'Venda menos compra' },
+    { title: 'Conversão', value: `${Number.isFinite(metrics.conversionRate) ? metrics.conversionRate.toFixed(1) : '0.0'}%`, icon: Car, accent: false, description: 'Vendas sobre negociações' }
   ];
 
   const emptyState = (
-    <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
-      <p>Nenhuma venda encontrada no período selecionado</p>
-    </div>
+    <EmptyState
+      icon={BarChart3}
+      title="Sem vendas neste período"
+      description="Ajuste o intervalo ou registre uma venda para ver tendências e desempenho."
+      className="min-h-64 shadow-none"
+    />
   );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <Skeleton className="h-32" />
+        <Skeleton className="h-24" />
+        <div className="grid gap-4 md:grid-cols-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <Skeleton className="h-80" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Relatórios</h1>
-        <p className="text-muted-foreground mt-1">Análise de desempenho e métricas</p>
-      </div>
+      <PageHeader
+        icon={BarChart3}
+        eyebrow="Inteligencia comercial"
+        title="Relatórios"
+        description="Entenda receita, lucro, conversão e desempenho da equipe por período."
+      />
 
       <Card>
-        <CardContent className="flex flex-col sm:flex-row gap-4 items-end">
-          <div className="flex-1 w-full space-y-2">
-            <Label htmlFor="start_date">Data Inicial</Label>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="start_date">Início do período</Label>
             <Input
               type="date"
               id="start_date"
@@ -166,8 +190,8 @@ export function Reports() {
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
             />
           </div>
-          <div className="flex-1 w-full space-y-2">
-            <Label htmlFor="end_date">Data Final</Label>
+          <div className="space-y-2">
+            <Label htmlFor="end_date">Fim do período</Label>
             <Input
               type="date"
               id="end_date"
@@ -178,33 +202,19 @@ export function Reports() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Card key={stat.title} className="transition-shadow hover:shadow-md">
-            <CardContent className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm text-muted-foreground truncate">{stat.title}</p>
-                <p className="text-2xl font-bold text-foreground mt-1 truncate">{stat.value}</p>
-              </div>
-              <div
-                className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
-                  stat.accent ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                <stat.icon className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
+          <MetricCard key={stat.title} {...stat} />
         ))}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Análise de Vendas</CardTitle>
+          <CardTitle>Tendencia de vendas</CardTitle>
         </CardHeader>
         <CardContent>
           {salesByMonth.length === 0 ? emptyState : (
-            <div style={{ width: '100%', height: 256 }}>
+            <div className="h-72 w-full">
               <ResponsiveContainer>
                 <LineChart data={salesByMonth}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -220,14 +230,14 @@ export function Reports() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Desempenho por Vendedor</CardTitle>
+            <CardTitle>Desempenho por vendedor</CardTitle>
           </CardHeader>
           <CardContent>
             {salesBySeller.length === 0 ? emptyState : (
-              <div style={{ width: '100%', height: 256 }}>
+              <div className="h-72 w-full">
                 <ResponsiveContainer>
                   <BarChart data={salesBySeller}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -245,15 +255,15 @@ export function Reports() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Veículos Mais Vendidos</CardTitle>
+            <CardTitle>Modelos com melhor giro</CardTitle>
           </CardHeader>
           <CardContent>
             {topVehicles.length === 0 ? emptyState : (
-              <div style={{ width: '100%', height: 256 }}>
+              <div className="h-72 w-full">
                 <ResponsiveContainer>
                   <BarChart data={topVehicles}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="veiculo" angle={-45} textAnchor="end" height={100} tick={axisStyle} stroke="var(--border)" />
+                    <XAxis dataKey="veículo" angle={-35} textAnchor="end" height={92} tick={axisStyle} stroke="var(--border)" />
                     <YAxis tick={axisStyle} stroke="var(--border)" />
                     <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--accent)' }} />
                     <Legend />
@@ -268,3 +278,5 @@ export function Reports() {
     </div>
   );
 }
+
+

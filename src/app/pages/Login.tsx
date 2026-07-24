@@ -1,7 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { AlertCircle, Lock, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -24,22 +24,22 @@ export function Login() {
       await signIn(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      setError(err.message || 'Não foi possivel entrar. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="shadow-xl">
+    <Card className="shadow-lux-lg">
       <CardHeader>
-        <CardTitle className="text-2xl">Entrar na sua conta</CardTitle>
-        <CardDescription>Acesse o painel da sua loja</CardDescription>
+        <CardTitle className="text-2xl">Entrar na loja</CardTitle>
+        <CardDescription>Acesse o centro de comando da sua operação.</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
@@ -48,7 +48,7 @@ export function Login() {
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
@@ -64,7 +64,7 @@ export function Login() {
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="password"
                 type="password"
@@ -72,7 +72,7 @@ export function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="pl-10"
-                placeholder="••••••••"
+                placeholder="Sua senha"
               />
             </div>
           </div>
@@ -83,8 +83,8 @@ export function Login() {
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Não tem uma conta?{' '}
-          <Link to="/auth/register" className="text-primary hover:underline font-medium">
+          Ainda não tem acesso?{' '}
+          <Link to="/auth/register" className="font-medium text-primary hover:underline">
             Criar conta
           </Link>
         </p>
@@ -92,3 +92,5 @@ export function Login() {
     </Card>
   );
 }
+
+

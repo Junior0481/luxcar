@@ -1,19 +1,25 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Vehicle, Negotiation } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import {
+  AlertCircle,
+  ArrowUpRight,
   Car,
-  Handshake,
-  TrendingUp,
   Clock,
+  Handshake,
+  LayoutDashboard,
   Plus,
-  ArrowUpRight
+  TrendingUp
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { EmptyState } from '../components/ui/empty-state';
+import { MetricCard } from '../components/ui/metric-card';
+import { PageHeader } from '../components/ui/page-header';
+import { Skeleton } from '../components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -36,20 +42,20 @@ const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
-  disponivel: { label: 'Disponível', variant: 'default' },
-  em_negociacao: { label: 'Em Negociação', variant: 'secondary' },
+  disponível: { label: 'Disponível', variant: 'default' },
+  em_negociação: { label: 'Em negociação', variant: 'secondary' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
 
 const stageBadge: Record<string, string> = {
-  primeiro_contato: 'Primeiro Contato',
-  avaliacao: 'Avaliação',
-  test_drive_agendado: 'Test Drive Agendado',
-  test_drive_realizado: 'Test Drive Realizado',
-  proposta_enviada: 'Proposta Enviada',
-  negociacao_preco: 'Negociação Preço',
-  aprovacao_credito: 'Aprovação Crédito',
-  documentacao: 'Documentação',
+  primeiro_contato: 'Primeiro contato',
+  avaliação: 'Avaliação',
+  test_drive_agendado: 'Test drive agendado',
+  test_drive_realizado: 'Test drive realizado',
+  proposta_enviada: 'Proposta enviada',
+  negociação_preço: 'Negociação de preço',
+  aprovação_credito: 'Aprovação de crédito',
+  documentação: 'Documentação',
   finalizado: 'Finalizado',
   perdido: 'Perdido'
 };
@@ -85,74 +91,95 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      <div className="space-y-6">
+        <Skeleton className="h-32" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
+        </div>
       </div>
     );
   }
 
   const statusData = [
-    { name: 'Disponíveis', value: metrics?.vehicles_available || 0, color: 'var(--primary)' },
-    { name: 'Em Negociação', value: metrics?.vehicles_in_negotiation || 0, color: 'var(--muted-foreground)' },
+    { name: 'Disponiveis', value: metrics?.vehicles_available || 0, color: 'var(--primary)' },
+    { name: 'Em negociação', value: metrics?.vehicles_in_negotiation || 0, color: 'var(--muted-foreground)' },
     { name: 'Vendidos', value: metrics?.vehicles_sold || 0, color: 'var(--foreground)' }
   ];
 
   const statCards = [
-    { title: 'Veículos Disponíveis', value: metrics?.vehicles_available ?? 0, icon: Car, accent: true },
-    { title: 'Em Negociação', value: metrics?.vehicles_in_negotiation ?? 0, icon: Clock, accent: false },
-    { title: 'Negociações Ativas', value: metrics?.active_negotiations ?? 0, icon: Handshake, accent: false },
-    { title: 'Lucro Potencial', value: brl(metrics?.potential_profit || 0), icon: TrendingUp, accent: false }
+    {
+      title: 'Prontos para vender',
+      value: metrics?.vehicles_available ?? 0,
+      icon: Car,
+      accent: true,
+      description: 'Estoque disponível agora'
+    },
+    {
+      title: 'Em negociação',
+      value: metrics?.vehicles_in_negotiation ?? 0,
+      icon: Clock,
+      accent: false,
+      description: 'Veiculos com conversa ativa'
+    },
+    {
+      title: 'Pipeline ativo',
+      value: metrics?.active_negotiations ?? 0,
+      icon: Handshake,
+      accent: false,
+      description: 'Oportunidades abertas'
+    },
+    {
+      title: 'Lucro potencial',
+      value: brl(metrics?.potential_profit || 0),
+      icon: TrendingUp,
+      accent: false,
+      description: 'Estimativa sobre estoque'
+    }
   ];
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Bem-vindo, {profile?.full_name}</p>
-        </div>
-        <Button asChild size="lg">
-          <Link to="/dashboard/vehicles">
-            <Plus className="w-4 h-4" />
-            Cadastrar Veículo
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        icon={LayoutDashboard}
+        eyebrow="Centro de comando"
+        title={`Visão da loja${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}`}
+        description="Acompanhe estoque, oportunidades e resultado potencial sem depender de planilhas."
+        action={(
+          <Button asChild size="lg">
+            <Link to="/dashboard/vehicles">
+              <Plus className="size-4" />
+              Adicionar veículo
+            </Link>
+          </Button>
+        )}
+      />
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Card
+          <MetricCard
             key={stat.title}
-            className={`transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 ${
-              stat.accent ? 'bg-gradient-to-br from-primary/[0.07] to-transparent border-primary/20' : ''
-            }`}
-          >
-            <CardContent className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm text-muted-foreground truncate">{stat.title}</p>
-                <p className="text-2xl font-bold text-foreground mt-1 truncate">{stat.value}</p>
-              </div>
-              <div
-                className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
-                  stat.accent ? 'bg-primary/15 text-primary ring-1 ring-primary/20' : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                <stat.icon className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={stat.icon}
+            accent={stat.accent}
+          />
         ))}
       </div>
 
-      {/* Charts + recent vehicles */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Status dos Veículos</CardTitle>
+            <CardTitle>Saude do estoque</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div style={{ width: '100%', height: 256 }}>
               <ResponsiveContainer>
                 <PieChart>
@@ -162,8 +189,8 @@ export function Dashboard() {
                     cy="50%"
                     labelLine={false}
                     label={({ name, value }) => `${name}: ${value}`}
-                    innerRadius={48}
-                    outerRadius={84}
+                    innerRadius={52}
+                    outerRadius={86}
                     paddingAngle={2}
                     dataKey="value"
                   >
@@ -182,27 +209,39 @@ export function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
+            <div className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
+              {statusData.map((item) => (
+                <div key={item.name} className="rounded-xl bg-muted/50 p-3">
+                  <p className="text-lg font-medium text-foreground">{item.value}</p>
+                  <p>{item.name}</p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Veículos Recentes</CardTitle>
+            <CardTitle>Entrada recente no estoque</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {recentVehicles.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">Nenhum veículo cadastrado ainda</p>
+              <EmptyState
+                title="Seu estoque ainda está vazio"
+                description="Adicione o primeiro veículo para acompanhar preço, status e negociações."
+                action={<Button asChild><Link to="/dashboard/vehicles">Adicionar veículo</Link></Button>}
+              />
             ) : (
               recentVehicles.map((vehicle) => {
-                const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
+                const b = statusBadge[vehicle.status] ?? statusBadge.disponível;
                 return (
                   <Link
                     key={vehicle.id}
                     to={`/dashboard/vehicles/${vehicle.id}`}
-                    className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-accent transition-colors"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/60 p-3 transition-colors hover:border-primary/50 hover:bg-accent"
                   >
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground truncate">
+                      <p className="truncate font-medium text-foreground">
                         {vehicle.brand} {vehicle.model}
                       </p>
                       <p className="text-sm text-muted-foreground">{vehicle.year}</p>
@@ -216,70 +255,75 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* Recent negotiations */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Negociações Recentes</CardTitle>
+          <CardTitle>Negociações que merecem atenção</CardTitle>
           <Button asChild variant="ghost" size="sm">
             <Link to="/dashboard/negotiations">
-              Ver todas
-              <ArrowUpRight className="w-4 h-4" />
+              Abrir pipeline
+              <ArrowUpRight className="size-4" />
             </Link>
           </Button>
         </CardHeader>
         <CardContent>
           {recentNegotiations.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-8">Nenhuma negociação iniciada ainda</p>
+            <EmptyState
+              icon={AlertCircle}
+              title="Nenhuma oportunidade aberta"
+              description="Quando uma conversa com cliente começar, ela aparece aqui com prioridade e etapa."
+              action={<Button asChild><Link to="/dashboard/negotiations">Criar negociação</Link></Button>}
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Estágio</TableHead>
-                    <TableHead>Prioridade</TableHead>
-                    <TableHead>Data</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentNegotiations.map((negotiation) => (
-                    <TableRow key={negotiation.id}>
-                      <TableCell>
-                        <Link
-                          to={`/dashboard/negotiations/${negotiation.id}`}
-                          className="font-medium text-foreground hover:text-primary transition-colors"
-                        >
-                          {negotiation.client_name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            negotiation.priority === 'alta'
-                              ? 'destructive'
-                              : negotiation.priority === 'media'
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Etapa</TableHead>
+                  <TableHead>Prioridade</TableHead>
+                  <TableHead>Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentNegotiations.map((negotiation) => (
+                  <TableRow key={negotiation.id}>
+                    <TableCell>
+                      <Link
+                        to={`/dashboard/negotiations/${negotiation.id}`}
+                        className="font-medium text-foreground transition-colors hover:text-primary"
+                      >
+                        {negotiation.client_name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          negotiation.priority === 'alta'
+                            ? 'destructive'
+                            : negotiation.priority === 'media'
                               ? 'default'
                               : 'outline'
-                          }
-                          className="capitalize"
-                        >
-                          {negotiation.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(negotiation.created_at).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        }
+                        className="capitalize"
+                      >
+                        {negotiation.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(negotiation.created_at).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
+
+
+

@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { User, Shield, Bell, Database, AlertCircle, CheckCircle } from 'lucide-react';
-import { Card, CardContent } from '../components/ui/card';
+import { AlertCircle, Bell, CheckCircle, Database, Palette, Shield, User } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
+import { PageHeader } from '../components/ui/page-header';
+import { cn } from '../components/ui/utils';
 
 type MessageState = {
   type: 'success' | 'error';
@@ -33,10 +35,10 @@ export function Settings() {
   });
 
   const tabs = [
-    { id: 'profile', label: 'Perfil', icon: User },
-    { id: 'security', label: 'Segurança', icon: Shield },
-    { id: 'notifications', label: 'Notificações', icon: Bell },
-    { id: 'system', label: 'Sistema', icon: Database }
+    { id: 'profile', label: 'Perfil', desc: 'Dados da conta', icon: User },
+    { id: 'security', label: 'Segurança', desc: 'Acesso e senha', icon: Shield },
+    { id: 'notifications', label: 'Notificações', desc: 'Alertas da operação', icon: Bell },
+    { id: 'system', label: 'Sistema', desc: 'Dados e backup', icon: Database }
   ];
 
   useEffect(() => {
@@ -75,23 +77,12 @@ export function Settings() {
         const nextName = profileForm.fullName.trim();
         const nextEmail = profileForm.email.trim();
 
-        if (!nextName) {
-          throw new Error('Informe o nome completo.');
-        }
-
-        if (!nextEmail) {
-          throw new Error('Informe o email.');
-        }
+        if (!nextName) throw new Error('Informe o nome completo.');
+        if (!nextEmail) throw new Error('Informe o email.');
 
         const updates: Record<string, string> = {};
-
-        if (nextName !== profile.full_name) {
-          updates.full_name = nextName;
-        }
-
-        if (nextEmail !== profile.email) {
-          updates.email = nextEmail;
-        }
+        if (nextName !== profile.full_name) updates.full_name = nextName;
+        if (nextEmail !== profile.email) updates.email = nextEmail;
 
         if (Object.keys(updates).length > 0) {
           const { error: profileError } = await supabase
@@ -103,58 +94,36 @@ export function Settings() {
         }
 
         if (nextEmail !== user.email) {
-          const { error: authError } = await supabase.auth.updateUser({
-            email: nextEmail
-          });
-
+          const { error: authError } = await supabase.auth.updateUser({ email: nextEmail });
           if (authError) throw authError;
         }
 
         await refreshProfile();
-        showMessage('success', 'Perfil atualizado com sucesso.');
+        showMessage('success', 'Perfil atualizado.');
       }
 
       if (activeTab === 'security') {
-        if (!securityForm.newPassword) {
-          throw new Error('Informe a nova senha.');
-        }
+        if (!securityForm.newPassword) throw new Error('Informe a nova senha.');
+        if (securityForm.newPassword.length < 6) throw new Error('A nova senha deve ter pelo menos 6 caracteres.');
+        if (securityForm.newPassword !== securityForm.confirmPassword) throw new Error('A confirmação da senha não confere.');
 
-        if (securityForm.newPassword.length < 6) {
-          throw new Error('A nova senha deve ter pelo menos 6 caracteres.');
-        }
-
-        if (securityForm.newPassword !== securityForm.confirmPassword) {
-          throw new Error('A confirmação da senha não confere.');
-        }
-
-        const { error } = await supabase.auth.updateUser({
-          password: securityForm.newPassword
-        });
-
+        const { error } = await supabase.auth.updateUser({ password: securityForm.newPassword });
         if (error) throw error;
 
-        setSecurityForm({
-          newPassword: '',
-          confirmPassword: ''
-        });
-
-        showMessage('success', 'Senha atualizada com sucesso.');
+        setSecurityForm({ newPassword: '', confirmPassword: '' });
+        showMessage('success', 'Senha atualizada.');
       }
 
       if (activeTab === 'notifications') {
-        localStorage.setItem(
-          `luxcar-notifications:${user.id}`,
-          JSON.stringify(notificationsForm)
-        );
-
-        showMessage('success', 'Preferências de notificação salvas.');
+        localStorage.setItem(`luxcar-notifications:${user.id}`, JSON.stringify(notificationsForm));
+        showMessage('success', 'Preferencias salvas.');
       }
 
       if (activeTab === 'system') {
         showMessage('success', 'Nenhuma configuração editável nesta aba.');
       }
     } catch (error: any) {
-      showMessage('error', error.message || 'Não foi possível salvar.');
+      showMessage('error', error.message || 'Não foi possivel salvar.');
     } finally {
       setSaving(false);
     }
@@ -192,9 +161,7 @@ export function Settings() {
       const failedResponse = [vehiclesRes, negotiationsRes, costsRes, interactionsRes, salesRes]
         .find((response) => response.error);
 
-      if (failedResponse?.error) {
-        throw failedResponse.error;
-      }
+      if (failedResponse?.error) throw failedResponse.error;
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
@@ -212,9 +179,9 @@ export function Settings() {
         sales: salesRes.data || []
       });
 
-      showMessage('success', mode === 'backup' ? 'Backup gerado com sucesso.' : 'Exportação gerada com sucesso.');
+      showMessage('success', mode === 'backup' ? 'Backup gerado.' : 'Exportação gerada.');
     } catch (error: any) {
-      showMessage('error', error.message || 'Não foi possível exportar os dados.');
+      showMessage('error', error.message || 'Não foi possivel exportar os dados.');
     } finally {
       setSaving(false);
     }
@@ -222,189 +189,182 @@ export function Settings() {
 
   const handleClearCache = () => {
     try {
-      if (user) {
-        localStorage.removeItem(`luxcar-notifications:${user.id}`);
-      }
-
+      if (user) localStorage.removeItem(`luxcar-notifications:${user.id}`);
       sessionStorage.clear();
-      showMessage('success', 'Cache local limpo com sucesso.');
+      showMessage('success', 'Cache local limpo.');
     } catch (error: any) {
-      showMessage('error', error.message || 'Não foi possível limpar o cache.');
+      showMessage('error', error.message || 'Não foi possivel limpar o cache.');
     }
   };
 
   const notificationRows = [
-    { key: 'newNegotiations' as const, title: 'Novas Negociações', desc: 'Receber alertas quando houver novas negociações' },
-    { key: 'vehicleUpdates' as const, title: 'Atualizações de Veículos', desc: 'Notificar sobre mudanças no estoque' },
-    { key: 'weeklyReports' as const, title: 'Relatórios Semanais', desc: 'Receber resumo semanal de vendas' }
+    { key: 'newNegotiations' as const, title: 'Novas negociações', desc: 'Receber alertas quando houver novas oportunidades' },
+    { key: 'vehicleUpdates' as const, title: 'Atualizações de veículos', desc: 'Notificar sobre mudancas importantes no estoque' },
+    { key: 'weeklyReports' as const, title: 'Resumo semanal', desc: 'Receber uma leitura semanal de vendas e pipeline' }
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Configurações</h1>
-        <p className="text-muted-foreground mt-1">Gerencie suas preferências e configurações do sistema</p>
-      </div>
+      <PageHeader
+        icon={Palette}
+        eyebrow="Operação e identidade"
+        title="Configurações"
+        description="Ajuste perfil, segurança, preferências e dados operacionais da loja."
+      />
 
       {message && (
-        <div className={`p-4 rounded-lg flex items-start gap-3 border ${
+        <div className={cn(
+          'flex items-start gap-3 rounded-2xl border p-4 shadow-lux-sm',
           message.type === 'success'
-            ? 'bg-emerald-500/10 border-emerald-500/30'
-            : 'bg-destructive/10 border-destructive/30'
-        }`}>
+            ? 'border-primary/20 bg-accent text-accent-foreground'
+            : 'border-destructive/30 bg-destructive/10 text-destructive'
+        )}>
           {message.type === 'success' ? (
-            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <CheckCircle className="mt-0.5 size-5 shrink-0 text-primary" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
           )}
-          <p className={`text-sm ${
-            message.type === 'success' ? 'text-emerald-700 dark:text-emerald-300' : 'text-destructive'
-          }`}>
-            {message.text}
-          </p>
+          <p className="text-sm">{message.text}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1">
-          <Card className="py-2 overflow-hidden">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+        <aside className="lg:col-span-1">
+          <Card className="gap-0 overflow-hidden py-2">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 transition-colors border-l-2 ${
+                className={cn(
+                  'flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors',
                   activeTab === tab.id
-                    ? 'bg-accent text-primary border-primary'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground border-transparent'
-                }`}
+                    ? 'border-primary bg-accent text-primary'
+                    : 'border-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                )}
               >
-                <tab.icon className="w-5 h-5" />
-                <span className="font-medium">{tab.label}</span>
+                <tab.icon className="size-5" />
+                <span>
+                  <span className="block text-sm font-medium">{tab.label}</span>
+                  <span className="block text-xs opacity-70">{tab.desc}</span>
+                </span>
               </button>
             ))}
           </Card>
-        </div>
+        </aside>
 
-        <div className="lg:col-span-3">
+        <section className="lg:col-span-3">
           <Card>
+            <CardHeader>
+              <CardTitle>{tabs.find((tab) => tab.id === activeTab)?.label}</CardTitle>
+            </CardHeader>
             <CardContent>
               {activeTab === 'profile' && (
-                <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground">Informações do Perfil</h2>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Nome Completo</Label>
-                      <Input
-                        id="fullName"
-                        value={profileForm.fullName}
-                        onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={profileForm.email}
-                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Tipo de Conta</Label>
-                      <Input
-                        id="role"
-                        value={profile?.role === 'administrador' ? 'Administrador' : 'Vendedor'}
-                        disabled
-                      />
-                    </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nome completo</Label>
+                    <Input
+                      id="fullName"
+                      value={profileForm.fullName}
+                      onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="role">Tipo de conta</Label>
+                    <Input
+                      id="role"
+                      value={profile?.role === 'administrador' ? 'Administrador' : 'Vendedor'}
+                      disabled
+                    />
                   </div>
                 </div>
               )}
 
               {activeTab === 'security' && (
-                <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground">Segurança</h2>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">Nova Senha</Label>
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        value={securityForm.newPassword}
-                        onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
-                        placeholder="Mínimo de 6 caracteres"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={securityForm.confirmPassword}
-                        onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
-                        placeholder="Repita a nova senha"
-                      />
-                    </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">Nova senha</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={securityForm.newPassword}
+                      onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
+                      placeholder="Minimo de 6 caracteres"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={securityForm.confirmPassword}
+                      onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
+                      placeholder="Repita a nova senha"
+                    />
                   </div>
                 </div>
               )}
 
               {activeTab === 'notifications' && (
-                <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground">Preferências de Notificação</h2>
-                  <div className="divide-y divide-border">
-                    {notificationRows.map((row) => (
-                      <div key={row.key} className="flex items-center justify-between gap-4 py-4">
-                        <div>
-                          <p className="font-medium text-foreground">{row.title}</p>
-                          <p className="text-sm text-muted-foreground">{row.desc}</p>
-                        </div>
-                        <Switch
-                          checked={notificationsForm[row.key]}
-                          onCheckedChange={(checked) =>
-                            setNotificationsForm({ ...notificationsForm, [row.key]: checked })
-                          }
-                        />
+                <div className="divide-y divide-border">
+                  {notificationRows.map((row) => (
+                    <div key={row.key} className="flex items-center justify-between gap-4 py-4">
+                      <div>
+                        <p className="font-medium text-foreground">{row.title}</p>
+                        <p className="text-sm text-muted-foreground">{row.desc}</p>
                       </div>
-                    ))}
-                  </div>
+                      <Switch
+                        checked={notificationsForm[row.key]}
+                        onCheckedChange={(checked) =>
+                          setNotificationsForm({ ...notificationsForm, [row.key]: checked })
+                        }
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 
               {activeTab === 'system' && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground">Configurações do Sistema</h2>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-accent border border-border rounded-lg space-y-1 text-sm text-foreground">
-                      <p><strong>Versão:</strong> 1.0.0</p>
-                      <p><strong>Banco de Dados:</strong> Supabase</p>
-                      <p><strong>Usuário:</strong> {profile?.full_name || 'Não identificado'}</p>
+                  <div className="grid gap-3 rounded-2xl border border-border bg-muted/40 p-4 text-sm md:grid-cols-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Versao</p>
+                      <p className="font-medium text-foreground">1.0.0</p>
                     </div>
-                    <div className="pt-2">
-                      <h3 className="font-semibold text-foreground mb-3">Ações do Sistema</h3>
-                      <div className="space-y-2">
-                        <Button variant="secondary" className="w-full justify-start" onClick={() => handleExportData('export')}>
-                          Exportar Dados
-                        </Button>
-                        <Button variant="secondary" className="w-full justify-start" onClick={() => handleExportData('backup')}>
-                          Backup do Sistema
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-destructive hover:text-destructive"
-                          onClick={handleClearCache}
-                        >
-                          Limpar Cache
-                        </Button>
-                      </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Banco de dados</p>
+                      <p className="font-medium text-foreground">Supabase</p>
                     </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Responsavel</p>
+                      <p className="font-medium text-foreground">{profile?.full_name || 'Não identificado'}</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <Button variant="secondary" onClick={() => handleExportData('export')}>
+                      Exportar dados
+                    </Button>
+                    <Button variant="secondary" onClick={() => handleExportData('backup')}>
+                      Gerar backup
+                    </Button>
+                    <Button variant="outline" className="text-destructive hover:text-destructive" onClick={handleClearCache}>
+                      Limpar cache
+                    </Button>
                   </div>
                 </div>
               )}
 
-              <div className="flex gap-3 pt-6 border-t border-border mt-6">
+              <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row">
                 <Button onClick={handleSave} disabled={saving}>
-                  {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  {saving ? 'Salvando...' : 'Salvar alterações'}
                 </Button>
                 <Button
                   variant="secondary"
@@ -413,10 +373,7 @@ export function Settings() {
                       fullName: profile?.full_name || '',
                       email: profile?.email || user?.email || ''
                     });
-                    setSecurityForm({
-                      newPassword: '',
-                      confirmPassword: ''
-                    });
+                    setSecurityForm({ newPassword: '', confirmPassword: '' });
                   }}
                 >
                   Cancelar
@@ -424,8 +381,11 @@ export function Settings() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </section>
       </div>
     </div>
   );
 }
+
+
+

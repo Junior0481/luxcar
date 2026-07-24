@@ -12,3 +12,8 @@ dist
 .vscode
 .idea
 .claude
+
+# AI brain — instruções/handoffs internos dos agentes, não versionar
+.ai/
+AGENTS.md
+CLAUDE.md

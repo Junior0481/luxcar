@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { supabase, Vehicle, VehicleCost, Negotiation } from '../../lib/supabase';
 import {
@@ -18,7 +18,7 @@ const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-  disponivel: { label: 'Disponível', variant: 'default' },
+  disponível: { label: 'Disponível', variant: 'default' },
   em_negociacao: { label: 'Em Negociação', variant: 'secondary' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
@@ -89,7 +89,7 @@ export function VehicleDetails() {
   const totalInvestment = Number(vehicle.purchase_price) + totalCosts;
   const potentialProfit = Number(vehicle.sale_price) - totalInvestment;
   const activeNegotiations = negotiations.filter(n => !['finalizado', 'perdido'].includes(n.stage));
-  const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
+  const b = statusBadge[vehicle.status] ?? statusBadge.disponível;
 
   const infoRows = [
     vehicle.color && { label: 'Cor', value: vehicle.color },
@@ -118,7 +118,7 @@ export function VehicleDetails() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {vehicle.year}
-            {vehicle.version ? ` • ${vehicle.version}` : ''}
+            {vehicle.version ? ` â€¢ ${vehicle.version}` : ''}
           </p>
         </div>
         <div className="ml-auto shrink-0">
@@ -146,7 +146,7 @@ export function VehicleDetails() {
       {vehicle.images && vehicle.images.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Galeria de Fotos</CardTitle>
+            <CardTitle>Galeria de fotos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -256,3 +256,6 @@ export function VehicleDetails() {
     </div>
   );
 }
+
+
+

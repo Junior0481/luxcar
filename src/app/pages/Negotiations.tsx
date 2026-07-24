@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile } from '../../lib/supabase';
-import { Plus, Search, Filter, Handshake } from 'lucide-react';
+import { CalendarDays, Filter, Handshake, Plus, Search, UserRound } from 'lucide-react';
 import { NegotiationForm } from '../components/NegotiationForm';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
+import { EmptyState } from '../components/ui/empty-state';
+import { MetricCard } from '../components/ui/metric-card';
+import { PageHeader } from '../components/ui/page-header';
+import { Skeleton } from '../components/ui/skeleton';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '../components/ui/table';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '../components/ui/select';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
@@ -22,14 +25,14 @@ type NegotiationWithDetails = Negotiation & {
 };
 
 const stageLabels: Record<string, string> = {
-  primeiro_contato: 'Primeiro Contato',
-  avaliacao: 'Avaliação',
-  test_drive_agendado: 'Test Drive Agendado',
-  test_drive_realizado: 'Test Drive Realizado',
-  proposta_enviada: 'Proposta Enviada',
-  negociacao_preco: 'Negociação Preço',
-  aprovacao_credito: 'Aprovação Crédito',
-  documentacao: 'Documentação',
+  primeiro_contato: 'Primeiro contato',
+  avaliação: 'Avaliação',
+  test_drive_agendado: 'Test drive agendado',
+  test_drive_realizado: 'Test drive realizado',
+  proposta_enviada: 'Proposta enviada',
+  negociação_preço: 'Negociação de preço',
+  aprovação_credito: 'Aprovação de crédito',
+  documentação: 'Documentação',
   finalizado: 'Finalizado',
   perdido: 'Perdido'
 };
@@ -39,7 +42,7 @@ const stageVariant = (stage: string): 'default' | 'secondary' | 'outline' | 'des
 
 const priorityMeta: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' }> = {
   alta: { label: 'Alta', variant: 'destructive' },
-  media: { label: 'Média', variant: 'default' },
+  media: { label: 'Media', variant: 'default' },
   baixa: { label: 'Baixa', variant: 'outline' }
 };
 
@@ -101,145 +104,155 @@ export function Negotiations() {
     setFilteredNegotiations(filtered);
   };
 
+  const summary = useMemo(() => {
+    const active = negotiations.filter((n) => !['finalizado', 'perdido'].includes(n.stage)).length;
+    const highPriority = negotiations.filter((n) => n.priority === 'alta' && !['finalizado', 'perdido'].includes(n.stage)).length;
+    const closed = negotiations.filter((n) => n.stage === 'finalizado').length;
+    return { active, highPriority, closed };
+  }, [negotiations]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <Skeleton className="h-32" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <Skeleton className="h-20" />
+        <Skeleton className="h-96" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Negociações</h1>
-          <p className="text-muted-foreground mt-1">Acompanhe todas as negociações em andamento</p>
-        </div>
-        <Button size="lg" onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4" />
-          Nova Negociação
-        </Button>
+      <PageHeader
+        icon={Handshake}
+        eyebrow="Pipeline comercial"
+        title="Negociações"
+        description="Acompanhe cada oportunidade pelo cliente, veículo, prioridade e proxima etapa de venda."
+        action={(
+          <Button size="lg" onClick={() => setShowForm(true)}>
+            <Plus className="size-4" />
+            Nova negociação
+          </Button>
+        )}
+      />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricCard title="Pipeline ativo" value={summary.active} description="Conversas em andamento" icon={Handshake} accent />
+        <MetricCard title="Alta prioridade" value={summary.highPriority} description="Precisam de ação rapida" icon={UserRound} />
+        <MetricCard title="Finalizadas" value={summary.closed} description="Negocios ganhos" icon={CalendarDays} />
       </div>
 
       <Card>
-        <CardContent className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <CardContent className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar por cliente ou veículo..."
+              placeholder="Buscar por cliente ou veículo"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            <select
-              value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value)}
-              className="h-9 pl-10 pr-8 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
-            >
-              <option value="active">Ativas</option>
-              <option value="all">Todas</option>
-              <option value="primeiro_contato">Primeiro Contato</option>
-              <option value="avaliacao">Avaliação</option>
-              <option value="test_drive_agendado">Test Drive Agendado</option>
-              <option value="test_drive_realizado">Test Drive Realizado</option>
-              <option value="proposta_enviada">Proposta Enviada</option>
-              <option value="negociacao_preco">Negociação Preço</option>
-              <option value="aprovacao_credito">Aprovação Crédito</option>
-              <option value="documentacao">Documentação</option>
-              <option value="finalizado">Finalizado</option>
-              <option value="perdido">Perdido</option>
-            </select>
+          <div className="relative sm:w-72">
+            <Filter className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="pl-10">
+                <SelectValue placeholder="Etapa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Ativas</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="primeiro_contato">Primeiro contato</SelectItem>
+                <SelectItem value="avaliação">Avaliação</SelectItem>
+                <SelectItem value="test_drive_agendado">Test drive agendado</SelectItem>
+                <SelectItem value="test_drive_realizado">Test drive realizado</SelectItem>
+                <SelectItem value="proposta_enviada">Proposta enviada</SelectItem>
+                <SelectItem value="negociação_preço">Negociação de preço</SelectItem>
+                <SelectItem value="aprovação_credito">Aprovação de credito</SelectItem>
+                <SelectItem value="documentação">Documentação</SelectItem>
+                <SelectItem value="finalizado">Finalizado</SelectItem>
+                <SelectItem value="perdido">Perdido</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
       {filteredNegotiations.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Handshake className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">Nenhuma negociação encontrada</h3>
-            <p className="text-muted-foreground mb-6">
-              {searchTerm || stageFilter !== 'active'
-                ? 'Tente ajustar os filtros de busca'
-                : 'Comece criando sua primeira negociação'}
-            </p>
-            {!searchTerm && stageFilter === 'active' && (
+        <EmptyState
+          icon={Handshake}
+          title="Nenhuma negociação encontrada"
+          description={
+            searchTerm || stageFilter !== 'active'
+              ? 'Ajuste os filtros para encontrar a oportunidade certa.'
+              : 'Crie a primeira negociação para acompanhar cliente, veículo e etapa comercial.'
+          }
+          action={
+            !searchTerm && stageFilter === 'active' ? (
               <Button onClick={() => setShowForm(true)}>
-                <Plus className="w-4 h-4" />
-                Nova Negociação
+                <Plus className="size-4" />
+                Nova negociação
               </Button>
-            )}
-          </CardContent>
-        </Card>
+            ) : null
+          }
+        />
       ) : (
-        <Card className="py-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Veículo</TableHead>
-                  <TableHead>Vendedor</TableHead>
-                  <TableHead>Estágio</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredNegotiations.map((negotiation) => {
-                  const p = priorityMeta[negotiation.priority] ?? priorityMeta.media;
-                  return (
-                    <TableRow key={negotiation.id}>
-                      <TableCell>
-                        <p className="font-medium text-foreground">{negotiation.client_name}</p>
-                        {negotiation.client_phone && (
-                          <p className="text-sm text-muted-foreground">{negotiation.client_phone}</p>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {negotiation.vehicle ? (
-                          <>
-                            <p className="font-medium text-foreground">
-                              {negotiation.vehicle.brand} {negotiation.vehicle.model}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{negotiation.vehicle.year}</p>
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-foreground">{negotiation.seller?.full_name || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant={stageVariant(negotiation.stage)}>
-                          {stageLabels[negotiation.stage] ?? negotiation.stage}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={p.variant}>{p.label}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
+        <div className="grid gap-4 xl:grid-cols-2">
+          {filteredNegotiations.map((negotiation) => {
+            const p = priorityMeta[negotiation.priority] ?? priorityMeta.media;
+            return (
+              <Card key={negotiation.id} className="lux-card-hover">
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Cliente</p>
+                      <h3 className="truncate text-lg font-medium text-foreground">{negotiation.client_name}</h3>
+                      {negotiation.client_phone ? (
+                        <p className="text-sm text-muted-foreground">{negotiation.client_phone}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant={stageVariant(negotiation.stage)}>
+                        {stageLabels[negotiation.stage] ?? negotiation.stage}
+                      </Badge>
+                      <Badge variant={p.variant}>{p.label}</Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 rounded-xl bg-muted/50 p-3 text-sm sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Veiculo</p>
+                      <p className="font-medium text-foreground">
+                        {negotiation.vehicle
+                          ? `${negotiation.vehicle.brand} ${negotiation.vehicle.model}`
+                          : 'Não informado'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Vendedor</p>
+                      <p className="font-medium text-foreground">{negotiation.seller?.full_name || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Criada em</p>
+                      <p className="font-medium text-foreground">
                         {new Date(negotiation.created_at).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          to={`/dashboard/negotiations/${negotiation.id}`}
-                          className="text-primary hover:underline text-sm font-medium"
-                        >
-                          Ver detalhes
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button asChild variant="secondary" className="w-full sm:w-auto">
+                    <Link to={`/dashboard/negotiations/${negotiation.id}`}>Ver oportunidade</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       {showForm && (
@@ -251,3 +264,6 @@ export function Negotiations() {
     </div>
   );
 }
+
+
+

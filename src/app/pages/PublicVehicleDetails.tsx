@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { ArrowLeft, Car, Calendar, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle } from 'lucide-react';
@@ -262,3 +262,5 @@ export function PublicVehicleDetails() {
     </div>
   );
 }
+
+
