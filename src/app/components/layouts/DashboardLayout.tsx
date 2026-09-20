@@ -45,7 +45,7 @@ export function DashboardLayout() {
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth/login', { replace: true });
-    } else if (!loading && user && !profile) {
+    } else if (!loading && user && !profile?.company_id) {
       navigate('/estoque', { replace: true });
     }
   }, [user, profile, loading, navigate]);
@@ -73,7 +73,7 @@ export function DashboardLayout() {
     );
   }
 
-  if (!user || !profile) {
+  if (!user || !profile?.company_id) {
     return null;
   }
 

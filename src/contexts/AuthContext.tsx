@@ -32,6 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        setLoading(true);
+        setProfile(null);
         loadProfile(session.user.id);
       } else {
         setProfile(null);
@@ -53,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       setProfile(data);
     } catch (error) {
+      setProfile(null);
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
@@ -60,8 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    setLoading(true);
+    setProfile(null);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      throw error;
+    }
+    setUser(data.user);
+    await loadProfile(data.user.id);
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: 'vendedor' | 'administrador') => {

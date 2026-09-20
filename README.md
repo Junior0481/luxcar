@@ -155,7 +155,29 @@ A aplicação ficará disponível, por padrão, em `http://localhost:5173`.
 | `pnpm test` | Executa os testes unitários e de integração |
 | `pnpm test:coverage` | Gera o relatório de cobertura |
 | `pnpm test:e2e` | Executa os fluxos E2E com Playwright |
+| `pnpm test:e2e:headed` | Executa a jornada desktop com o navegador visível |
+| `pnpm test:e2e:ui` | Abre a interface interativa do Playwright |
+| `pnpm test:e2e:report` | Abre o último relatório HTML |
 | `pnpm check` | Valida tipos, testes e build de produção |
+
+### Validação navegável com Playwright
+
+Os testes percorrem a vitrine pública em desktop e celular, monitoram erros de
+JavaScript e validam as permissões de administrador, vendedor e cliente. Para
+habilitar as jornadas autenticadas, configure no `.env` local as variáveis
+`E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_SELLER_EMAIL`,
+`E2E_SELLER_PASSWORD`, `E2E_CLIENT_EMAIL` e `E2E_CLIENT_PASSWORD`.
+
+Por padrão, o Playwright compila e abre a aplicação localmente. Para testar o
+deploy, informe também:
+
+```env
+E2E_BASE_URL=https://luxcar-six.vercel.app
+```
+
+Em caso de falha, ficam disponíveis relatório HTML, screenshot, vídeo e trace
+de navegação. As credenciais E2E devem pertencer apenas a contas de teste e não
+devem ser commitadas.
 
 ## Principais rotas
 

@@ -10,6 +10,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed --project=desktop-chromium",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:production": "playwright test --project=desktop-chromium",
     "check": "tsc --noEmit && vitest run && vite build"
   },
   "dependencies": {
