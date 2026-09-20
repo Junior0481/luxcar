@@ -1,5 +1,5 @@
 ﻿import { useEffect } from 'react';
-import { Outlet, useLocation, useNavigate, Link } from 'react-router';
+import { Outlet, Link } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Car } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
@@ -7,15 +7,7 @@ import { Skeleton } from '../ui/skeleton';
 import loginImg from '../../../assets/login_img.png';
 
 export function AuthLayout() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    if (!loading && user) {
-      navigate(location.pathname.startsWith('/client') ? '/estoque' : '/dashboard', { replace: true });
-    }
-  }, [user, loading, navigate, location.pathname]);
+  const { loading } = useAuth();
 
   if (loading) {
     return (

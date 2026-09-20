@@ -47,6 +47,21 @@ test.describe('jornadas reais por perfil', () => {
     await expect(page).toHaveURL(/\/estoque/);
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/estoque/);
+
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Entrar', exact: true }).first().click();
+    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page.getByRole('heading', { name: 'Entrar na loja' })).toBeVisible();
+
+    await page.goto('/estoque');
+    await page.getByRole('link', { name: 'Sou cliente' }).click();
+    await expect(page).toHaveURL(/\/client\/login/);
+    await expect(page.getByRole('heading', { name: 'Login de Cliente' })).toBeVisible();
+
+    await page.goto('/estoque');
+    await page.getByRole('link', { name: 'Sou lojista' }).click();
+    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page.getByRole('heading', { name: 'Entrar na loja' })).toBeVisible();
     expectNoBrowserIssues(issues);
   });
 });
