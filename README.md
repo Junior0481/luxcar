@@ -179,6 +179,13 @@ Em caso de falha, ficam disponíveis relatório HTML, screenshot, vídeo e trace
 de navegação. As credenciais E2E devem pertencer apenas a contas de teste e não
 devem ser commitadas.
 
+A suíte `full-lifecycle.spec.ts` valida o ciclo white label completo: criação
+da empresa e do primeiro administrador, personalização das cores, cadastro de
+vendedor, veículo, negociação, avanço das etapas, pagamento e fechamento da
+venda. Por criar dados reais, ela só executa quando
+`E2E_ALLOW_MUTATIONS=true` e as credenciais `E2E_PLATFORM_*` estiverem
+configuradas.
+
 ## Principais rotas
 
 | Rota | Descrição |
@@ -192,6 +199,8 @@ devem ser commitadas.
 | `/dashboard/vehicles` | Gestão do estoque |
 | `/dashboard/negotiations` | Gestão das negociações |
 | `/dashboard/payments` | Pagamentos vinculados às negociações |
+| `/dashboard/team` | Administração dos acessos da empresa |
+| `/dashboard/platform` | Provisionamento de empresas pelo administrador da plataforma |
 | `/dashboard/reports` | Relatórios gerenciais |
 
 ## Fluxo de desenvolvimento

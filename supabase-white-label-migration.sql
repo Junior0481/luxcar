@@ -247,7 +247,7 @@ CREATE OR REPLACE FUNCTION public.set_payment_status(
 )
 RETURNS public.payments
 LANGUAGE plpgsql
-SECURITY INVOKER
+SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
@@ -278,22 +278,20 @@ BEGIN
     SELECT * INTO current_negotiation
     FROM public.negotiations WHERE id = current_payment.negotiation_id FOR UPDATE;
 
-    UPDATE public.negotiations SET stage = 'finalizado'
-    WHERE id = current_negotiation.id;
-    UPDATE public.vehicles SET status = 'vendido'
-    WHERE id = current_negotiation.vehicle_id;
-
     INSERT INTO public.sales (
       company_id, negotiation_id, vehicle_id, seller_id,
       final_price, payment_method, sale_date
     )
-    SELECT
-      current_payment.company_id, current_negotiation.id,
-      current_negotiation.vehicle_id, current_negotiation.seller_id,
-      current_payment.amount, current_payment.method, current_date
-    WHERE NOT EXISTS (
-      SELECT 1 FROM public.sales WHERE negotiation_id = current_negotiation.id
-    );
+    SELECT n.company_id, n.id, n.vehicle_id, n.seller_id,
+      p.amount, p.method, current_date
+    FROM public.negotiations n
+    JOIN public.payments p ON p.negotiation_id = n.id
+    WHERE p.id = current_payment.id
+      AND NOT EXISTS (SELECT 1 FROM public.sales s WHERE s.negotiation_id = n.id);
+    UPDATE public.negotiations SET stage = 'finalizado'
+    WHERE id = current_negotiation.id;
+    UPDATE public.vehicles SET status = 'vendido'
+    WHERE id = current_negotiation.vehicle_id;
   END IF;
 
   RETURN current_payment;

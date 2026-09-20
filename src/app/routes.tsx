@@ -19,6 +19,8 @@ import { ClientLogin } from './pages/ClientLogin';
 import { ClientRegister } from './pages/ClientRegister';
 import { RouteError } from './pages/RouteError';
 import { Payments } from './pages/Payments';
+import { Team } from './pages/Team';
+import { Platform } from './pages/Platform';
 
 export const router = createBrowserRouter([
   {
@@ -65,6 +67,8 @@ export const router = createBrowserRouter([
           { path: 'negotiations/:id', Component: NegotiationDetails },
           { path: 'reports', Component: Reports },
           { path: 'payments', Component: Payments },
+          { path: 'team', Component: Team },
+          { path: 'platform', Component: Platform },
           { path: 'settings', Component: Settings }
         ]
       },

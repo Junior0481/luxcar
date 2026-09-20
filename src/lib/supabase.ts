@@ -45,7 +45,7 @@ export type Profile = {
   id: string;
   email: string;
   full_name: string;
-  role: 'vendedor' | 'administrador';
+  role: 'vendedor' | 'administrador' | 'platform_admin';
   company_id?: string;
   created_at: string;
   updated_at: string;

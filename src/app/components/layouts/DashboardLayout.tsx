@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useNavigate, NavLink } from 'react-router';
+import { Outlet, useLocation, useNavigate, NavLink } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCompany } from '../../../contexts/CompanyContext';
 import {
@@ -12,7 +12,9 @@ import {
   LogOut,
   Menu,
   X,
-  User
+  User,
+  Users,
+  Building2
 } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
 import { Button } from '../ui/button';
@@ -40,15 +42,18 @@ export function DashboardLayout() {
   const { user, profile, loading, signOut } = useAuth();
   const { company } = useCompany();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth/login', { replace: true });
-    } else if (!loading && user && !profile?.company_id) {
+    } else if (!loading && user && profile?.role === 'platform_admin' && location.pathname === '/dashboard') {
+      navigate('/dashboard/platform', { replace: true });
+    } else if (!loading && user && !profile?.company_id && profile?.role !== 'platform_admin') {
       navigate('/estoque', { replace: true });
     }
-  }, [user, profile, loading, navigate]);
+  }, [user, profile, loading, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -73,9 +78,16 @@ export function DashboardLayout() {
     );
   }
 
-  if (!user || !profile?.company_id) {
+  if (!user || !profile || (!profile.company_id && profile.role !== 'platform_admin')) {
     return null;
   }
+
+  const visibleNavItems = profile.role === 'platform_admin'
+    ? [{ to: '/dashboard/platform', icon: Building2, label: 'Empresas' }]
+    : [
+        ...navItems,
+        ...(profile.role === 'administrador' ? [{ to: '/dashboard/team', icon: Users, label: 'Equipe' }] : [])
+      ];
 
   const handleSignOut = async () => {
     await signOut();
@@ -130,7 +142,7 @@ export function DashboardLayout() {
         <div className="flex items-center border-b border-sidebar-border px-6 py-5">{brand}</div>
 
         <nav className="flex-1 space-y-1 px-3 py-6">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} className={navClass}>
               <item.icon className="w-5 h-5" />
               <span>{item.label}</span>
@@ -157,7 +169,7 @@ export function DashboardLayout() {
             </div>
 
             <nav className="flex-1 space-y-1 px-3 py-6">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
