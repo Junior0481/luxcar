@@ -30,9 +30,12 @@ UPDATE public.sales
 SET company_id = '00000000-0000-0000-0000-000000000001'
 WHERE company_id IS NULL;
 
--- Clientes finais não são membros internos da loja.
-DELETE FROM public.profiles p
-USING public.customers c
+-- Perfis históricos que também representam clientes são preservados porque podem
+-- ser referenciados por auditoria (por exemplo, custos cadastrados). Sem
+-- company_id eles não recebem acesso interno a nenhuma loja pelas políticas RLS.
+UPDATE public.profiles p
+SET company_id = NULL
+FROM public.customers c
 WHERE c.user_id = p.id;
 
 ALTER TABLE public.vehicles ALTER COLUMN company_id SET NOT NULL;
