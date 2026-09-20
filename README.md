@@ -1,231 +1,199 @@
-# 🚗 AutoGest - Sistema SaaS para Gerenciamento de Concessionária
+# LuxCar
 
-Sistema completo para gerenciamento de concessionárias e lojas de veículos, com foco em controle de estoque, negociações e comunicação interna entre vendedores.
+Sistema web para gestão de concessionárias e lojas de veículos, desenvolvido como projeto acadêmico. A aplicação centraliza o controle de estoque, custos, negociações, leads e indicadores comerciais, além de disponibilizar uma vitrine pública para consulta dos veículos cadastrados.
 
-## 🎯 Funcionalidades Principais
+## Sobre o projeto
 
-### ✅ Autenticação e Controle de Acesso
-- Sistema de login e registro
-- Perfis de usuário: Vendedor e Administrador
-- Controle de acesso baseado em funções (RBAC)
+A LuxCar foi concebida para reduzir a dependência de planilhas e informações dispersas na rotina de uma loja automotiva. O sistema oferece uma interface pública para clientes e um ambiente interno para a equipe comercial, mantendo os dados integrados em uma única plataforma.
 
-### 🚙 Gerenciamento de Veículos (CRUD Completo)
-- Cadastro de veículos com informações detalhadas
-- Controle de status: Disponível, Em Negociação, Vendido
-- Gestão de estoque em tempo real
-- Filtros e busca avançada
+O projeto demonstra, na prática, conceitos de desenvolvimento de aplicações web, autenticação, controle de acesso, banco de dados relacional, integração com serviços externos e organização de uma aplicação em camadas.
 
-### 💰 Controle Financeiro
-- Registro de valor de compra e venda
-- Controle de custos adicionais (manutenção, estética, mecânica)
-- Cálculo automático de lucro estimado
-- Integração com Tabela FIPE para valores de mercado
+## Objetivos
 
-### 🤝 Sistema de Negociações
-- Registro de negociações por veículo
-- Acompanhamento de estágios (Primeiro Contato → Finalizado)
-- **Alertas visuais** quando veículo está em negociação
-- Histórico completo de interações
-- Sistema de prioridades (Baixa, Média, Alta)
+- Centralizar o cadastro e o acompanhamento dos veículos em estoque.
+- Registrar custos, manutenções e informações financeiras de cada veículo.
+- Organizar negociações e interações realizadas com clientes.
+- Disponibilizar indicadores para apoiar decisões comerciais.
+- Oferecer uma vitrine digital com os veículos disponíveis.
+- Aplicar autenticação e regras de acesso aos dados da aplicação.
 
-### 📊 Dashboard e Relatórios
-- Métricas em tempo real
-- Indicadores de performance
-- Relatórios de vendas por período
-- Análise de giro de estoque
+## Funcionalidades
 
-### 🔧 Histórico de Manutenções
-- Registro de manutenções realizadas
-- Controle de custos por veículo
-- Histórico completo de serviços
+### Ambiente público
 
-## 🛠️ Tecnologias Utilizadas
+- Apresentação institucional da plataforma.
+- Consulta e filtragem dos veículos em estoque.
+- Visualização dos detalhes de cada veículo.
+- Cadastro e autenticação de clientes.
+- Registro de interesse por meio de leads.
 
-- **Frontend**: React 18 + TypeScript
-- **Roteamento**: React Router v7 (Data mode)
-- **Estilização**: Tailwind CSS v4
-- **Backend/Database**: Supabase
-  - PostgreSQL
-  - Authentication
-  - Row Level Security (RLS)
-  - Real-time subscriptions
-- **Gráficos**: Recharts
-- **Ícones**: Lucide React
+### Ambiente administrativo
 
-## 📋 Pré-requisitos
+- Autenticação de usuários internos.
+- Dashboard com indicadores operacionais e comerciais.
+- Cadastro, edição, consulta e exclusão de veículos.
+- Controle de status do estoque.
+- Registro de custos e manutenções.
+- Acompanhamento das etapas de uma negociação.
+- Histórico de interações com clientes.
+- Registro de veículos recebidos como parte do pagamento.
+- Relatórios de vendas e desempenho.
+- Consulta de valores de referência por meio da API FIPE.
 
-- Node.js 18+ e pnpm
-- Conta no Supabase (gratuita)
+## Tecnologias utilizadas
 
-## 🚀 Instalação e Configuração
+| Tecnologia | Finalidade |
+| --- | --- |
+| React 18 | Construção da interface de usuário |
+| TypeScript | Tipagem estática e maior segurança no desenvolvimento |
+| Vite | Ambiente de desenvolvimento e geração da versão de produção |
+| React Router | Definição e controle das rotas da aplicação |
+| Tailwind CSS | Estilização e responsividade |
+| Radix UI e Material UI | Componentes acessíveis e elementos de interface |
+| Supabase | Autenticação, banco de dados PostgreSQL e armazenamento |
+| Recharts | Visualização de indicadores e relatórios |
+| API FIPE | Consulta de valores de referência de veículos |
 
-### 1. Clone o repositório
+## Arquitetura
 
-```bash
-git clone <seu-repositorio>
-cd autogest
+A aplicação utiliza uma arquitetura cliente-servidor baseada em serviços:
+
+```text
+Usuário
+   |
+   v
+Interface React
+   |
+   v
+Camada de serviços
+   |-------------------|
+   v                   v
+Supabase            API FIPE
+Auth + PostgreSQL   Valores de referência
 ```
 
-### 2. Instale as dependências
+No frontend, as páginas e os componentes são responsáveis pela apresentação e pela interação com o usuário. A camada de serviços concentra o acesso aos dados. O Supabase fornece autenticação e persistência em PostgreSQL, com políticas de segurança em nível de linha (RLS).
+
+## Estrutura do repositório
+
+```text
+luxcar/
+├── src/
+│   ├── app/
+│   │   ├── components/     # Componentes e layouts da interface
+│   │   ├── pages/          # Páginas públicas e administrativas
+│   │   └── routes.tsx      # Configuração das rotas
+│   ├── contexts/           # Estado global de autenticação
+│   ├── hooks/              # Hooks reutilizáveis
+│   ├── lib/                # Cliente Supabase e utilitários
+│   ├── services/           # Regras de acesso e manipulação de dados
+│   └── styles/             # Estilos globais e tema
+├── DOCUMENTACAO_ACADEMICA.md # Especificação acadêmica do sistema
+├── MODELO_FISICO_COMPLETO.sql # Modelo físico consolidado do banco
+├── SETUP_GUIDE.md            # Guia complementar de configuração
+└── supabase-*.sql            # Schema, migrações e ajustes do Supabase
+```
+
+## Pré-requisitos
+
+- Node.js 18 ou superior.
+- pnpm instalado.
+- Projeto criado no Supabase.
+- URL e chave anônima do projeto Supabase.
+
+## Instalação e execução
+
+1. Clone o repositório:
+
+```bash
+git clone https://github.com/Junior0481/luxcar.git
+cd luxcar
+```
+
+2. Instale as dependências:
 
 ```bash
 pnpm install
 ```
 
-### 3. Configure o Supabase
-
-#### 3.1. Crie um projeto no Supabase
-1. Acesse [supabase.com](https://supabase.com)
-2. Crie uma nova organização e projeto
-3. Anote a **URL do projeto** e a **anon key**
-
-#### 3.2. Execute o schema do banco de dados
-1. No dashboard do Supabase, vá em **SQL Editor**
-2. Abra o arquivo `supabase-schema.sql` deste projeto
-3. Copie e cole o conteúdo completo no SQL Editor
-4. Clique em **Run** para executar
-
-Isso criará:
-- Todas as tabelas necessárias
-- Triggers automáticos
-- Row Level Security (RLS)
-- Views para relatórios
-- Função para criar perfis automaticamente
-
-### 4. Configure as variáveis de ambiente
-
-Copie o arquivo `.env.example` para `.env`:
+3. Crie o arquivo local de variáveis de ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` e adicione suas credenciais do Supabase:
+No Windows PowerShell, utilize:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+4. Preencha as credenciais no arquivo `.env`:
 
 ```env
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-anon-key-aqui
+VITE_SUPABASE_ANON_KEY=sua-chave-anonima
 ```
 
-### 5. Inicie o servidor de desenvolvimento
+5. No SQL Editor do Supabase, execute o modelo do banco indicado para o ambiente. O arquivo `MODELO_FISICO_COMPLETO.sql` consolida a estrutura documentada do projeto. Scripts adicionais de migração e correção também estão disponíveis na raiz do repositório.
+
+6. Inicie o servidor de desenvolvimento:
 
 ```bash
 pnpm dev
 ```
 
-O sistema estará disponível em `http://localhost:5173`
+A aplicação ficará disponível, por padrão, em `http://localhost:5173`.
 
-## 👤 Primeiro Acesso
+## Scripts disponíveis
 
-1. Acesse a tela de registro em `/auth/register`
-2. Crie sua primeira conta (será um Administrador por padrão)
-3. Faça login com suas credenciais
-4. Comece cadastrando seus primeiros veículos!
+| Comando | Descrição |
+| --- | --- |
+| `pnpm dev` | Inicia o ambiente local de desenvolvimento |
+| `pnpm build` | Gera a versão otimizada para produção |
 
-## 📖 Guia de Uso
+## Principais rotas
 
-### Cadastrando Veículos
+| Rota | Descrição |
+| --- | --- |
+| `/` | Apresentação da plataforma |
+| `/estoque` | Vitrine pública de veículos |
+| `/vehicles/:id` | Detalhes públicos de um veículo |
+| `/auth/login` | Acesso de usuários internos |
+| `/client/login` | Acesso de clientes |
+| `/dashboard` | Painel administrativo |
+| `/dashboard/vehicles` | Gestão do estoque |
+| `/dashboard/negotiations` | Gestão das negociações |
+| `/dashboard/reports` | Relatórios gerenciais |
 
-1. Acesse **Veículos** no menu lateral
-2. Clique em **Novo Veículo**
-3. Preencha os dados:
-   - Marca, Modelo, Ano, Versão
-   - Valores de compra e venda
-   - Informações técnicas (cor, placa, km, combustível)
-4. Clique em **Cadastrar**
+## Banco de dados e segurança
 
-### Gerenciando Negociações
+O modelo de dados contempla entidades como perfis, lojas, veículos, custos, leads, negociações, interações e vendas. A segurança é apoiada pelos seguintes recursos:
 
-1. Acesse **Negociações** no menu
-2. Clique em **Nova Negociação**
-3. Selecione o veículo disponível
-4. Preencha dados do cliente
-5. Acompanhe o estágio da negociação
-6. Adicione interações ao histórico
+- autenticação gerenciada pelo Supabase Auth;
+- uso de JSON Web Tokens (JWT) nas sessões autenticadas;
+- políticas de Row Level Security (RLS);
+- separação entre as áreas pública e administrativa;
+- validação de dados na camada de serviços.
 
-**⚠️ Importante**: Quando um veículo entra em negociação, o sistema exibe alertas visuais para todos os vendedores, evitando conflitos!
+As chaves privadas do ambiente não devem ser adicionadas ao controle de versão. O arquivo `.env.example` deve conter somente os nomes das variáveis necessárias.
 
-### Adicionando Custos e Manutenções
+## Documentação acadêmica
 
-1. Acesse os detalhes de um veículo
-2. Na seção **Custos e Manutenções**, clique em **Adicionar**
-3. Selecione o tipo de custo
-4. Informe descrição e valor
-5. O lucro estimado será recalculado automaticamente
+O arquivo [`DOCUMENTACAO_ACADEMICA.md`](DOCUMENTACAO_ACADEMICA.md) apresenta detalhes adicionais do trabalho, incluindo:
 
-## 🏗️ Estrutura do Projeto
+- atores e casos de uso;
+- diagramas de caso de uso e de classes;
+- wireframes das principais interfaces;
+- modelagem do banco de dados;
+- modelo entidade-relacionamento;
+- arquitetura da aplicação;
+- considerações de acessibilidade.
 
-```
-src/
-├── app/
-│   ├── components/         # Componentes reutilizáveis
-│   │   ├── layouts/        # Layouts (Auth, Dashboard, Root)
-│   │   ├── CostForm.tsx
-│   │   ├── InteractionForm.tsx
-│   │   ├── NegotiationForm.tsx
-│   │   └── VehicleForm.tsx
-│   ├── pages/              # Páginas da aplicação
-│   │   ├── Dashboard.tsx
-│   │   ├── Vehicles.tsx
-│   │   ├── VehicleDetails.tsx
-│   │   ├── Negotiations.tsx
-│   │   ├── NegotiationDetails.tsx
-│   │   ├── Reports.tsx
-│   │   ├── Settings.tsx
-│   │   ├── Login.tsx
-│   │   ├── Register.tsx
-│   │   └── NotFound.tsx
-│   ├── routes.tsx          # Configuração de rotas
-│   └── App.tsx             # Componente principal
-├── contexts/
-│   └── AuthContext.tsx     # Contexto de autenticação
-├── lib/
-│   └── supabase.ts         # Cliente e tipos do Supabase
-└── styles/                 # Estilos globais
-```
+## Status do projeto
 
-## 🔐 Segurança
+Projeto acadêmico em desenvolvimento. Algumas funcionalidades e regras de negócio podem passar por ajustes conforme a evolução dos requisitos e a validação dos testes.
 
-- **Row Level Security (RLS)** habilitado em todas as tabelas
-- Políticas de acesso baseadas em perfis
-- Autenticação JWT via Supabase
-- Validação de dados no frontend e backend
+## Autoria
 
-## 📊 Modelo de Dados
-
-### Principais Tabelas
-
-- **profiles**: Perfis de usuários (vendedor/administrador)
-- **vehicles**: Cadastro de veículos
-- **vehicle_costs**: Custos e manutenções
-- **negotiations**: Negociações de venda
-- **interaction_history**: Histórico de interações
-- **sales**: Vendas finalizadas
-
-## 🎨 Planos SaaS (Futuro)
-
-- **Bronze**: Até 50 veículos
-- **Prata**: Até 200 veículos + Relatórios avançados
-- **Gold**: Veículos ilimitados + API + White Label
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Por favor:
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Add: MinhaFeature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT.
-
-## 📧 Suporte
-
-Para dúvidas ou suporte, abra uma issue no GitHub.
-
----
-
-Desenvolvido com ❤️ para revolucionar o gerenciamento de concessionárias no Brasil 🇧🇷
+Projeto desenvolvido para fins acadêmicos. Consulte o histórico do repositório para informações sobre autoria e contribuições.
