@@ -4,6 +4,7 @@ import { supabase, Vehicle } from '../../lib/supabase';
 import { Calendar, Car, Gauge, MapPin, Search, SlidersHorizontal } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { useCompany } from '../../contexts/CompanyContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -20,6 +21,7 @@ import {
 
 type PublicVehicle = Vehicle & {
   company_name?: string;
+  company_slug?: string;
   company_city?: string;
   company_state?: string;
   company_phone?: string;
@@ -31,12 +33,14 @@ const brl = (v: number) =>
 const ANY = 'all';
 
 export function PublicHome() {
+  const { company } = useCompany();
   const [vehicles, setVehicles] = useState<PublicVehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<PublicVehicle[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState(ANY);
+  const [selectedCompany, setSelectedCompany] = useState(ANY);
   const [minYear, setMinYear] = useState(ANY);
   const [maxYear, setMaxYear] = useState(ANY);
   const [minPrice, setMinPrice] = useState('');
@@ -51,7 +55,7 @@ export function PublicHome() {
 
   useEffect(() => {
     filterVehicles();
-  }, [searchTerm, selectedBrand, minYear, maxYear, minPrice, maxPrice, fuelType, transmission, vehicles]);
+  }, [searchTerm, selectedBrand, selectedCompany, minYear, maxYear, minPrice, maxPrice, fuelType, transmission, vehicles]);
 
   const loadVehicles = async () => {
     try {
@@ -100,6 +104,7 @@ export function PublicHome() {
       );
     }
     if (selectedBrand !== ANY) filtered = filtered.filter(v => v.brand === selectedBrand);
+    if (selectedCompany !== ANY) filtered = filtered.filter(v => v.company_slug === selectedCompany);
     if (minYear !== ANY) filtered = filtered.filter(v => v.year >= parseInt(minYear));
     if (maxYear !== ANY) filtered = filtered.filter(v => v.year <= parseInt(maxYear));
     if (minPrice) filtered = filtered.filter(v => v.sale_price >= parseFloat(minPrice));
@@ -113,6 +118,7 @@ export function PublicHome() {
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedBrand(ANY);
+    setSelectedCompany(ANY);
     setMinYear(ANY);
     setMaxYear(ANY);
     setMinPrice('');
@@ -123,6 +129,13 @@ export function PublicHome() {
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 30 }, (_, i) => currentYear - i);
+  const companies = Array.from(
+    new Map(
+      vehicles
+        .filter((vehicle) => vehicle.company_slug && vehicle.company_name)
+        .map((vehicle) => [vehicle.company_slug!, vehicle.company_name!])
+    ).entries()
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,11 +143,15 @@ export function PublicHome() {
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <Link to="/" className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                <Car className="size-6" />
-              </div>
+              {company?.logo_url ? (
+                <img src={company.logo_url} alt={`Logo ${company.name}`} className="size-10 rounded-2xl object-contain" />
+              ) : (
+                <div className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                  <Car className="size-6" aria-hidden="true" />
+                </div>
+              )}
               <div>
-                <h1 className="text-xl font-medium text-foreground">LuxCar</h1>
+                <h1 className="text-xl font-medium text-foreground">{company?.name || 'LuxCar'}</h1>
                 <p className="text-xs text-muted-foreground">Vitrine automotiva</p>
               </div>
             </Link>
@@ -172,6 +189,7 @@ export function PublicHome() {
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  aria-label="Buscar veículos por marca ou modelo"
                   placeholder="Busque por marca ou modelo"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -187,9 +205,19 @@ export function PublicHome() {
             {showFilters && (
               <div className="mt-6 grid grid-cols-1 gap-4 border-t border-border pt-6 md:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
-                  <Label>Marca</Label>
+                  <Label htmlFor="company-filter">Loja</Label>
+                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                    <SelectTrigger id="company-filter"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ANY}>Todas as lojas</SelectItem>
+                      {companies.map(([slug, name]) => <SelectItem key={slug} value={slug}>{name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand-filter">Marca</Label>
                   <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="brand-filter"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={ANY}>Todas</SelectItem>
                       {CAR_BRANDS.map(brand => <SelectItem key={brand} value={brand}>{brand}</SelectItem>)}

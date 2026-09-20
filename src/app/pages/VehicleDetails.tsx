@@ -18,7 +18,7 @@ const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-  disponível: { label: 'Disponível', variant: 'default' },
+  disponivel: { label: 'Disponível', variant: 'default' },
   em_negociacao: { label: 'Em Negociação', variant: 'secondary' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
@@ -89,7 +89,7 @@ export function VehicleDetails() {
   const totalInvestment = Number(vehicle.purchase_price) + totalCosts;
   const potentialProfit = Number(vehicle.sale_price) - totalInvestment;
   const activeNegotiations = negotiations.filter(n => !['finalizado', 'perdido'].includes(n.stage));
-  const b = statusBadge[vehicle.status] ?? statusBadge.disponível;
+  const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
 
   const infoRows = [
     vehicle.color && { label: 'Cor', value: vehicle.color },

@@ -30,7 +30,7 @@ export function Register() {
         navigate('/auth/login');
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Não foi possivel criar a conta. Tente novamente.');
+      setError(err.message || 'Não foi possível criar a conta. Tente novamente.');
     } finally {
       setLoading(false);
     }

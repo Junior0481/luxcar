@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompany } from '../../contexts/CompanyContext';
 import { supabase } from '../../lib/supabase';
 import { AlertCircle, Bell, CheckCircle, Database, Palette, Shield, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -17,6 +18,7 @@ type MessageState = {
 
 export function Settings() {
   const { profile, user, refreshProfile } = useAuth();
+  const { company } = useCompany();
   const [activeTab, setActiveTab] = useState('profile');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<MessageState>(null);
@@ -29,13 +31,16 @@ export function Settings() {
     confirmPassword: ''
   });
   const [notificationsForm, setNotificationsForm] = useState({
-    newNegotiations: true,
-    vehicleUpdates: true,
-    weeklyReports: false
+    negotiationStatus: true,
+    linkedVehicleUpdates: true
+  });
+  const [brandingForm, setBrandingForm] = useState({
+    name: '', logoUrl: '', faviconUrl: '', primaryColor: '#f8a746', secondaryColor: '#111827', customDomain: ''
   });
 
   const tabs = [
     { id: 'profile', label: 'Perfil', desc: 'Dados da conta', icon: User },
+    ...(profile?.role === 'administrador' ? [{ id: 'branding', label: 'Marca', desc: 'Identidade white label', icon: Palette }] : []),
     { id: 'security', label: 'Segurança', desc: 'Acesso e senha', icon: Shield },
     { id: 'notifications', label: 'Notificações', desc: 'Alertas da operação', icon: Bell },
     { id: 'system', label: 'Sistema', desc: 'Dados e backup', icon: Database }
@@ -47,6 +52,15 @@ export function Settings() {
       email: profile?.email || user?.email || ''
     });
   }, [profile, user]);
+
+  useEffect(() => {
+    if (!company) return;
+    setBrandingForm({
+      name: company.name || '', logoUrl: company.logo_url || '', faviconUrl: company.favicon_url || '',
+      primaryColor: company.primary_color || '#f8a746', secondaryColor: company.secondary_color || '#111827',
+      customDomain: company.custom_domain || ''
+    });
+  }, [company]);
 
   useEffect(() => {
     if (!user) return;
@@ -119,11 +133,26 @@ export function Settings() {
         showMessage('success', 'Preferencias salvas.');
       }
 
+      if (activeTab === 'branding') {
+        if (profile.role !== 'administrador' || !profile.company_id) throw new Error('Apenas administradores podem alterar a marca.');
+        const { error } = await supabase.from('companies').update({
+          name: brandingForm.name.trim(),
+          logo_url: brandingForm.logoUrl.trim() || null,
+          favicon_url: brandingForm.faviconUrl.trim() || null,
+          primary_color: brandingForm.primaryColor,
+          secondary_color: brandingForm.secondaryColor,
+          custom_domain: brandingForm.customDomain.trim() || null
+        }).eq('id', profile.company_id).select('id').single();
+        if (error) throw error;
+        window.dispatchEvent(new Event('luxcar:branding-updated'));
+        showMessage('success', 'Identidade da loja atualizada.');
+      }
+
       if (activeTab === 'system') {
         showMessage('success', 'Nenhuma configuração editável nesta aba.');
       }
     } catch (error: any) {
-      showMessage('error', error.message || 'Não foi possivel salvar.');
+      showMessage('error', error.message || 'Não foi possível salvar.');
     } finally {
       setSaving(false);
     }
@@ -181,7 +210,7 @@ export function Settings() {
 
       showMessage('success', mode === 'backup' ? 'Backup gerado.' : 'Exportação gerada.');
     } catch (error: any) {
-      showMessage('error', error.message || 'Não foi possivel exportar os dados.');
+      showMessage('error', error.message || 'Não foi possível exportar os dados.');
     } finally {
       setSaving(false);
     }
@@ -193,14 +222,13 @@ export function Settings() {
       sessionStorage.clear();
       showMessage('success', 'Cache local limpo.');
     } catch (error: any) {
-      showMessage('error', error.message || 'Não foi possivel limpar o cache.');
+      showMessage('error', error.message || 'Não foi possível limpar o cache.');
     }
   };
 
   const notificationRows = [
-    { key: 'newNegotiations' as const, title: 'Novas negociações', desc: 'Receber alertas quando houver novas oportunidades' },
-    { key: 'vehicleUpdates' as const, title: 'Atualizações de veículos', desc: 'Notificar sobre mudancas importantes no estoque' },
-    { key: 'weeklyReports' as const, title: 'Resumo semanal', desc: 'Receber uma leitura semanal de vendas e pipeline' }
+    { key: 'negotiationStatus' as const, title: 'Status da negociação', desc: 'Receber alertas quando o estágio de uma negociação mudar' },
+    { key: 'linkedVehicleUpdates' as const, title: 'Veículo vinculado', desc: 'Notificar apenas sobre atualizações importantes do veículo negociado' }
   ];
 
   return (
@@ -213,7 +241,7 @@ export function Settings() {
       />
 
       {message && (
-        <div className={cn(
+        <div role={message.type === 'error' ? 'alert' : 'status'} aria-live="polite" className={cn(
           'flex items-start gap-3 rounded-2xl border p-4 shadow-lux-sm',
           message.type === 'success'
             ? 'border-primary/20 bg-accent text-accent-foreground'
@@ -313,6 +341,17 @@ export function Settings() {
                 </div>
               )}
 
+              {activeTab === 'branding' && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2"><Label htmlFor="brandName">Nome da loja</Label><Input id="brandName" value={brandingForm.name} onChange={(e) => setBrandingForm({ ...brandingForm, name: e.target.value })} /></div>
+                  <div className="space-y-2"><Label htmlFor="brandDomain">Domínio personalizado</Label><Input id="brandDomain" placeholder="loja.exemplo.com.br" value={brandingForm.customDomain} onChange={(e) => setBrandingForm({ ...brandingForm, customDomain: e.target.value })} /></div>
+                  <div className="space-y-2"><Label htmlFor="brandLogo">URL do logotipo</Label><Input id="brandLogo" type="url" value={brandingForm.logoUrl} onChange={(e) => setBrandingForm({ ...brandingForm, logoUrl: e.target.value })} /></div>
+                  <div className="space-y-2"><Label htmlFor="brandFavicon">URL do favicon</Label><Input id="brandFavicon" type="url" value={brandingForm.faviconUrl} onChange={(e) => setBrandingForm({ ...brandingForm, faviconUrl: e.target.value })} /></div>
+                  <div className="space-y-2"><Label htmlFor="brandPrimary">Cor principal</Label><Input id="brandPrimary" type="color" value={brandingForm.primaryColor} onChange={(e) => setBrandingForm({ ...brandingForm, primaryColor: e.target.value })} className="h-12" /></div>
+                  <div className="space-y-2"><Label htmlFor="brandSecondary">Cor secundária</Label><Input id="brandSecondary" type="color" value={brandingForm.secondaryColor} onChange={(e) => setBrandingForm({ ...brandingForm, secondaryColor: e.target.value })} className="h-12" /></div>
+                </div>
+              )}
+
               {activeTab === 'notifications' && (
                 <div className="divide-y divide-border">
                   {notificationRows.map((row) => (
@@ -322,6 +361,7 @@ export function Settings() {
                         <p className="text-sm text-muted-foreground">{row.desc}</p>
                       </div>
                       <Switch
+                        aria-label={row.title}
                         checked={notificationsForm[row.key]}
                         onCheckedChange={(checked) =>
                           setNotificationsForm({ ...notificationsForm, [row.key]: checked })
@@ -336,7 +376,7 @@ export function Settings() {
                 <div className="space-y-6">
                   <div className="grid gap-3 rounded-2xl border border-border bg-muted/40 p-4 text-sm md:grid-cols-3">
                     <div>
-                      <p className="text-xs text-muted-foreground">Versao</p>
+                      <p className="text-xs text-muted-foreground">Versão</p>
                       <p className="font-medium text-foreground">1.0.0</p>
                     </div>
                     <div>
@@ -344,7 +384,7 @@ export function Settings() {
                       <p className="font-medium text-foreground">Supabase</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Responsavel</p>
+                      <p className="text-xs text-muted-foreground">Responsável</p>
                       <p className="font-medium text-foreground">{profile?.full_name || 'Não identificado'}</p>
                     </div>
                   </div>

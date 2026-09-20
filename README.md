@@ -133,9 +133,10 @@ Copy-Item .env.example .env
 ```env
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua-chave-anonima
+VITE_DEFAULT_COMPANY_SLUG=luxcar
 ```
 
-5. No SQL Editor do Supabase, execute o modelo do banco indicado para o ambiente. O arquivo `MODELO_FISICO_COMPLETO.sql` consolida a estrutura documentada do projeto. Scripts adicionais de migração e correção também estão disponíveis na raiz do repositório.
+5. No SQL Editor do Supabase, execute `MODELO_FISICO_COMPLETO.sql` em uma instalação nova. Em um banco existente, aplique as migrações versionadas em ordem. A migração `supabase-white-label-migration.sql` adiciona isolamento multitenant, identidade visual, pagamentos, relacionamento cliente-loja e as políticas RLS correspondentes.
 
 6. Inicie o servidor de desenvolvimento:
 
@@ -151,6 +152,10 @@ A aplicação ficará disponível, por padrão, em `http://localhost:5173`.
 | --- | --- |
 | `pnpm dev` | Inicia o ambiente local de desenvolvimento |
 | `pnpm build` | Gera a versão otimizada para produção |
+| `pnpm test` | Executa os testes unitários e de integração |
+| `pnpm test:coverage` | Gera o relatório de cobertura |
+| `pnpm test:e2e` | Executa os fluxos E2E com Playwright |
+| `pnpm check` | Valida tipos, testes e build de produção |
 
 ## Principais rotas
 
@@ -164,7 +169,36 @@ A aplicação ficará disponível, por padrão, em `http://localhost:5173`.
 | `/dashboard` | Painel administrativo |
 | `/dashboard/vehicles` | Gestão do estoque |
 | `/dashboard/negotiations` | Gestão das negociações |
+| `/dashboard/payments` | Pagamentos vinculados às negociações |
 | `/dashboard/reports` | Relatórios gerenciais |
+
+## Fluxo de desenvolvimento
+
+1. Crie uma branch a partir da `main`.
+2. Implemente a alteração mantendo todas as consultas internas escopadas por `company_id`.
+3. Para mudanças no banco, adicione uma migração SQL versionada e revise as políticas RLS.
+4. Execute `pnpm check` antes de criar o commit.
+5. Abra um pull request descrevendo impacto, testes e eventual procedimento de migração.
+
+Nunca utilize `service_role` no frontend. Essa chave é exclusiva de rotinas administrativas executadas em ambiente seguro.
+
+## Arquitetura white label
+
+Cada empresa é um tenant independente. Usuários internos, veículos, negociações, vendas, pagamentos e relatórios são associados por `company_id`. O isolamento é aplicado simultaneamente na aplicação e nas políticas RLS do PostgreSQL.
+
+Nome, logotipo, cores, favicon e domínio podem ser configurados por empresa. Clientes finais permanecem separados dos usuários internos e podem se relacionar com diversas lojas por meio de `customer_companies`.
+
+## Processo de deploy
+
+O projeto possui configuração para deploy na Vercel:
+
+1. Configure `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e `VITE_DEFAULT_COMPANY_SLUG` nas variáveis do projeto.
+2. Aplique e valide previamente as migrações no Supabase.
+3. Execute `pnpm check` localmente ou no pipeline de CI.
+4. Publique a branch e valide o preview da Vercel.
+5. Faça merge na `main` somente após os testes; a Vercel produzirá o deploy de produção.
+
+Para domínios white label, cadastre o domínio na Vercel e preencha `custom_domain` na empresa correspondente.
 
 ## Banco de dados e segurança
 

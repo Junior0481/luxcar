@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { CalendarDays, Filter, Handshake, Plus, Search, UserRound } from 'lucide-react';
 import { NegotiationForm } from '../components/NegotiationForm';
 import { Card, CardContent } from '../components/ui/card';
@@ -26,13 +27,13 @@ type NegotiationWithDetails = Negotiation & {
 
 const stageLabels: Record<string, string> = {
   primeiro_contato: 'Primeiro contato',
-  avaliação: 'Avaliação',
+  avaliacao: 'Avaliação',
   test_drive_agendado: 'Test drive agendado',
   test_drive_realizado: 'Test drive realizado',
   proposta_enviada: 'Proposta enviada',
-  negociação_preço: 'Negociação de preço',
-  aprovação_credito: 'Aprovação de crédito',
-  documentação: 'Documentação',
+  negociacao_preco: 'Negociação de preço',
+  aprovacao_credito: 'Aprovação de crédito',
+  documentacao: 'Documentação',
   finalizado: 'Finalizado',
   perdido: 'Perdido'
 };
@@ -47,6 +48,7 @@ const priorityMeta: Record<string, { label: string; variant: 'default' | 'outlin
 };
 
 export function Negotiations() {
+  const { profile } = useAuth();
   const [negotiations, setNegotiations] = useState<NegotiationWithDetails[]>([]);
   const [filteredNegotiations, setFilteredNegotiations] = useState<NegotiationWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,8 +57,8 @@ export function Negotiations() {
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    loadNegotiations();
-  }, []);
+    if (profile?.company_id) loadNegotiations();
+  }, [profile?.company_id]);
 
   useEffect(() => {
     filterNegotiations();
@@ -71,6 +73,7 @@ export function Negotiations() {
           vehicle:vehicles(*),
           seller:profiles(*)
         `)
+        .eq('company_id', profile!.company_id!)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -132,7 +135,7 @@ export function Negotiations() {
         icon={Handshake}
         eyebrow="Pipeline comercial"
         title="Negociações"
-        description="Acompanhe cada oportunidade pelo cliente, veículo, prioridade e proxima etapa de venda."
+        description="Acompanhe cada oportunidade pelo cliente, veículo, prioridade e próxima etapa de venda."
         action={(
           <Button size="lg" onClick={() => setShowForm(true)}>
             <Plus className="size-4" />
@@ -143,8 +146,8 @@ export function Negotiations() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard title="Pipeline ativo" value={summary.active} description="Conversas em andamento" icon={Handshake} accent />
-        <MetricCard title="Alta prioridade" value={summary.highPriority} description="Precisam de ação rapida" icon={UserRound} />
-        <MetricCard title="Finalizadas" value={summary.closed} description="Negocios ganhos" icon={CalendarDays} />
+        <MetricCard title="Alta prioridade" value={summary.highPriority} description="Precisam de ação rápida" icon={UserRound} />
+        <MetricCard title="Finalizadas" value={summary.closed} description="Negócios ganhos" icon={CalendarDays} />
       </div>
 
       <Card>
@@ -168,13 +171,13 @@ export function Negotiations() {
                 <SelectItem value="active">Ativas</SelectItem>
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="primeiro_contato">Primeiro contato</SelectItem>
-                <SelectItem value="avaliação">Avaliação</SelectItem>
+                <SelectItem value="avaliacao">Avaliação</SelectItem>
                 <SelectItem value="test_drive_agendado">Test drive agendado</SelectItem>
                 <SelectItem value="test_drive_realizado">Test drive realizado</SelectItem>
                 <SelectItem value="proposta_enviada">Proposta enviada</SelectItem>
-                <SelectItem value="negociação_preço">Negociação de preço</SelectItem>
-                <SelectItem value="aprovação_credito">Aprovação de credito</SelectItem>
-                <SelectItem value="documentação">Documentação</SelectItem>
+                <SelectItem value="negociacao_preco">Negociação de preço</SelectItem>
+                <SelectItem value="aprovacao_credito">Aprovação de crédito</SelectItem>
+                <SelectItem value="documentacao">Documentação</SelectItem>
                 <SelectItem value="finalizado">Finalizado</SelectItem>
                 <SelectItem value="perdido">Perdido</SelectItem>
               </SelectContent>
@@ -226,7 +229,7 @@ export function Negotiations() {
 
                   <div className="grid gap-3 rounded-xl bg-muted/50 p-3 text-sm sm:grid-cols-3">
                     <div>
-                      <p className="text-xs text-muted-foreground">Veiculo</p>
+                      <p className="text-xs text-muted-foreground">Veículo</p>
                       <p className="font-medium text-foreground">
                         {negotiation.vehicle
                           ? `${negotiation.vehicle.brand} ${negotiation.vehicle.model}`

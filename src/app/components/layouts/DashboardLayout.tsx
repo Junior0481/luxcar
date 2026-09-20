@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, NavLink } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useCompany } from '../../../contexts/CompanyContext';
 import {
   Car,
   LayoutDashboard,
   Handshake,
   BarChart3,
+  CreditCard,
   Settings,
   LogOut,
   Menu,
@@ -21,6 +23,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/dashboard/vehicles', icon: Car, label: 'Veículos' },
   { to: '/dashboard/negotiations', icon: Handshake, label: 'Negociações' },
+  { to: '/dashboard/payments', icon: CreditCard, label: 'Pagamentos' },
   { to: '/dashboard/reports', icon: BarChart3, label: 'Relatórios' },
   { to: '/dashboard/settings', icon: Settings, label: 'Configurações' }
 ];
@@ -35,14 +38,17 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 
 export function DashboardLayout() {
   const { user, profile, loading, signOut } = useAuth();
+  const { company } = useCompany();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth/login', { replace: true });
+    } else if (!loading && user && !profile) {
+      navigate('/estoque', { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, profile, loading, navigate]);
 
   if (loading) {
     return (
@@ -78,11 +84,15 @@ export function DashboardLayout() {
 
   const brand = (
     <div className="flex items-center gap-3">
-      <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
-        <Car className="size-6" />
-      </div>
+      {company?.logo_url ? (
+        <img src={company.logo_url} alt={`Logo ${company.name}`} className="size-11 rounded-2xl object-contain" />
+      ) : (
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
+          <Car className="size-6" aria-hidden="true" />
+        </div>
+      )}
       <div>
-        <h1 className="text-lg font-medium leading-tight text-sidebar-foreground">LuxCar</h1>
+        <h1 className="text-lg font-medium leading-tight text-sidebar-foreground">{company?.name || 'LuxCar'}</h1>
         <p className="text-xs text-sidebar-foreground/60">Centro da loja</p>
       </div>
     </div>
@@ -180,7 +190,7 @@ export function DashboardLayout() {
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Car className="size-5" />
             </div>
-            <span className="font-medium text-foreground">LuxCar</span>
+            <span className="font-medium text-foreground">{company?.name || 'LuxCar'}</span>
           </div>
           <ThemeToggle />
         </header>

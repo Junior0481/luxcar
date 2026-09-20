@@ -23,8 +23,8 @@ const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-  disponível: { label: "Disponível", variant: "default" },
-  em_negociação: { label: "Em negociação", variant: "secondary" },
+  disponivel: { label: "Disponível", variant: "default" },
+  em_negociacao: { label: "Em negociação", variant: "secondary" },
   vendido: { label: "Vendido", variant: "outline" },
 };
 
@@ -40,8 +40,8 @@ export function Vehicles() {
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
-    loadVehicles();
-  }, []);
+    if (profile?.company_id) loadVehicles();
+  }, [profile?.company_id]);
 
   useEffect(() => {
     filterVehicles();
@@ -52,6 +52,7 @@ export function Vehicles() {
       const { data, error } = await supabase
         .from("vehicles")
         .select("*")
+        .eq("company_id", profile!.company_id!)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -93,7 +94,7 @@ export function Vehicles() {
         .limit(1);
 
       if (sales && sales.length > 0) {
-        alert("Não é possivel excluir: este veículo já possui vendas registradas.");
+        alert("Não é possível excluir: este veículo já possui vendas registradas.");
         return;
       }
 
@@ -165,8 +166,8 @@ export function Vehicles() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="disponível">Disponível</SelectItem>
-                <SelectItem value="em_negociação">Em negociação</SelectItem>
+                <SelectItem value="disponivel">Disponível</SelectItem>
+                <SelectItem value="em_negociacao">Em negociação</SelectItem>
                 <SelectItem value="vendido">Vendido</SelectItem>
               </SelectContent>
             </Select>
@@ -194,7 +195,7 @@ export function Vehicles() {
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredVehicles.map((vehicle) => {
-            const b = statusBadge[vehicle.status] ?? statusBadge.disponível;
+            const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
             const margin = Number(vehicle.sale_price || 0) - Number(vehicle.purchase_price || 0);
 
             return (
@@ -230,7 +231,7 @@ export function Vehicles() {
                 <CardContent className="space-y-4 p-4">
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-xs text-muted-foreground">Preco de venda</p>
+                      <p className="text-xs text-muted-foreground">Preço de venda</p>
                       <p className="text-2xl font-medium leading-tight text-foreground">{brl(vehicle.sale_price)}</p>
                     </div>
                     <div className="text-right">
@@ -247,9 +248,11 @@ export function Vehicles() {
                     <Button asChild variant="secondary" size="sm" className="flex-1">
                       <Link to={`/dashboard/vehicles/${vehicle.id}`}>Ver ficha</Link>
                     </Button>
-                    <Button variant="outline" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo">
-                      <Edit className="size-4" />
-                    </Button>
+                    {isAdmin && (
+                      <Button variant="outline" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo">
+                        <Edit className="size-4" />
+                      </Button>
+                    )}
                     {isAdmin && (
                       <Button
                         variant="outline"

@@ -139,7 +139,7 @@ export function Reports() {
   };
 
   const statCards = [
-    { title: 'Vendas no período', value: metrics.totalSales, icon: Handshake, accent: true, description: 'Negocios fechados' },
+    { title: 'Vendas no período', value: metrics.totalSales, icon: Handshake, accent: true, description: 'Negócios fechados' },
     { title: 'Receita', value: brl(metrics.totalRevenue), icon: DollarSign, accent: false, description: 'Valor vendido' },
     { title: 'Lucro estimado', value: brl(metrics.totalProfit), icon: TrendingUp, accent: false, description: 'Venda menos compra' },
     { title: 'Conversão', value: `${Number.isFinite(metrics.conversionRate) ? metrics.conversionRate.toFixed(1) : '0.0'}%`, icon: Car, accent: false, description: 'Vendas sobre negociações' }

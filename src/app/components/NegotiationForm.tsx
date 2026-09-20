@@ -36,14 +36,15 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
   });
 
   useEffect(() => {
-    loadVehicles();
-  }, []);
+    if (profile?.company_id) loadVehicles();
+  }, [profile?.company_id]);
 
   const loadVehicles = async () => {
     try {
       const { data } = await supabase
         .from('vehicles')
         .select('*')
+        .eq('company_id', profile!.company_id!)
         .eq('status', 'disponivel')
         .order('brand');
       if (data) setVehicles(data);
@@ -72,14 +73,15 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
           notes: formData.notes || null,
           priority: formData.priority
         }
-      ]);
+      ]).select('id').single();
 
       if (negError) throw negError;
 
       await supabase
         .from('vehicles')
         .update({ status: 'em_negociacao' })
-        .eq('id', formData.vehicle_id);
+        .eq('id', formData.vehicle_id)
+        .eq('company_id', profile!.company_id!);
 
       onClose();
     } catch (err: any) {

@@ -18,6 +18,7 @@ import { TradeInVehicleForm } from '../components/TradeInVehicleForm';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { useAuth } from '../../contexts/AuthContext';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
@@ -60,6 +61,7 @@ const interactionTypeLabels: Record<string, string> = {
 
 export function NegotiationDetails() {
   const { id } = useParams();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const [negotiation, setNegotiation] = useState<NegotiationWithDetails | null>(null);
   const [interactions, setInteractions] = useState<InteractionWithUser[]>([]);
@@ -72,10 +74,10 @@ export function NegotiationDetails() {
   const [tradeInAvailable, setTradeInAvailable] = useState(true);
 
   useEffect(() => {
-    if (id) {
+    if (id && profile?.company_id) {
       loadNegotiationDetails();
     }
-  }, [id]);
+  }, [id, profile?.company_id]);
 
   const loadNegotiationDetails = async () => {
     try {
@@ -88,6 +90,7 @@ export function NegotiationDetails() {
             seller:profiles(*)
           `)
           .eq('id', id)
+          .eq('company_id', profile!.company_id!)
           .single(),
         supabase
           .from('interaction_history')
@@ -129,7 +132,8 @@ export function NegotiationDetails() {
       const { error: vehicleError } = await supabase
         .from('vehicles')
         .update({ status: 'vendido' })
-        .eq('id', current.vehicle_id);
+        .eq('id', current.vehicle_id)
+        .eq('company_id', current.company_id!);
 
       if (vehicleError) throw vehicleError;
 
@@ -146,6 +150,7 @@ export function NegotiationDetails() {
           .from('sales')
           .insert([{
             negotiation_id: current.id,
+            company_id: current.company_id,
             vehicle_id: current.vehicle_id,
             seller_id: current.seller_id,
             final_price: current.offered_price || current.vehicle?.sale_price || 0,
@@ -165,7 +170,8 @@ export function NegotiationDetails() {
     const { error: vehicleError } = await supabase
       .from('vehicles')
       .update({ status: nextVehicleStatus })
-      .eq('id', current.vehicle_id);
+      .eq('id', current.vehicle_id)
+      .eq('company_id', current.company_id!);
 
     if (vehicleError) throw vehicleError;
   };
@@ -180,7 +186,10 @@ export function NegotiationDetails() {
       const { error } = await supabase
         .from('negotiations')
         .update({ stage: newStage })
-        .eq('id', negotiation.id);
+        .eq('id', negotiation.id)
+        .eq('company_id', profile!.company_id!)
+        .select('id')
+        .single();
 
       if (error) throw error;
 
@@ -203,7 +212,10 @@ export function NegotiationDetails() {
       const { error } = await supabase
         .from('negotiations')
         .update({ priority: newPriority })
-        .eq('id', negotiation.id);
+        .eq('id', negotiation.id)
+        .eq('company_id', profile!.company_id!)
+        .select('id')
+        .single();
 
       if (error) throw error;
 

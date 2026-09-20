@@ -42,20 +42,20 @@ const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
-  disponível: { label: 'Disponível', variant: 'default' },
-  em_negociação: { label: 'Em negociação', variant: 'secondary' },
+  disponivel: { label: 'Disponível', variant: 'default' },
+  em_negociacao: { label: 'Em negociação', variant: 'secondary' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
 
 const stageBadge: Record<string, string> = {
   primeiro_contato: 'Primeiro contato',
-  avaliação: 'Avaliação',
+  avaliacao: 'Avaliação',
   test_drive_agendado: 'Test drive agendado',
   test_drive_realizado: 'Test drive realizado',
   proposta_enviada: 'Proposta enviada',
-  negociação_preço: 'Negociação de preço',
-  aprovação_credito: 'Aprovação de crédito',
-  documentação: 'Documentação',
+  negociacao_preco: 'Negociação de preço',
+  aprovacao_credito: 'Aprovação de crédito',
+  documentacao: 'Documentação',
   finalizado: 'Finalizado',
   perdido: 'Perdido'
 };
@@ -68,20 +68,36 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    if (profile?.company_id) loadDashboardData();
+  }, [profile?.company_id]);
 
   const loadDashboardData = async () => {
     try {
-      const [metricsRes, vehiclesRes, negotiationsRes] = await Promise.all([
-        supabase.from('dashboard_metrics').select('*').single(),
-        supabase.from('vehicles').select('*').order('created_at', { ascending: false }).limit(5),
-        supabase.from('negotiations').select('*').order('created_at', { ascending: false }).limit(5)
+      const companyId = profile?.company_id;
+      if (!companyId) throw new Error('Usuário sem empresa vinculada.');
+
+      const [vehiclesRes, negotiationsRes] = await Promise.all([
+        supabase.from('vehicles').select('*').eq('company_id', companyId).order('created_at', { ascending: false }),
+        supabase.from('negotiations').select('*').eq('company_id', companyId).order('created_at', { ascending: false })
       ]);
 
-      if (metricsRes.data) setMetrics(metricsRes.data);
-      if (vehiclesRes.data) setRecentVehicles(vehiclesRes.data);
-      if (negotiationsRes.data) setRecentNegotiations(negotiationsRes.data);
+      if (vehiclesRes.error) throw vehiclesRes.error;
+      if (negotiationsRes.error) throw negotiationsRes.error;
+
+      const vehicles = vehiclesRes.data || [];
+      const negotiations = negotiationsRes.data || [];
+      setMetrics({
+        vehicles_available: vehicles.filter((vehicle) => vehicle.status === 'disponivel').length,
+        vehicles_in_negotiation: vehicles.filter((vehicle) => vehicle.status === 'em_negociacao').length,
+        vehicles_sold: vehicles.filter((vehicle) => vehicle.status === 'vendido').length,
+        active_negotiations: negotiations.filter((item) => !['finalizado', 'perdido'].includes(item.stage)).length,
+        monthly_revenue: 0,
+        potential_profit: vehicles
+          .filter((vehicle) => vehicle.status !== 'vendido')
+          .reduce((total, vehicle) => total + Number(vehicle.sale_price) - Number(vehicle.purchase_price), 0)
+      });
+      setRecentVehicles(vehicles.slice(0, 5));
+      setRecentNegotiations(negotiations.slice(0, 5));
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -108,7 +124,7 @@ export function Dashboard() {
   }
 
   const statusData = [
-    { name: 'Disponiveis', value: metrics?.vehicles_available || 0, color: 'var(--primary)' },
+    { name: 'Disponíveis', value: metrics?.vehicles_available || 0, color: 'var(--primary)' },
     { name: 'Em negociação', value: metrics?.vehicles_in_negotiation || 0, color: 'var(--muted-foreground)' },
     { name: 'Vendidos', value: metrics?.vehicles_sold || 0, color: 'var(--foreground)' }
   ];
@@ -126,7 +142,7 @@ export function Dashboard() {
       value: metrics?.vehicles_in_negotiation ?? 0,
       icon: Clock,
       accent: false,
-      description: 'Veiculos com conversa ativa'
+      description: 'Veículos com conversa ativa'
     },
     {
       title: 'Pipeline ativo',
@@ -177,7 +193,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Saude do estoque</CardTitle>
+            <CardTitle>Saúde do estoque</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div style={{ width: '100%', height: 256 }}>
@@ -233,7 +249,7 @@ export function Dashboard() {
               />
             ) : (
               recentVehicles.map((vehicle) => {
-                const b = statusBadge[vehicle.status] ?? statusBadge.disponível;
+                const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
                 return (
                   <Link
                     key={vehicle.id}

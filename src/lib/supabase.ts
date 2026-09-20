@@ -29,6 +29,10 @@ export type Company = {
   state?: string;
   logo_url?: string;
   primary_color?: string;
+  secondary_color?: string;
+  favicon_url?: string;
+  custom_domain?: string;
+  branding?: Record<string, unknown>;
   status: 'active' | 'inactive' | 'suspended';
   plan: 'basic' | 'pro' | 'enterprise';
   max_vehicles: number;
@@ -138,6 +142,22 @@ export type Sale = {
   commission?: number;
   sale_date: string;
   created_at: string;
+};
+
+export type Payment = {
+  id: string;
+  company_id: string;
+  negotiation_id: string;
+  sale_id?: string;
+  amount: number;
+  method: 'pix' | 'dinheiro' | 'cartao' | 'financiamento' | 'transferencia' | 'outro';
+  status: 'pending' | 'authorized' | 'paid' | 'cancelled' | 'refunded';
+  external_reference?: string;
+  notes?: string;
+  paid_at?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Customer = {

@@ -30,7 +30,8 @@ export function ClientRegister() {
         options: {
           data: {
             full_name: fullName,
-            phone: phone || null
+            phone: phone || null,
+            user_type: 'customer'
           }
         }
       });

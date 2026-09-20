@@ -24,7 +24,7 @@ export function Login() {
       await signIn(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Não foi possivel entrar. Verifique suas credenciais.');
+      setError(err.message || 'Não foi possível entrar. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }

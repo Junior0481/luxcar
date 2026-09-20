@@ -17,11 +17,14 @@ import { PublicHome } from './pages/PublicHome';
 import { PublicVehicleDetails } from './pages/PublicVehicleDetails';
 import { ClientLogin } from './pages/ClientLogin';
 import { ClientRegister } from './pages/ClientRegister';
+import { RouteError } from './pages/RouteError';
+import { Payments } from './pages/Payments';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     Component: RootLayout,
+    ErrorBoundary: RouteError,
     children: [
       {
         index: true,
@@ -61,6 +64,7 @@ export const router = createBrowserRouter([
           { path: 'negotiations', Component: Negotiations },
           { path: 'negotiations/:id', Component: NegotiationDetails },
           { path: 'reports', Component: Reports },
+          { path: 'payments', Component: Payments },
           { path: 'settings', Component: Settings }
         ]
       },

@@ -138,12 +138,17 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
         const { error } = await supabase
           .from("vehicles")
           .update(vehicleData)
-          .eq("id", vehicle.id);
+          .eq("id", vehicle.id)
+          .eq("company_id", profile!.company_id!)
+          .select('id')
+          .single();
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("vehicles")
-          .insert([vehicleData]);
+          .insert([vehicleData])
+          .select('id')
+          .single();
         if (error) throw error;
       }
 
