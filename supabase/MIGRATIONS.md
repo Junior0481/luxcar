@@ -11,6 +11,7 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 7. `20261007000700_storage.sql` — bucket de imagens e policies do Storage.
 8. `20261007000800_rls_hardening.sql` — remove policies públicas anteriores nas tabelas de negócio e instala regras por tenant/ownership e papel.
 9. `20261007000900_profile_guard.sql` — bloqueia alterações de `role` e `company_id` em perfis, exceto para `platform_admin` e `service_role`.
+10. `1000_signup_lockdown.sql` — redefine `handle_new_user` para criar todo perfil como `vendedor` sem empresa, ignorando `role` e `company_id` dos metadados de signup.
 
 As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ... IF EXISTS` antes do `CREATE`); DDL de tabelas/índices usa `IF NOT EXISTS` e funções/views usam `OR REPLACE` quando compatível.
 
