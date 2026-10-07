@@ -156,15 +156,16 @@ WHERE v.status = 'disponivel';
 -- =====================================================
 -- 8. UPDATED_AT
 -- =====================================================
+DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON companies
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+DROP TRIGGER IF EXISTS update_customers_updated_at ON customers;
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+DROP TRIGGER IF EXISTS update_leads_updated_at ON leads;
 CREATE TRIGGER update_leads_updated_at BEFORE UPDATE ON leads
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+DROP TRIGGER IF EXISTS update_trade_in_vehicles_updated_at ON trade_in_vehicles;
 CREATE TRIGGER update_trade_in_vehicles_updated_at BEFORE UPDATE ON trade_in_vehicles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -180,68 +181,5 @@ CREATE INDEX IF NOT EXISTS idx_leads_company_id ON leads(company_id);
 CREATE INDEX IF NOT EXISTS idx_trade_in_negotiation_id ON trade_in_vehicles(negotiation_id);
 
 -- =====================================================
--- 10. RLS
--- =====================================================
-ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE trade_in_vehicles ENABLE ROW LEVEL SECURITY;
+-- RLS policies are installed in the final hardening migration.
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'companies' AND policyname = 'Todos podem ver empresas'
-  ) THEN
-    CREATE POLICY "Todos podem ver empresas" ON companies
-      FOR SELECT USING (true);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customers' AND policyname = 'Usuarios autenticados podem ver clientes'
-  ) THEN
-    CREATE POLICY "Usuarios autenticados podem ver clientes" ON customers
-      FOR SELECT USING (auth.uid() IS NOT NULL);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customers' AND policyname = 'Usuarios autenticados podem criar clientes'
-  ) THEN
-    CREATE POLICY "Usuarios autenticados podem criar clientes" ON customers
-      FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'leads' AND policyname = 'Qualquer pessoa pode criar leads'
-  ) THEN
-    CREATE POLICY "Qualquer pessoa pode criar leads" ON leads
-      FOR INSERT WITH CHECK (true);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'leads' AND policyname = 'Usuarios autenticados podem ver leads'
-  ) THEN
-    CREATE POLICY "Usuarios autenticados podem ver leads" ON leads
-      FOR SELECT USING (auth.uid() IS NOT NULL);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'trade_in_vehicles' AND policyname = 'Usuarios autenticados podem ver veiculos na troca'
-  ) THEN
-    CREATE POLICY "Usuarios autenticados podem ver veiculos na troca" ON trade_in_vehicles
-      FOR SELECT USING (auth.uid() IS NOT NULL);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'trade_in_vehicles' AND policyname = 'Usuarios autenticados podem criar veiculos na troca'
-  ) THEN
-    CREATE POLICY "Usuarios autenticados podem criar veiculos na troca" ON trade_in_vehicles
-      FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'trade_in_vehicles' AND policyname = 'Usuarios autenticados podem atualizar veiculos na troca'
-  ) THEN
-    CREATE POLICY "Usuarios autenticados podem atualizar veiculos na troca" ON trade_in_vehicles
-      FOR UPDATE USING (auth.uid() IS NOT NULL);
-  END IF;
-END $$;

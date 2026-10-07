@@ -11,21 +11,21 @@ ON CONFLICT (id) DO NOTHING;
 -- 2. Políticas de acesso ao bucket vehicles
 
 -- Permitir que todos vejam as imagens (público)
-CREATE POLICY "Imagens de veículos são públicas"
-ON storage.objects FOR SELECT
+DROP POLICY IF EXISTS "Imagens de veículos são públicas" ON storage.objects;
+CREATE POLICY "Imagens de veículos são públicas" ON storage.objects FOR SELECT
 USING (bucket_id = 'vehicles');
 
 -- Permitir que usuários autenticados façam upload
-CREATE POLICY "Usuários autenticados podem fazer upload"
-ON storage.objects FOR INSERT
+DROP POLICY IF EXISTS "Usuários autenticados podem fazer upload" ON storage.objects;
+CREATE POLICY "Usuários autenticados podem fazer upload" ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'vehicles'
   AND auth.uid() IS NOT NULL
 );
 
 -- Permitir que usuários autenticados atualizem suas próprias imagens
-CREATE POLICY "Usuários podem atualizar suas imagens"
-ON storage.objects FOR UPDATE
+DROP POLICY IF EXISTS "Usuários podem atualizar suas imagens" ON storage.objects;
+CREATE POLICY "Usuários podem atualizar suas imagens" ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'vehicles'
   AND auth.uid() IS NOT NULL
@@ -36,8 +36,8 @@ WITH CHECK (
 );
 
 -- Permitir que administradores deletem imagens
-CREATE POLICY "Administradores podem deletar imagens"
-ON storage.objects FOR DELETE
+DROP POLICY IF EXISTS "Administradores podem deletar imagens" ON storage.objects;
+CREATE POLICY "Administradores podem deletar imagens" ON storage.objects FOR DELETE
 USING (
   bucket_id = 'vehicles'
   AND EXISTS (
