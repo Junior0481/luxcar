@@ -10,6 +10,7 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 6. `20261007000600_policy_fixes.sql` — recria a view pública sem os campos internos; policies permissivas legadas foram omitidas.
 7. `20261007000700_storage.sql` — bucket de imagens e policies do Storage.
 8. `20261007000800_rls_hardening.sql` — remove policies públicas anteriores nas tabelas de negócio e instala regras por tenant/ownership e papel.
+9. `20261007000900_profile_guard.sql` — bloqueia alterações de `role` e `company_id` em perfis, exceto para `platform_admin` e `service_role`.
 
 As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ... IF EXISTS` antes do `CREATE`); DDL de tabelas/índices usa `IF NOT EXISTS` e funções/views usam `OR REPLACE` quando compatível.
 
@@ -18,6 +19,5 @@ As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ..
 - O esquema não define se vendedores devem compartilhar todos os registros da loja ou ver somente os próprios. As regras atuais permitem leitura por tenant e restringem criação de negociação ao vendedor autenticado; atualizações de negociação são por tenant.
 - O formulário público precisa inserir leads sem sessão. A regra exige empresa ativa e, quando informado, veículo pertencente à empresa indicada. Não há rate limit nem verificação anti-spam no SQL.
 - Clientes autenticados só podem ler/editar o próprio registro. O fluxo de cliente público não tem regra de ownership verificável; permanece fechado até o modelo de vínculo ser decidido.
-- A policy de atualização do próprio perfil ainda não restringe colunas `role`/`company_id`; isso exige grants/trigger ou RPC e deve ser corrigido antes de produção.
 - Uploads de Storage preservam as regras antigas por autenticação e papel; associação do caminho do objeto ao tenant ainda não está modelada.
 - `REFERENCE_MODELO_FISICO_COMPLETO.sql` foi movido para `supabase/reference/` e reduzido aqui a marcador para evitar execução acidental.
