@@ -22,6 +22,8 @@ sed -i "s/^project_id = .*/project_id = \"$PROJECT_ID\"/" supabase/config.toml
 # Só migrations numeradas (ignora REFERENCE_*.sql).
 mkdir -p supabase/migrations
 cp "$MIGRATIONS"/[0-9]*_*.sql supabase/migrations/
+# Migrations próprias deste worktree (ex.: P1-2) entram depois da cadeia do backend.
+cp "$ROOT"/supabase/migrations/[0-9]*_*.sql supabase/migrations/ 2>/dev/null || true
 mkdir -p supabase/tests
 cp "$ROOT"/supabase/tests/* supabase/tests/
 
