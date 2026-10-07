@@ -6,8 +6,8 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 2. `20261007000200_multitenant.sql` — companies, vínculo de tenant, clientes, leads, trocas, triggers e view pública; semente fixa de empresa legada.
 3. `20261007000300_platform_admin.sql` — papel de plataforma, políticas de perfil/empresa, criação de venda e RPCs.
 4. `20261007000400_white_label.sql` — branding, pagamentos, preferências, funções de tenant, policies e views públicas com colunas explícitas.
-5. `20261007000500_feature_alignment.sql` — complementos de schema para funcionalidades do frontend e triggers/views compatíveis.
-6. `20261007000600_policy_fixes.sql` — recria a view pública sem os campos internos; policies permissivas legadas foram omitidas.
+5. `20261007000500_feature_alignment.sql` — complementos de schema para funcionalidades do frontend e triggers compatíveis.
+6. `20261007000600_policy_fixes.sql` — concede acesso à view pública segura criada na migration 4; policies permissivas legadas foram omitidas.
 7. `20261007000700_storage.sql` — bucket de imagens e policies do Storage.
 8. `20261007000800_rls_hardening.sql` — remove policies públicas anteriores nas tabelas de negócio e instala regras por tenant/ownership e papel.
 9. `20261007000900_profile_guard.sql` — bloqueia alterações de `role` e `company_id` em perfis, exceto para `platform_admin` e `service_role`.

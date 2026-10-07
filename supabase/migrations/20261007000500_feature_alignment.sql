@@ -139,21 +139,6 @@ BEGIN
 END $$;
 
 -- =====================================================
--- 7. VIEW PUBLICA DE VEICULOS
--- =====================================================
-CREATE OR REPLACE VIEW public_vehicles AS
-SELECT
-  v.*,
-  c.name AS company_name,
-  c.slug AS company_slug,
-  c.city AS company_city,
-  c.state AS company_state,
-  c.phone AS company_phone
-FROM vehicles v
-LEFT JOIN companies c ON c.id = v.company_id
-WHERE v.status = 'disponivel';
-
--- =====================================================
 -- 8. UPDATED_AT
 -- =====================================================
 DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;

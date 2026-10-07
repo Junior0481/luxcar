@@ -1,4 +1,9 @@
 -- Replaces legacy policies with tenant and ownership rules.
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.trade_in_vehicles ENABLE ROW LEVEL SECURITY;
+
 DO $$
 DECLARE r RECORD;
 BEGIN
@@ -103,3 +108,21 @@ CREATE POLICY tradein_tenant_insert ON public.trade_in_vehicles FOR INSERT TO au
 DROP POLICY IF EXISTS tradein_admin_update ON public.trade_in_vehicles;
 CREATE POLICY tradein_admin_update ON public.trade_in_vehicles FOR UPDATE TO authenticated
   USING (public.is_company_admin(company_id)) WITH CHECK (public.is_company_admin(company_id));
+
+DO $$
+DECLARE unprotected_table TEXT;
+BEGIN
+  SELECT format('%I.%I', n.nspname, c.relname)
+    INTO unprotected_table
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public'
+    AND c.relkind IN ('r', 'p')
+    AND NOT c.relrowsecurity
+  ORDER BY c.relname
+  LIMIT 1;
+
+  IF unprotected_table IS NOT NULL THEN
+    RAISE EXCEPTION 'RLS está desabilitado na tabela %', unprotected_table;
+  END IF;
+END $$;
