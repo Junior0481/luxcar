@@ -15,7 +15,7 @@ select lives_ok(
   'vendedor A edita o próprio nome');
 
 :as_seller_b
-select is((with u as (update public.profiles set full_name = 'hack' where id = 'a0000000-0000-0000-0000-0000000000a1' returning 1) select count(*)::int from u),
+select is(rls_test.affected($$update public.profiles set full_name = 'hack' where id = 'a0000000-0000-0000-0000-0000000000a1'$$),
   0, 'vendedor B não edita perfil de outro usuário');
 
 -- Contexto de migration/SQL editor: postgres sem JWT precisa conseguir corrigir dados (P1-3).

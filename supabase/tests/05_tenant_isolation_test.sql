@@ -15,7 +15,7 @@ select is(rls_test.visible('select 1 from public.vehicles'), 1, 'vendedor A vê 
 select is(rls_test.visible('select 1 from public.customers'), 0, 'vendedor A não lista clientes finais');
 select is(rls_test.visible('select 1 from public.companies'), 1, 'vendedor A vê só a própria loja');
 
-select is((with u as (update public.negotiations set notes = 'x' where id = 'a0000000-0000-0000-0000-00000000f102' returning 1) select count(*)::int from u),
+select is(rls_test.affected($$update public.negotiations set notes = 'x' where id = 'a0000000-0000-0000-0000-00000000f102'$$),
   0, 'vendedor A não altera negociação do colega A2');
 
 select throws_ok(
@@ -34,9 +34,9 @@ select is(rls_test.visible('select 1 from public.negotiations'), 2, 'admin A vê
 select is(rls_test.visible('select 1 from public.leads'), 2, 'admin A vê todos os leads da loja A');
 select is(rls_test.visible('select 1 from public.negotiations where company_id = ''b0000000-0000-0000-0000-000000000001'''), 0, 'admin A não vê negociações da loja B');
 select is(rls_test.visible('select 1 from public.leads where company_id = ''b0000000-0000-0000-0000-000000000001'''), 0, 'admin A não vê leads da loja B');
-select is((with u as (update public.vehicles set sale_price = 1 where id = 'b0000000-0000-0000-0000-00000000f001' returning 1) select count(*)::int from u),
+select is(rls_test.affected($$update public.vehicles set sale_price = 1 where id = 'b0000000-0000-0000-0000-00000000f001'$$),
   0, 'admin A não altera veículo da loja B');
-select is((with u as (update public.companies set name = 'hack' where id = 'b0000000-0000-0000-0000-000000000001' returning 1) select count(*)::int from u),
+select is(rls_test.affected($$update public.companies set name = 'hack' where id = 'b0000000-0000-0000-0000-000000000001'$$),
   0, 'admin A não altera a loja B');
 
 -- Vendedor B

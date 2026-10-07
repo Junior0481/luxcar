@@ -20,6 +20,7 @@ cd "$WORK"
 $SB init --force >/dev/null
 sed -i "s/^project_id = .*/project_id = \"$PROJECT_ID\"/" supabase/config.toml
 # Só migrations numeradas (ignora REFERENCE_*.sql).
+mkdir -p supabase/migrations
 cp "$MIGRATIONS"/[0-9]*_*.sql supabase/migrations/
 mkdir -p supabase/tests
 cp "$ROOT"/supabase/tests/* supabase/tests/
@@ -32,6 +33,9 @@ STATUS=0
 echo "== 1ª aplicação da cadeia (db reset)"
 $SB db reset || { echo "FALHA: cadeia de migrations não aplica em banco vazio"; STATUS=1; }
 
+echo "== 2ª aplicação da cadeia (db reset de novo)"
+$SB db reset || { echo "FALHA: 2º db reset falhou"; STATUS=1; }
+
 echo "== testes pgTAP"
 $SB test db || STATUS=1
 
@@ -39,7 +43,7 @@ echo "== idempotência: reaplicando todas as migrations sobre o banco já migrad
 DB="supabase_db_$PROJECT_ID"
 for f in supabase/migrations/*.sql; do
   if ! docker exec -i "$DB" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q < "$f" >/dev/null 2>"$WORK/err.txt"; then
-    echo "not ok - idempotência: $(basename "$f") falhou na 2ª execução: $(head -c 300 "$WORK/err.txt")"
+    echo "not ok - idempotência: $(basename "$f") falhou na 2ª execução: $(grep -m1 -A2 ERROR "$WORK/err.txt" | tr -s '[:space:]' ' ' | head -c 400)"
     STATUS=1
   else
     echo "ok - idempotência: $(basename "$f")"
