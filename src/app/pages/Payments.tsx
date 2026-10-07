@@ -143,13 +143,15 @@ export function Payments() {
         </CardContent>
       </Card>
 
-      {payments.length === 0 ? (
+      {!error && payments.length === 0 ? (
         <EmptyState
           icon={CreditCard}
           title="Nenhum pagamento registrado"
           description="Registre o primeiro recebimento usando o formulário acima para acompanhar o status financeiro das negociações."
         />
-      ) : (
+      ) : null}
+
+      {payments.length > 0 && (
         <div className="space-y-3">
           {payments.map((payment) => (
             <Card key={payment.id}>

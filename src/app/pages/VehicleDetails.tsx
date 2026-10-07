@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { supabase, Vehicle, VehicleCost, Negotiation } from '../../lib/supabase';
 import {
@@ -13,6 +13,13 @@ import { CostForm } from '../components/CostForm';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -40,6 +47,7 @@ export function VehicleDetails() {
   const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCostForm, setShowCostForm] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -118,7 +126,7 @@ export function VehicleDetails() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {vehicle.year}
-            {vehicle.version ? ` â€¢ ${vehicle.version}` : ''}
+            {vehicle.version ? ` • ${vehicle.version}` : ''}
           </p>
         </div>
         <div className="ml-auto shrink-0">
@@ -151,16 +159,19 @@ export function VehicleDetails() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {vehicle.images.map((image, index) => (
-                <div
+                <button
                   key={index}
-                  className="aspect-square overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                  type="button"
+                  onClick={() => setSelectedPhoto(image)}
+                  aria-label={`Ver foto ${index + 1} ampliada`}
+                  className="aspect-square overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <img
                     src={image}
                     alt={`${vehicle.brand} ${vehicle.model} - Foto ${index + 1}`}
                     className="w-full h-full object-cover hover:scale-110 transition-transform"
                   />
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -253,6 +264,22 @@ export function VehicleDetails() {
           }}
         />
       )}
+
+      <Dialog open={!!selectedPhoto} onOpenChange={(open) => { if (!open) setSelectedPhoto(null); }}>
+        <DialogContent className="sm:max-w-3xl p-3 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Foto do veículo</DialogTitle>
+            <DialogDescription>{vehicle.brand} {vehicle.model}</DialogDescription>
+          </DialogHeader>
+          {selectedPhoto && (
+            <img
+              src={selectedPhoto}
+              alt={`${vehicle.brand} ${vehicle.model}`}
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

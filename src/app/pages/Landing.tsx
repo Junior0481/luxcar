@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import {
   ArrowRight,
@@ -23,7 +23,7 @@ const features = [
   {
     icon: LayoutDashboard,
     title: 'Centro de comando',
-    desc: 'KPIs, estoque e pipeline em uma visao clara para decidir o próximo movimento.'
+    desc: 'KPIs, estoque e pipeline em uma visão clara para decidir o próximo movimento.'
   },
   {
     icon: Car,
@@ -37,7 +37,7 @@ const features = [
   },
   {
     icon: BarChart3,
-    title: 'Relatórios acionaveis',
+    title: 'Relatórios acionáveis',
     desc: 'Receita, lucro, conversão e desempenho da equipe sem depender de planilhas.'
   },
   {
@@ -137,7 +137,7 @@ export function Landing() {
               <Link to="/auth/login">Entrar</Link>
             </Button>
             <Button asChild>
-              <Link to="/auth/register">Comecar agora</Link>
+              <Link to="/auth/register">Começar agora</Link>
             </Button>
           </div>
 
@@ -157,7 +157,7 @@ export function Landing() {
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Button asChild variant="secondary"><Link to="/auth/login">Entrar</Link></Button>
-              <Button asChild><Link to="/auth/register">Comecar</Link></Button>
+              <Button asChild><Link to="/auth/register">Começar</Link></Button>
             </div>
           </div>
         ) : null}
@@ -180,7 +180,7 @@ export function Landing() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
                   <Link to="/auth/register">
-                    Comecar agora
+                    Começar agora
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>
@@ -197,13 +197,13 @@ export function Landing() {
                     <p className="text-sm text-muted-foreground">Centro de comando</p>
                     <p className="text-xl font-medium">Visão da loja</p>
                   </div>
-                  <Badge>Ao vivo</Badge>
+                  <Badge variant="outline">Exemplo ilustrativo</Badge>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {['Estoque', 'Pipeline', 'Lucro'].map((label, index) => (
                     <div key={label} className={index === 0 ? 'rounded-2xl bg-accent p-4' : 'rounded-2xl bg-muted/50 p-4'}>
                       <p className="text-xs text-muted-foreground">{label}</p>
-                      <p className="mt-2 text-2xl font-medium">{index === 0 ? '18' : index === 1 ? '7' : 'R$ --'}</p>
+                      <p className="mt-2 text-2xl font-medium">{index === 0 ? '18 (ex.)' : index === 1 ? '7 (ex.)' : 'R$ 45.000'}</p>
                     </div>
                   ))}
                 </div>
@@ -292,7 +292,7 @@ export function Landing() {
                     ))}
                   </ul>
                   <Button asChild className="mt-8" variant={plan.highlight ? 'default' : 'outline'}>
-                    <Link to="/auth/register">Comecar</Link>
+                    <Link to="/auth/register">Começar</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -318,7 +318,7 @@ export function Landing() {
                 Pronto para organizar a operação da sua loja?
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-                Comece pela base: estoque claro, pipeline visivel e decisoes com mais contexto.
+                Comece pela base: estoque claro, pipeline visível e decisões com mais contexto.
               </p>
               <Button asChild size="lg" className="mt-8">
                 <Link to="/auth/register">

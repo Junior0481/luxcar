@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { ArrowLeft, Car, Calendar, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle } from 'lucide-react';
@@ -146,9 +146,11 @@ export function PublicVehicleDetails() {
                       {images.map((img, index) => (
                         <button
                           key={index}
+                          type="button"
                           onClick={() => setSelectedImage(index)}
-                          className={`aspect-video rounded-lg overflow-hidden border-2 transition-colors ${
-                            selectedImage === index ? 'border-primary' : 'border-border'
+                          aria-label={`Selecionar foto ${index + 1}`}
+                          className={`aspect-video rounded-lg overflow-hidden border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                            selectedImage === index ? 'border-primary ring-2 ring-primary/40' : 'border-border'
                           }`}
                         >
                           <img src={img} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />

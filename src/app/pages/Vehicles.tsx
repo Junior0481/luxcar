@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
@@ -18,6 +18,17 @@ import {
   SelectTrigger,
   SelectValue
 } from "../components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -38,6 +49,7 @@ export function Vehicles() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showForm, setShowForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     if (profile?.company_id) loadVehicles();
@@ -83,8 +95,9 @@ export function Vehicles() {
     setFilteredVehicles(filtered);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este veículo? Essa ação não pode ser desfeita.")) return;
+  const confirmDelete = async () => {
+    if (!vehicleToDelete) return;
+    const id = vehicleToDelete.id;
 
     try {
       const { data: sales } = await supabase
@@ -94,16 +107,20 @@ export function Vehicles() {
         .limit(1);
 
       if (sales && sales.length > 0) {
-        alert("Não é possível excluir: este veículo já possui vendas registradas.");
+        toast.error("Não é possível excluir: este veículo já possui vendas registradas.");
+        setVehicleToDelete(null);
         return;
       }
 
       const { error } = await supabase.from("vehicles").delete().eq("id", id);
       if (error) throw error;
 
+      toast.success("Veículo excluído com sucesso.");
       loadVehicles();
     } catch (error: any) {
-      alert("Erro ao excluir veículo: " + error.message);
+      toast.error("Erro ao excluir veículo: " + (error.message || "Erro desconhecido"));
+    } finally {
+      setVehicleToDelete(null);
     }
   };
 
@@ -152,6 +169,7 @@ export function Vehicles() {
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Buscar por marca, modelo ou ano"
               placeholder="Buscar por marca, modelo ou ano"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -161,7 +179,7 @@ export function Vehicles() {
           <div className="relative sm:w-64">
             <Filter className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="pl-10">
+              <SelectTrigger className="pl-10" aria-label="Filtrar por status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -257,7 +275,7 @@ export function Vehicles() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleDelete(vehicle.id)}
+                        onClick={() => setVehicleToDelete(vehicle)}
                         aria-label="Excluir veículo"
                         className="text-destructive hover:text-destructive"
                       >
@@ -273,6 +291,26 @@ export function Vehicles() {
       )}
 
       {showForm && <VehicleForm vehicle={editingVehicle} onClose={handleFormClose} />}
+
+      <AlertDialog open={!!vehicleToDelete} onOpenChange={(open) => { if (!open) setVehicleToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir veículo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O veículo {vehicleToDelete ? `"${vehicleToDelete.brand} ${vehicleToDelete.model}"` : ''} será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
