@@ -58,27 +58,31 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', policy_row.policyname);
   END LOOP;
 END $$;
-
-CREATE POLICY "tenant_read_profiles" ON public.profiles
+DROP POLICY IF EXISTS "tenant_read_profiles" ON profiles;
+CREATE POLICY "tenant_read_profiles" ON profiles
   FOR SELECT TO authenticated USING (
     id = auth.uid()
     OR public.is_platform_admin()
     OR company_id = public.current_company_id()
   );
-CREATE POLICY "users_update_own_profile" ON public.profiles
+DROP POLICY IF EXISTS "users_update_own_profile" ON profiles;
+CREATE POLICY "users_update_own_profile" ON profiles
   FOR UPDATE TO authenticated USING (id = auth.uid())
   WITH CHECK (id = auth.uid() AND company_id IS NOT DISTINCT FROM public.current_company_id());
 
 DROP POLICY IF EXISTS "tenant_select_company" ON public.companies;
-CREATE POLICY "tenant_select_company" ON public.companies
+DROP POLICY IF EXISTS "tenant_select_company" ON companies;
+CREATE POLICY "tenant_select_company" ON companies
   FOR SELECT TO authenticated USING (
     id = public.current_company_id() OR public.is_platform_admin()
   );
 DROP POLICY IF EXISTS "platform_insert_company" ON public.companies;
-CREATE POLICY "platform_insert_company" ON public.companies
+DROP POLICY IF EXISTS "platform_insert_company" ON companies;
+CREATE POLICY "platform_insert_company" ON companies
   FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin());
 DROP POLICY IF EXISTS "platform_update_company" ON public.companies;
-CREATE POLICY "platform_update_company" ON public.companies
+DROP POLICY IF EXISTS "platform_update_company" ON companies;
+CREATE POLICY "platform_update_company" ON companies
   FOR UPDATE TO authenticated USING (public.is_platform_admin())
   WITH CHECK (public.is_platform_admin());
 

@@ -142,13 +142,13 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+DROP TRIGGER IF EXISTS update_vehicles_updated_at ON vehicles;
 CREATE TRIGGER update_vehicles_updated_at BEFORE UPDATE ON vehicles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+DROP TRIGGER IF EXISTS update_negotiations_updated_at ON negotiations;
 CREATE TRIGGER update_negotiations_updated_at BEFORE UPDATE ON negotiations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -162,75 +162,7 @@ ALTER TABLE negotiations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interaction_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 
--- Policies para PROFILES
-CREATE POLICY "Usuários podem ver todos os perfis" ON profiles
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Usuários podem atualizar próprio perfil" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Policies para VEHICLES
-CREATE POLICY "Todos usuários autenticados podem ver veículos" ON vehicles
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem criar veículos" ON vehicles
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem atualizar veículos" ON vehicles
-  FOR UPDATE USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Administradores podem deletar veículos" ON vehicles
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'administrador'
-    )
-  );
-
--- Policies para VEHICLE_COSTS
-CREATE POLICY "Todos usuários autenticados podem ver custos" ON vehicle_costs
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem criar custos" ON vehicle_costs
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem atualizar custos" ON vehicle_costs
-  FOR UPDATE USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Administradores podem deletar custos" ON vehicle_costs
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'administrador'
-    )
-  );
-
--- Policies para NEGOTIATIONS
-CREATE POLICY "Todos usuários autenticados podem ver negociações" ON negotiations
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem criar negociações" ON negotiations
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem atualizar negociações" ON negotiations
-  FOR UPDATE USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Vendedor pode deletar próprias negociações" ON negotiations
-  FOR DELETE USING (seller_id = auth.uid());
-
--- Policies para INTERACTION_HISTORY
-CREATE POLICY "Todos usuários autenticados podem ver histórico" ON interaction_history
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem criar interações" ON interaction_history
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
--- Policies para SALES
-CREATE POLICY "Todos usuários autenticados podem ver vendas" ON sales
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Todos usuários autenticados podem criar vendas" ON sales
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+-- RLS policies are installed in the final hardening migration.
 
 -- =====================================================
 -- 10. FUNÇÃO PARA CRIAR PERFIL AUTOMATICAMENTE
@@ -251,8 +183,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger para criar perfil ao registrar usuário
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- =====================================================

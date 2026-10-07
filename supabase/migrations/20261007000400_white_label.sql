@@ -130,8 +130,7 @@ $$;
 
 DROP TRIGGER IF EXISTS on_auth_customer_created ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-AFTER INSERT ON auth.users
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- 7. Helper de tenant para políticas RLS.
@@ -183,59 +182,68 @@ BEGIN
     );
   END LOOP;
 END $$;
-
-CREATE POLICY "tenant_select_company" ON public.companies
+DROP POLICY IF EXISTS "tenant_select_company" ON companies;
+CREATE POLICY "tenant_select_company" ON companies
   FOR SELECT TO authenticated USING (id = public.current_company_id());
-CREATE POLICY "tenant_update_company" ON public.companies
+DROP POLICY IF EXISTS "tenant_update_company" ON companies;
+CREATE POLICY "tenant_update_company" ON companies
   FOR UPDATE TO authenticated
   USING (public.is_company_admin(id))
   WITH CHECK (public.is_company_admin(id));
-
-CREATE POLICY "tenant_select_vehicles" ON public.vehicles
+DROP POLICY IF EXISTS "tenant_select_vehicles" ON vehicles;
+CREATE POLICY "tenant_select_vehicles" ON vehicles
   FOR SELECT TO authenticated USING (company_id = public.current_company_id());
-CREATE POLICY "tenant_insert_vehicles" ON public.vehicles
+DROP POLICY IF EXISTS "tenant_insert_vehicles" ON vehicles;
+CREATE POLICY "tenant_insert_vehicles" ON vehicles
   FOR INSERT TO authenticated WITH CHECK (
     company_id = public.current_company_id() AND public.is_company_admin(company_id)
   );
-CREATE POLICY "tenant_update_vehicles" ON public.vehicles
+DROP POLICY IF EXISTS "tenant_update_vehicles" ON vehicles;
+CREATE POLICY "tenant_update_vehicles" ON vehicles
   FOR UPDATE TO authenticated
   USING (public.is_company_admin(company_id))
   WITH CHECK (public.is_company_admin(company_id));
-CREATE POLICY "tenant_delete_vehicles" ON public.vehicles
+DROP POLICY IF EXISTS "tenant_delete_vehicles" ON vehicles;
+CREATE POLICY "tenant_delete_vehicles" ON vehicles
   FOR DELETE TO authenticated USING (public.is_company_admin(company_id));
-
-CREATE POLICY "tenant_select_negotiations" ON public.negotiations
+DROP POLICY IF EXISTS "tenant_select_negotiations" ON negotiations;
+CREATE POLICY "tenant_select_negotiations" ON negotiations
   FOR SELECT TO authenticated USING (company_id = public.current_company_id());
-CREATE POLICY "tenant_insert_negotiations" ON public.negotiations
+DROP POLICY IF EXISTS "tenant_insert_negotiations" ON negotiations;
+CREATE POLICY "tenant_insert_negotiations" ON negotiations
   FOR INSERT TO authenticated WITH CHECK (
     company_id = public.current_company_id() AND seller_id = auth.uid()
   );
-CREATE POLICY "tenant_update_negotiations" ON public.negotiations
+DROP POLICY IF EXISTS "tenant_update_negotiations" ON negotiations;
+CREATE POLICY "tenant_update_negotiations" ON negotiations
   FOR UPDATE TO authenticated
   USING (company_id = public.current_company_id())
   WITH CHECK (company_id = public.current_company_id());
-
-CREATE POLICY "customers_read_own_companies" ON public.customer_companies
+DROP POLICY IF EXISTS "customers_read_own_companies" ON customer_companies;
+CREATE POLICY "customers_read_own_companies" ON customer_companies
   FOR SELECT TO authenticated USING (
     customer_id IN (SELECT id FROM public.customers WHERE user_id = auth.uid())
   );
-CREATE POLICY "admins_manage_customer_companies" ON public.customer_companies
+DROP POLICY IF EXISTS "admins_manage_customer_companies" ON customer_companies;
+CREATE POLICY "admins_manage_customer_companies" ON customer_companies
   FOR ALL TO authenticated
   USING (public.is_company_admin(company_id))
   WITH CHECK (public.is_company_admin(company_id));
-
-CREATE POLICY "tenant_read_payments" ON public.payments
+DROP POLICY IF EXISTS "tenant_read_payments" ON payments;
+CREATE POLICY "tenant_read_payments" ON payments
   FOR SELECT TO authenticated USING (company_id = public.current_company_id());
-CREATE POLICY "tenant_create_payments" ON public.payments
+DROP POLICY IF EXISTS "tenant_create_payments" ON payments;
+CREATE POLICY "tenant_create_payments" ON payments
   FOR INSERT TO authenticated WITH CHECK (
     company_id = public.current_company_id() AND created_by = auth.uid()
   );
-CREATE POLICY "tenant_update_payments" ON public.payments
+DROP POLICY IF EXISTS "tenant_update_payments" ON payments;
+CREATE POLICY "tenant_update_payments" ON payments
   FOR UPDATE TO authenticated
   USING (public.is_company_admin(company_id))
   WITH CHECK (public.is_company_admin(company_id));
-
-CREATE POLICY "users_manage_notification_preferences" ON public.notification_preferences
+DROP POLICY IF EXISTS "users_manage_notification_preferences" ON notification_preferences;
+CREATE POLICY "users_manage_notification_preferences" ON notification_preferences
   FOR ALL TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());

@@ -1,3 +1,4 @@
+-- REFERÊNCIA NÃO EXECUTÁVEL. Não aplicar como migration; ver MIGRATIONS.md.
 -- =====================================================
 -- MODELO FISICO COMPLETO - LUXCAR / AUTOGEST
 -- Consolidado a partir de:
