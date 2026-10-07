@@ -23,6 +23,15 @@ Deno.serve(async (request) => {
 
     const callerClient = createClient(url, anonKey, { global: { headers: { Authorization: authorization } } });
     const service = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const setProvisionedProfile = async (userId: string, role: string, companyId: string) => {
+      const { error } = await service.from('profiles').update({ role, company_id: companyId }).eq('id', userId);
+      if (!error) return null;
+
+      const { error: deleteError } = await service.auth.admin.deleteUser(userId);
+      return deleteError
+        ? `${error.message}; também não foi possível remover o usuário criado: ${deleteError.message}`
+        : error.message;
+    };
     const { data: { user }, error: userError } = await callerClient.auth.getUser();
     if (userError || !user) return json({ error: 'Sessão inválida.' }, 401);
 
@@ -49,6 +58,11 @@ Deno.serve(async (request) => {
         await service.from('companies').delete().eq('id', company.id);
         return json({ error: authError.message }, 400);
       }
+      const profileError = await setProvisionedProfile(created.user.id, 'administrador', company.id);
+      if (profileError) {
+        await service.from('companies').delete().eq('id', company.id);
+        return json({ error: `Não foi possível configurar o perfil: ${profileError}` }, 500);
+      }
       return json({ company, user: { id: created.user.id, email: created.user.email } }, 201);
     }
 
@@ -65,6 +79,8 @@ Deno.serve(async (request) => {
         user_metadata: { full_name: fullName, role, company_id: caller.company_id }
       });
       if (error) return json({ error: error.message }, 400);
+      const profileError = await setProvisionedProfile(created.user.id, role, caller.company_id);
+      if (profileError) return json({ error: `Não foi possível configurar o perfil: ${profileError}` }, 500);
       return json({ user: { id: created.user.id, email: created.user.email } }, 201);
     }
 
