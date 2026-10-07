@@ -191,6 +191,7 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
 -- =====================================================
 
 -- View de veículos com informações de negociações ativas
+DROP VIEW IF EXISTS vehicles_with_negotiations;
 CREATE OR REPLACE VIEW vehicles_with_negotiations AS
 SELECT
   v.*,
@@ -210,6 +211,7 @@ LEFT JOIN profiles p ON n.seller_id = p.id
 GROUP BY v.id;
 
 -- View de métricas do dashboard
+DROP VIEW IF EXISTS dashboard_metrics;
 CREATE OR REPLACE VIEW dashboard_metrics AS
 SELECT
   (SELECT COUNT(*) FROM vehicles WHERE status = 'disponivel') as vehicles_available,

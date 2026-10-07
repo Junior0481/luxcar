@@ -4,8 +4,8 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 
 1. `20261007000100_initial_schema.sql` — tabelas centrais, índices, funções, triggers e views iniciais.
 2. `20261007000200_multitenant.sql` — companies, vínculo de tenant, clientes, leads, trocas, triggers e view pública; semente fixa de empresa legada.
-3. `20261007000300_platform_admin.sql` — papel de plataforma, políticas de perfil/empresa, criação de venda e RPCs.
-4. `20261007000400_white_label.sql` — branding, pagamentos, preferências, funções de tenant, policies e views públicas com colunas explícitas.
+3. `20261007000300_platform_admin.sql` — papel de plataforma, helpers de autorização e criação de venda.
+4. `20261007000400_white_label.sql` — branding, pagamentos, preferências, funções de tenant, policies (incluindo as dependentes do papel da plataforma) e views públicas com colunas explícitas; precisa vir após a migration 3.
 5. `20261007000500_feature_alignment.sql` — complementos de schema para funcionalidades do frontend e triggers compatíveis.
 6. `20261007000600_policy_fixes.sql` — concede acesso à view pública segura criada na migration 4; policies permissivas legadas foram omitidas.
 7. `20261007000700_storage.sql` — bucket de imagens e policies do Storage.

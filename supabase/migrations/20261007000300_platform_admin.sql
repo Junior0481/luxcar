@@ -48,44 +48,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-DO $$
-DECLARE policy_row RECORD;
-BEGIN
-  FOR policy_row IN SELECT policyname FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'profiles'
-  LOOP
-    EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', policy_row.policyname);
-  END LOOP;
-END $$;
-DROP POLICY IF EXISTS "tenant_read_profiles" ON profiles;
-CREATE POLICY "tenant_read_profiles" ON profiles
-  FOR SELECT TO authenticated USING (
-    id = auth.uid()
-    OR public.is_platform_admin()
-    OR company_id = public.current_company_id()
-  );
-DROP POLICY IF EXISTS "users_update_own_profile" ON profiles;
-CREATE POLICY "users_update_own_profile" ON profiles
-  FOR UPDATE TO authenticated USING (id = auth.uid())
-  WITH CHECK (id = auth.uid() AND company_id IS NOT DISTINCT FROM public.current_company_id());
-
-DROP POLICY IF EXISTS "tenant_select_company" ON public.companies;
-DROP POLICY IF EXISTS "tenant_select_company" ON companies;
-CREATE POLICY "tenant_select_company" ON companies
-  FOR SELECT TO authenticated USING (
-    id = public.current_company_id() OR public.is_platform_admin()
-  );
-DROP POLICY IF EXISTS "platform_insert_company" ON public.companies;
-DROP POLICY IF EXISTS "platform_insert_company" ON companies;
-CREATE POLICY "platform_insert_company" ON companies
-  FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin());
-DROP POLICY IF EXISTS "platform_update_company" ON public.companies;
-DROP POLICY IF EXISTS "platform_update_company" ON companies;
-CREATE POLICY "platform_update_company" ON companies
-  FOR UPDATE TO authenticated USING (public.is_platform_admin())
-  WITH CHECK (public.is_platform_admin());
-
 GRANT EXECUTE ON FUNCTION public.is_platform_admin() TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.create_sale_when_finalized()
@@ -108,46 +70,3 @@ BEGIN
 END;
 $$;
 
--- A conclusão financeira precisa escrever a venda através das políticas RLS,
--- depois de validar explicitamente o administrador do tenant.
-CREATE OR REPLACE FUNCTION public.set_payment_status(payment_id UUID, next_status TEXT)
-RETURNS public.payments
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  current_payment public.payments;
-  current_negotiation public.negotiations;
-BEGIN
-  SELECT * INTO current_payment FROM public.payments p WHERE p.id = payment_id FOR UPDATE;
-  IF current_payment.id IS NULL OR NOT public.is_company_admin(current_payment.company_id) THEN
-    RAISE EXCEPTION 'Pagamento não encontrado ou acesso negado';
-  END IF;
-  IF NOT (
-    (current_payment.status = 'pending' AND next_status IN ('authorized', 'paid', 'cancelled')) OR
-    (current_payment.status = 'authorized' AND next_status IN ('paid', 'cancelled')) OR
-    (current_payment.status = 'paid' AND next_status = 'refunded')
-  ) THEN RAISE EXCEPTION 'Transição de pagamento inválida'; END IF;
-
-  UPDATE public.payments SET status = next_status,
-    paid_at = CASE WHEN next_status = 'paid' THEN now() ELSE paid_at END,
-    updated_at = now()
-  WHERE id = current_payment.id RETURNING * INTO current_payment;
-
-  IF next_status = 'paid' THEN
-    SELECT * INTO current_negotiation FROM public.negotiations n
-      WHERE n.id = current_payment.negotiation_id FOR UPDATE;
-    INSERT INTO public.sales (company_id, negotiation_id, vehicle_id, seller_id, final_price, payment_method, sale_date)
-    SELECT n.company_id, n.id, n.vehicle_id, n.seller_id, p.amount, p.method, current_date
-    FROM public.negotiations n
-    JOIN public.payments p ON p.negotiation_id = n.id
-    WHERE p.id = current_payment.id
-      AND NOT EXISTS (SELECT 1 FROM public.sales s WHERE s.negotiation_id = n.id);
-    UPDATE public.negotiations SET stage = 'finalizado' WHERE id = current_negotiation.id;
-    UPDATE public.vehicles SET status = 'vendido' WHERE id = current_negotiation.vehicle_id;
-  END IF;
-  RETURN current_payment;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.set_payment_status(UUID, TEXT) TO authenticated;
