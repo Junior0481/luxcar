@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { X, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 type InteractionFormProps = {
   negotiationId: string;
@@ -51,23 +58,25 @@ export function InteractionForm({ negotiationId, vehicleId, onClose }: Interacti
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-bold text-foreground">Nova Interação</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="pr-6">
+          <DialogTitle className="text-xl font-bold text-foreground">
+            Nova Interação
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Registre uma nova interação com o cliente nesta negociação.
+          </DialogDescription>
+        </DialogHeader>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="interaction_type">Tipo de Interação *</Label>
             <select
@@ -108,7 +117,7 @@ export function InteractionForm({ negotiationId, vehicleId, onClose }: Interacti
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

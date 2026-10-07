@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 type LeadFormProps = {
   vehicleId: string;
@@ -62,33 +69,28 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Tenho Interesse</h2>
-            <p className="text-sm text-muted-foreground mt-1">{vehicleName}</p>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="pr-6">
+          <DialogTitle className="text-xl font-bold text-foreground">Tenho Interesse</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">{vehicleName}</DialogDescription>
+        </DialogHeader>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="mx-6 mt-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-start gap-3">
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <p className="text-sm text-emerald-700 dark:text-emerald-300">Mensagem enviada com sucesso! Em breve entraremos em contato.</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="customer_name">Seu Nome *</Label>
             <Input
@@ -142,7 +144,7 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
