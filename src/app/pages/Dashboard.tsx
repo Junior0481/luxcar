@@ -45,7 +45,7 @@ const brl = (v: number) =>
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   disponivel: { label: 'Disponível', variant: 'default' },
-  em_negociacao: { label: 'Em negociação', variant: 'secondary' },
+  em_negociacao: { label: 'Em negociação', variant: 'outline' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
 
@@ -342,7 +342,7 @@ export function Dashboard() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
+                      <Badge variant="outline">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge

@@ -28,7 +28,7 @@ const brl = (v: number) =>
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   disponivel: { label: 'Disponível', variant: 'default' },
-  em_negociacao: { label: 'Em Negociação', variant: 'secondary' },
+  em_negociacao: { label: 'Em Negociação', variant: 'outline' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
 
