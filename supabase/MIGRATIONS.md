@@ -31,7 +31,3 @@ As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ..
 - Clientes autenticados só podem ler/editar o próprio registro. O fluxo de cliente público não tem regra de ownership verificável; permanece fechado até o modelo de vínculo ser decidido.
 - Uploads de Storage preservam as regras antigas por autenticação e papel; associação do caminho do objeto ao tenant ainda não está modelada.
 - `REFERENCE_MODELO_FISICO_COMPLETO.sql` foi movido para `supabase/reference/` e reduzido aqui a marcador para evitar execução acidental.
-
-### 20261007001500 — finalização transacional de venda
-
-Adiciona unicidade por negociação e só finaliza a venda quando os pagamentos confirmados cobrem o preço acordado. A finalização exige administrador da loja e vincula pagamentos à venda.

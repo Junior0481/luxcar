@@ -115,4 +115,8 @@ GRANT EXECUTE ON FUNCTION public.is_company_admin(UUID) TO authenticated;
 REVOKE ALL ON FUNCTION public.set_payment_status(UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.set_payment_status(UUID, TEXT) TO authenticated;
 REVOKE ALL ON FUNCTION public.create_sale_when_finalized() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.finalize_sale(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.finalize_sale(UUID) TO authenticated;
+REVOKE ALL ON FUNCTION public.negotiation_agreed_price(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.negotiation_agreed_price(UUID) TO authenticated;
 
