@@ -39,6 +39,14 @@ async function expectPageLoadedWithoutError(page: Page, path: string) {
   expect(messages, `${path} mostrou erro: ${messages.join(' | ')}`).toEqual([]);
 }
 
+test('plataforma: "Empresas cadastradas" lista as lojas da demo', async ({ page }) => {
+  await login(page, 'plataforma@luxcar.demo', DEMO_PASSWORD);
+  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+  await expectPageLoadedWithoutError(page, '/dashboard/platform');
+  await expect(page.getByText('LuxCar Motors').first()).toBeVisible();
+  await expect(page.getByText('Auto Premium').first()).toBeVisible();
+});
+
 for (const role of roles) {
   test.describe(`fumaça logada: ${role.name}`, () => {
     test.beforeEach(async ({ page }) => {
