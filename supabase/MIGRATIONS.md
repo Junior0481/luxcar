@@ -13,6 +13,7 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 9. `20261007000900_profile_guard.sql` — bloqueia alterações de `role` e `company_id` em perfis, exceto para `platform_admin` e `service_role`.
 10. `20261007001000_signup_lockdown.sql` — redefine `handle_new_user` para criar todo perfil como `vendedor` sem empresa, ignorando `role` e `company_id` dos metadados de signup. O provisionamento administrativo define esses campos explicitamente após criar o usuário.
 11. `20261007001200_rls_views_ownership.sql` — aplica RLS às views de relatório, retira leitura anônima, corrige bypass administrativo do guard e limita leads/negociações de vendedores aos próprios registros.
+12. `20261007001300_tenant_integrity_storage.sql` — adiciona chaves estrangeiras compostas para vínculos entre tenants, restringe escrita no Storage pelo prefixo da empresa e limita `EXECUTE` das funções `SECURITY DEFINER`.
 
 As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ... IF EXISTS` antes do `CREATE`); DDL de tabelas/índices usa `IF NOT EXISTS` e funções/views usam `OR REPLACE` quando compatível.
 
