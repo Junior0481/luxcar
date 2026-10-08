@@ -127,44 +127,21 @@ export function NegotiationDetails() {
     }
   };
 
-  const syncVehicleAndSaleForStage = async (nextStage: string, current: NegotiationWithDetails) => {
-    if (nextStage === 'finalizado') {
-      const { error: vehicleError } = await supabase
-        .from('vehicles')
-        .update({ status: 'vendido' })
-        .eq('id', current.vehicle_id)
-        .eq('company_id', current.company_id!);
-
-      if (vehicleError) throw vehicleError;
-
-      const { data: existingSale, error: saleLookupError } = await supabase
-        .from('sales')
-        .select('id')
-        .eq('negotiation_id', current.id)
-        .maybeSingle();
-
-      if (saleLookupError) throw saleLookupError;
-
-      if (!existingSale) {
-        const { error: saleInsertError } = await supabase
-          .from('sales')
-          .insert([{
-            negotiation_id: current.id,
-            company_id: current.company_id,
-            vehicle_id: current.vehicle_id,
-            seller_id: current.seller_id,
-            final_price: current.offered_price || current.vehicle?.sale_price || 0,
-            payment_method: 'a_definir',
-            commission: null,
-            sale_date: new Date().toISOString().split('T')[0]
-          }]);
-
-        if (saleInsertError) throw saleInsertError;
-      }
-
-      return;
+  // Venda, estágio e status do veículo são gravados de forma atômica no banco
+  // (RPC finalize_sale): exige administrador e pagamentos que cubram o preço acordado.
+  const finalizeSale = async (current: NegotiationWithDetails) => {
+    const { error } = await supabase.rpc('finalize_sale', { target_negotiation: current.id });
+    if (!error) return;
+    if (error.code === '42501') {
+      throw new Error('Apenas o administrador da loja pode finalizar a venda.');
     }
+    if (error.code === 'PGRST202' || error.code === '42883') {
+      throw new Error('A finalização de vendas ainda não foi configurada no banco. Aplique as migrations antes de usar.');
+    }
+    throw new Error(error.message || 'Não foi possível finalizar a venda.');
+  };
 
+  const syncVehicleForStage = async (nextStage: string, current: NegotiationWithDetails) => {
     const nextVehicleStatus = nextStage === 'perdido' ? 'disponivel' : 'em_negociacao';
 
     const { error: vehicleError } = await supabase
@@ -183,18 +160,23 @@ export function NegotiationDetails() {
     setMessage(null);
 
     try {
-      const { error } = await supabase
-        .from('negotiations')
-        .update({ stage: newStage })
-        .eq('id', negotiation.id)
-        .eq('company_id', profile!.company_id!)
-        .select('id')
-        .single();
+      if (newStage === 'finalizado') {
+        await finalizeSale(negotiation);
+        setMessage({ type: 'success', text: 'Venda finalizada com sucesso.' });
+      } else {
+        const { error } = await supabase
+          .from('negotiations')
+          .update({ stage: newStage })
+          .eq('id', negotiation.id)
+          .eq('company_id', profile!.company_id!)
+          .select('id')
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      await syncVehicleAndSaleForStage(newStage, negotiation);
-      setMessage({ type: 'success', text: 'Estágio atualizado com sucesso.' });
+        await syncVehicleForStage(newStage, negotiation);
+        setMessage({ type: 'success', text: 'Estágio atualizado com sucesso.' });
+      }
       await loadNegotiationDetails();
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Erro ao atualizar estágio.' });
