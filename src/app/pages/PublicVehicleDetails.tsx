@@ -279,8 +279,9 @@ export function PublicVehicleDetails() {
         </div>
       </div>
 
-      {showLeadForm && vehicle && (
+      {vehicle && (
         <LeadForm
+          open={showLeadForm}
           vehicleId={vehicle.id}
           companyId={vehicle.company_id || ''}
           vehicleName={`${vehicle.brand} ${vehicle.model} ${vehicle.year}`}

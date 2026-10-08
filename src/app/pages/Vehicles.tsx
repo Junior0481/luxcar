@@ -317,7 +317,7 @@ export function Vehicles() {
         </div>
       )}
 
-      {showForm && <VehicleForm vehicle={editingVehicle} onClose={handleFormClose} />}
+      <VehicleForm open={showForm} vehicle={editingVehicle} onClose={handleFormClose} />
 
       <AlertDialog open={!!vehicleToDelete} onOpenChange={(open) => { if (!open) setVehicleToDelete(null); }}>
         <AlertDialogContent>
