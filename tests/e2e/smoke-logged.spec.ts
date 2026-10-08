@@ -3,7 +3,8 @@ import { login } from './helpers';
 
 // Fumaça logada: abre todas as telas do painel com os logins de DEMO do Supabase LOCAL
 // (seed do orch/preview, ver PREVIEW.md) e falha se qualquer tela mostrar "Erro ao carregar".
-// Rodar: E2E_BASE_URL=http://127.0.0.1:5180 pnpm exec playwright test smoke-logged --project=desktop-chromium
+// Rodar: E2E_BASE_URL=http://127.0.0.1:5180 pnpm exec playwright test smoke-logged --project=desktop-chromium --workers=2
+// (com 6 workers o Vite dev em :5180 dá timeouts espúrios de networkidle)
 const DEMO_PASSWORD = process.env.E2E_DEMO_PASSWORD || 'Demo@12345';
 
 const NEGOTIATION_A = 'f0000000-0000-0000-0000-000000000001'; // LuxCar, vendedor@luxcar.demo
