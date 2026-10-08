@@ -48,9 +48,10 @@ select is(rls_test.visible('select 1 from public.sales where company_id = ''a000
 -- Anon
 :as_anon
 select is(rls_test.visible('select 1 from public.negotiations'), 0, 'anon não lê negociações');
-select lives_ok(
+-- T8: lead público só pela Edge Function public-lead (Turnstile + service_role).
+select throws_ok(
   $$insert into public.leads (company_id, customer_name, customer_email) values ('a0000000-0000-0000-0000-000000000001', 'Visitante', 'v@test.local')$$,
-  'anon ainda consegue enviar lead pelo formulário público');
+  '42501', null, 'anon não insere lead direto; só via Edge Function public-lead');
 
 select * from finish();
 rollback;
