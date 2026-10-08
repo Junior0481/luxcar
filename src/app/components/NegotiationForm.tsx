@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { X, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 type NegotiationFormProps = {
   onClose: () => void;
@@ -92,23 +99,29 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-2xl my-8">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-2xl font-bold text-foreground">Nova Negociação</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
+        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="pr-6">
+          <DialogTitle className="text-2xl font-bold text-foreground">
+            Nova Negociação
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Selecione o veículo e informe os dados do cliente e da proposta.
+          </DialogDescription>
+        </DialogHeader>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="vehicle_id">Veículo *</Label>
@@ -233,7 +246,7 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || vehicles.length === 0} className="flex-1">
@@ -241,7 +254,7 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

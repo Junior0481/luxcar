@@ -1,7 +1,7 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
-import { ArrowLeft, Car, Calendar, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Car, Calendar, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle, RefreshCw } from 'lucide-react';
 import { LeadForm } from '../components/LeadForm';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Card, CardContent } from '../components/ui/card';
@@ -22,6 +22,7 @@ export function PublicVehicleDetails() {
   const { id } = useParams();
   const [vehicle, setVehicle] = useState<PublicVehicle | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
 
@@ -33,6 +34,8 @@ export function PublicVehicleDetails() {
 
   const loadVehicle = async () => {
     try {
+      setLoading(true);
+      setError(null);
       let { data, error } = await supabase
         .from('public_vehicles')
         .select('*')
@@ -61,8 +64,9 @@ export function PublicVehicleDetails() {
       }
 
       setVehicle(data);
-    } catch (error) {
-      console.error('Error loading vehicle:', error);
+    } catch (err: any) {
+      console.error('Error loading vehicle:', err);
+      setError(err?.message || 'Erro ao carregar detalhes do veículo.');
     } finally {
       setLoading(false);
     }
@@ -70,8 +74,30 @@ export function PublicVehicleDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background" role="status">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="sr-only">Carregando veículo...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar veículo</h2>
+          <p className="text-sm text-destructive/80 mb-6">{error}</p>
+          <div className="flex justify-center gap-3">
+            <Button variant="outline" onClick={() => loadVehicle()}>
+              <RefreshCw className="size-4" />
+              Tentar novamente
+            </Button>
+            <Button asChild>
+              <Link to="/">Voltar para a página inicial</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -142,13 +168,15 @@ export function PublicVehicleDetails() {
                     />
                   </div>
                   {images.length > 1 && (
-                    <div className="p-4 grid grid-cols-6 gap-2">
+                    <div className="p-4 grid grid-cols-4 sm:grid-cols-6 gap-2">
                       {images.map((img, index) => (
                         <button
                           key={index}
+                          type="button"
                           onClick={() => setSelectedImage(index)}
-                          className={`aspect-video rounded-lg overflow-hidden border-2 transition-colors ${
-                            selectedImage === index ? 'border-primary' : 'border-border'
+                          aria-label={`Selecionar foto ${index + 1}`}
+                          className={`aspect-video rounded-lg overflow-hidden border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                            selectedImage === index ? 'border-primary ring-2 ring-primary/40' : 'border-border'
                           }`}
                         >
                           <img src={img} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />

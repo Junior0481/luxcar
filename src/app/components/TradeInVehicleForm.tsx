@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase, TradeInVehicle } from '../../lib/supabase';
-import { X, AlertCircle, Upload, Trash2 } from 'lucide-react';
+import { AlertCircle, Upload, Trash2 } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 type TradeInVehicleFormProps = {
   negotiationId: string;
@@ -161,25 +168,29 @@ export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-4xl my-8">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-2xl font-bold text-foreground">
+    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
+        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="pr-6">
+          <DialogTitle className="text-2xl font-bold text-foreground">
             {existingTradeIn ? 'Editar Veículo na Troca' : 'Adicionar Veículo na Troca'}
-          </h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {existingTradeIn ? 'Edite os dados do veículo recebido na troca.' : 'Cadastre os dados e avaliação do veículo na troca.'}
+          </DialogDescription>
+        </DialogHeader>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="brand">Marca *</Label>
@@ -312,7 +323,8 @@ export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, 
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                      aria-label={`Excluir foto ${index + 1}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -323,7 +335,7 @@ export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, 
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
@@ -331,7 +343,7 @@ export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, 
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
