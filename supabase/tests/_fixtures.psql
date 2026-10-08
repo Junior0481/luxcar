@@ -1,0 +1,92 @@
+-- Fixtures compartilhadas pelos testes RLS (incluído via \ir; não é um teste).
+-- Roda como postgres dentro da transação do teste; tudo sofre rollback no fim.
+--
+-- Atores:
+--   anon                      sem sessão
+--   vendedor A  (SA)          loja A
+--   vendedor A2 (SA2)         loja A (colega, para testar "vendedor vê só o seu")
+--   admin A     (AA)          loja A
+--   vendedor B  (SB)          loja B
+
+create extension if not exists pgtap with schema extensions;
+set search_path = public, extensions;
+
+-- Fixtures sem disparar triggers (handle_new_user, guard de profiles).
+set local session_replication_role = replica;
+
+insert into public.companies (id, name, slug, status) values
+  ('a0000000-0000-0000-0000-000000000001', 'Loja A', 'loja-a-test', 'active'),
+  ('b0000000-0000-0000-0000-000000000001', 'Loja B', 'loja-b-test', 'active');
+
+insert into auth.users (id, email) values
+  ('a0000000-0000-0000-0000-0000000000a1', 'sa@test.local'),
+  ('a0000000-0000-0000-0000-0000000000a2', 'sa2@test.local'),
+  ('a0000000-0000-0000-0000-0000000000ad', 'aa@test.local'),
+  ('b0000000-0000-0000-0000-0000000000b1', 'sb@test.local');
+
+insert into public.profiles (id, email, full_name, role, company_id) values
+  ('a0000000-0000-0000-0000-0000000000a1', 'sa@test.local',  'Vendedor A',  'vendedor',      'a0000000-0000-0000-0000-000000000001'),
+  ('a0000000-0000-0000-0000-0000000000a2', 'sa2@test.local', 'Vendedor A2', 'vendedor',      'a0000000-0000-0000-0000-000000000001'),
+  ('a0000000-0000-0000-0000-0000000000ad', 'aa@test.local',  'Admin A',     'administrador', 'a0000000-0000-0000-0000-000000000001'),
+  ('b0000000-0000-0000-0000-0000000000b1', 'sb@test.local',  'Vendedor B',  'vendedor',      'b0000000-0000-0000-0000-000000000001');
+
+insert into public.vehicles (id, company_id, brand, model, year, purchase_price, sale_price, plate, status) values
+  ('a0000000-0000-0000-0000-00000000f001', 'a0000000-0000-0000-0000-000000000001', 'VW', 'Gol',   2020, 40000, 50000, 'AAA1A11', 'disponivel'),
+  ('b0000000-0000-0000-0000-00000000f001', 'b0000000-0000-0000-0000-000000000001', 'Fiat', 'Uno', 2019, 30000, 38000, 'BBB2B22', 'disponivel');
+
+insert into public.negotiations (id, company_id, vehicle_id, seller_id, client_name, client_cpf) values
+  ('a0000000-0000-0000-0000-00000000f101', 'a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-00000000f001', 'a0000000-0000-0000-0000-0000000000a1', 'Cliente de SA',  '111'),
+  ('a0000000-0000-0000-0000-00000000f102', 'a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-00000000f001', 'a0000000-0000-0000-0000-0000000000a2', 'Cliente de SA2', '222'),
+  ('b0000000-0000-0000-0000-00000000f101', 'b0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-00000000f001', 'b0000000-0000-0000-0000-0000000000b1', 'Cliente de SB',  '333');
+
+insert into public.interaction_history (negotiation_id, vehicle_id, user_id, interaction_type, description) values
+  ('a0000000-0000-0000-0000-00000000f101', 'a0000000-0000-0000-0000-00000000f001', 'a0000000-0000-0000-0000-0000000000a1', 'ligacao', 'h SA'),
+  ('a0000000-0000-0000-0000-00000000f102', 'a0000000-0000-0000-0000-00000000f001', 'a0000000-0000-0000-0000-0000000000a2', 'ligacao', 'h SA2'),
+  ('b0000000-0000-0000-0000-00000000f101', 'b0000000-0000-0000-0000-00000000f001', 'b0000000-0000-0000-0000-0000000000b1', 'ligacao', 'h SB');
+
+insert into public.customers (id, full_name, email) values
+  ('a0000000-0000-0000-0000-00000000f301', 'Cliente Final', 'cliente@test.local');
+
+insert into public.leads (id, company_id, customer_name, customer_email, assigned_to) values
+  ('a0000000-0000-0000-0000-00000000f201', 'a0000000-0000-0000-0000-000000000001', 'Lead SA',  'l1@test.local', 'a0000000-0000-0000-0000-0000000000a1'),
+  ('a0000000-0000-0000-0000-00000000f202', 'a0000000-0000-0000-0000-000000000001', 'Lead SA2', 'l2@test.local', 'a0000000-0000-0000-0000-0000000000a2'),
+  ('b0000000-0000-0000-0000-00000000f201', 'b0000000-0000-0000-0000-000000000001', 'Lead SB',  'l3@test.local', 'b0000000-0000-0000-0000-0000000000b1');
+
+insert into public.trade_in_vehicles (negotiation_id, company_id, brand, model, year) values
+  ('a0000000-0000-0000-0000-00000000f101', 'a0000000-0000-0000-0000-000000000001', 'Ford', 'Ka', 2015),
+  ('b0000000-0000-0000-0000-00000000f101', 'b0000000-0000-0000-0000-000000000001', 'Ford', 'Fiesta', 2014);
+
+set local session_replication_role = origin;
+
+-- Conta linhas visíveis ao papel atual; falta de privilégio conta como 0 linhas.
+create schema if not exists rls_test;
+create or replace function rls_test.visible(q text) returns int
+language plpgsql as $$
+declare n int;
+begin
+  execute format('select count(*) from (%s) s', q) into n;
+  return n;
+exception when insufficient_privilege then
+  return 0;
+end $$;
+-- Executa um UPDATE/DELETE como o papel atual e devolve quantas linhas afetou (0 se sem privilégio).
+create or replace function rls_test.affected(q text) returns int
+language plpgsql as $$
+declare n int;
+begin
+  execute q;
+  get diagnostics n = row_count;
+  return n;
+exception when insufficient_privilege then
+  return 0;
+end $$;
+grant usage on schema rls_test to anon, authenticated;
+grant execute on function rls_test.visible(text), rls_test.affected(text) to anon, authenticated;
+
+-- Troca de ator. Uso: :as_anon / :as_seller_a / ... / :as_postgres
+\set as_postgres 'reset role; do $$ begin perform set_config(''request.jwt.claims'', '''', true); end $$;'
+\set as_anon 'reset role; do $$ begin perform set_config(''request.jwt.claims'', ''{"role":"anon"}'', true); end $$; set local role anon;'
+\set as_seller_a 'reset role; do $$ begin perform set_config(''request.jwt.claims'', ''{"sub":"a0000000-0000-0000-0000-0000000000a1","role":"authenticated"}'', true); end $$; set local role authenticated;'
+\set as_seller_a2 'reset role; do $$ begin perform set_config(''request.jwt.claims'', ''{"sub":"a0000000-0000-0000-0000-0000000000a2","role":"authenticated"}'', true); end $$; set local role authenticated;'
+\set as_admin_a 'reset role; do $$ begin perform set_config(''request.jwt.claims'', ''{"sub":"a0000000-0000-0000-0000-0000000000ad","role":"authenticated"}'', true); end $$; set local role authenticated;'
+\set as_seller_b 'reset role; do $$ begin perform set_config(''request.jwt.claims'', ''{"sub":"b0000000-0000-0000-0000-0000000000b1","role":"authenticated"}'', true); end $$; set local role authenticated;'

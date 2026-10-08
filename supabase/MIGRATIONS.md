@@ -14,6 +14,13 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 10. `20261007001000_signup_lockdown.sql` — redefine `handle_new_user` para criar todo perfil como `vendedor` sem empresa, ignorando `role` e `company_id` dos metadados de signup. O provisionamento administrativo define esses campos explicitamente após criar o usuário.
 11. `20261007001200_rls_views_ownership.sql` — aplica RLS às views de relatório, retira leitura anônima, corrige bypass administrativo do guard e limita leads/negociações de vendedores aos próprios registros.
 12. `20261007001300_tenant_integrity_storage.sql` — adiciona chaves estrangeiras compostas para vínculos entre tenants, restringe escrita no Storage pelo prefixo da empresa e limita `EXECUTE` das funções `SECURITY DEFINER`.
+13. `20261007001400_public_lead_captcha.sql` — remove a inserção pública direta em `leads`; novos leads devem passar pela Edge Function `public-lead`, que valida o Turnstile e grava com `service_role`. Restringe também registros financeiros e de troca ao ownership das negociações.
+
+## Formulário público de leads (Turnstile)
+
+- Configure `TURNSTILE_SECRET_KEY` como secret das Supabase Edge Functions (`supabase secrets set TURNSTILE_SECRET_KEY=...`). Ela nunca deve ser exposta ao navegador.
+- Configure `VITE_TURNSTILE_SITE_KEY` no ambiente de build do frontend. A site key é pública e usada para renderizar o widget no formulário.
+- A função `supabase/functions/public-lead` exige o token Turnstile, uma empresa ativa e um veículo disponível pertencente à empresa antes de inserir o lead.
 
 As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ... IF EXISTS` antes do `CREATE`); DDL de tabelas/índices usa `IF NOT EXISTS` e funções/views usam `OR REPLACE` quando compatível.
 
@@ -24,3 +31,7 @@ As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ..
 - Clientes autenticados só podem ler/editar o próprio registro. O fluxo de cliente público não tem regra de ownership verificável; permanece fechado até o modelo de vínculo ser decidido.
 - Uploads de Storage preservam as regras antigas por autenticação e papel; associação do caminho do objeto ao tenant ainda não está modelada.
 - `REFERENCE_MODELO_FISICO_COMPLETO.sql` foi movido para `supabase/reference/` e reduzido aqui a marcador para evitar execução acidental.
+
+### 20261007001500 — finalização transacional de venda
+
+Adiciona unicidade por negociação e só finaliza a venda quando os pagamentos confirmados cobrem o preço acordado. A finalização exige administrador da loja e vincula pagamentos à venda.
