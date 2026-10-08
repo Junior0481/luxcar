@@ -1,10 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { X, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: {
+        sitekey: string;
+        callback: (token: string) => void;
+        'expired-callback': () => void;
+        'error-callback': () => void;
+      }) => string;
+      remove: (widgetId: string) => void;
+      reset: (widgetId?: string) => void;
+    };
+  }
+}
 
 type LeadFormProps = {
   vehicleId: string;
@@ -17,6 +32,54 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileError, setTurnstileError] = useState(false);
+  const turnstileContainer = useRef<HTMLDivElement>(null);
+  const turnstileWidget = useRef<string | null>(null);
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
+
+  useEffect(() => {
+    if (!turnstileSiteKey) return;
+
+    let disposed = false;
+    const renderWidget = () => {
+      if (disposed || !turnstileContainer.current || !window.turnstile || turnstileWidget.current) return;
+      turnstileWidget.current = window.turnstile.render(turnstileContainer.current, {
+        sitekey: turnstileSiteKey,
+        callback: setTurnstileToken,
+        'expired-callback': () => setTurnstileToken(''),
+        'error-callback': () => {
+          setTurnstileToken('');
+          setTurnstileError(true);
+        },
+      });
+    };
+
+    let script = document.querySelector<HTMLScriptElement>('script[data-cloudflare-turnstile]');
+    if (window.turnstile) {
+      renderWidget();
+    } else {
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.cloudflareTurnstile = 'true';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', renderWidget);
+      script.addEventListener('error', () => setTurnstileError(true), { once: true });
+    }
+
+    return () => {
+      disposed = true;
+      if (turnstileWidget.current) {
+        window.turnstile?.remove(turnstileWidget.current);
+        turnstileWidget.current = null;
+      }
+      script?.removeEventListener('load', renderWidget);
+    };
+  }, [turnstileSiteKey]);
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -28,34 +91,48 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!turnstileSiteKey) {
+      setError('A verificação antispam não está configurada. Tente novamente mais tarde.');
+      return;
+    }
+    if (!turnstileToken) {
+      setError('Conclua a verificação antispam antes de enviar.');
+      return;
+    }
+    if (!formData.customer_email.trim() && !formData.customer_phone.trim()) {
+      setError('Informe e-mail ou telefone para contato.');
+      return;
+    }
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('leads').insert([
-        {
+      const { data, error: invokeError } = await supabase.functions.invoke('public-lead', {
+        body: {
           company_id: companyId,
           vehicle_id: vehicleId,
           customer_name: formData.customer_name,
-          customer_email: formData.customer_email || null,
-          customer_phone: formData.customer_phone || null,
-          message: formData.message || null,
-          source: 'website',
-          status: 'new'
-        }
-      ]);
-
-      if (error) throw error;
+          customer_email: formData.customer_email,
+          customer_phone: formData.customer_phone,
+          message: formData.message,
+          turnstile_token: turnstileToken,
+        },
+      });
+      if (invokeError) throw invokeError;
+      if (!data?.success) throw new Error('Não foi possível enviar sua mensagem.');
 
       setSuccess(true);
       setTimeout(() => {
         onClose();
       }, 2000);
     } catch (err: any) {
-      if (err.code === '42P01') {
-        setError('O módulo de leads ainda não foi configurado no banco. Execute o SQL complementar antes de usar este formulário.');
-      } else {
-        setError(err.message || 'Erro ao enviar mensagem');
+      let message = err.message || 'Erro ao enviar mensagem';
+      if (err.context instanceof Response) {
+        const body = await err.context.json().catch(() => null);
+        message = body?.error || message;
       }
+      setError(message);
+      setTurnstileToken('');
+      if (turnstileWidget.current) window.turnstile?.reset(turnstileWidget.current);
     } finally {
       setLoading(false);
     }
@@ -131,6 +208,12 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
               rows={4}
               placeholder="Gostaria de mais informações sobre este veículo..."
             />
+          </div>
+
+          <div className="space-y-2" aria-label="Verificação antispam">
+            <div ref={turnstileContainer} />
+            {!turnstileSiteKey && <p className="text-sm text-destructive">Verificação antispam indisponível.</p>}
+            {turnstileError && <p className="text-sm text-destructive">Não foi possível carregar a verificação antispam.</p>}
           </div>
 
           <div className="flex gap-3 pt-4">
