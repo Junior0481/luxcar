@@ -58,6 +58,7 @@ const Vehicles = withSuspense(lazy(() => import('./pages/Vehicles').then((m) => 
 const VehicleDetails = withSuspense(lazy(() => import('./pages/VehicleDetails').then((m) => ({ default: m.VehicleDetails }))));
 const Negotiations = withSuspense(lazy(() => import('./pages/Negotiations').then((m) => ({ default: m.Negotiations }))));
 const NegotiationDetails = withSuspense(lazy(() => import('./pages/NegotiationDetails').then((m) => ({ default: m.NegotiationDetails }))));
+const Leads = withSuspense(lazy(() => import('./pages/Leads').then((m) => ({ default: m.Leads }))));
 const Reports = withSuspense(lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports }))));
 const Payments = withSuspense(lazy(() => import('./pages/Payments').then((m) => ({ default: m.Payments }))));
 const Team = withSuspense(lazy(() => import('./pages/Team').then((m) => ({ default: m.Team }))));
@@ -105,6 +106,7 @@ export const router = createBrowserRouter([
           { index: true, Component: Dashboard },
           { path: 'vehicles', Component: Vehicles },
           { path: 'vehicles/:id', Component: VehicleDetails },
+          { path: 'leads', Component: Leads },
           { path: 'negotiations', Component: Negotiations },
           { path: 'negotiations/:id', Component: NegotiationDetails },
           { path: 'reports', Component: Reports },
