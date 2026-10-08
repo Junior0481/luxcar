@@ -14,6 +14,7 @@ import {
   X,
   User,
   Users,
+  UserPlus,
   Building2
 } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
@@ -24,6 +25,7 @@ import { cn } from '../ui/utils';
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/dashboard/vehicles', icon: Car, label: 'Veículos' },
+  { to: '/dashboard/leads', icon: UserPlus, label: 'Leads' },
   { to: '/dashboard/negotiations', icon: Handshake, label: 'Negociações' },
   { to: '/dashboard/payments', icon: CreditCard, label: 'Pagamentos' },
   { to: '/dashboard/reports', icon: BarChart3, label: 'Relatórios' },
