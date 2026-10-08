@@ -21,17 +21,26 @@ export function Platform() {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
+  async function load({ silent = false }: { silent?: boolean } = {}) {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const { data, error: err } = await supabase.from('companies').select('*').order('created_at', { ascending: false });
       if (err) throw err;
       setCompanies(data || []);
     } catch (err: any) {
-      setError(err.message || 'Erro ao carregar empresas da plataforma.');
+      const text = err.message || 'Erro ao carregar empresas da plataforma.';
+      if (silent) {
+        setMessage(`Empresa criada, mas não foi possível atualizar a lista: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }
 
@@ -52,7 +61,7 @@ export function Platform() {
     if (err || data?.error) return setMessage(data?.error || err?.message || 'Não foi possível criar a empresa.');
     setMessage('Empresa e administrador criados com sucesso.');
     setForm(initialForm);
-    await load();
+    await load({ silent: true });
   }
 
   if (profile?.role !== 'platform_admin') {

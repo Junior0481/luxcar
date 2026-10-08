@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import { toast } from 'sonner';
 
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -57,10 +58,12 @@ export function VehicleDetails() {
     }
   }, [id]);
 
-  const loadVehicleDetails = async () => {
+  const loadVehicleDetails = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const [vehicleRes, costsRes, negotiationsRes] = await Promise.all([
         supabase.from('vehicles').select('*').eq('id', id).single(),
         supabase.from('vehicle_costs').select('*').eq('vehicle_id', id).order('service_date', { ascending: false }),
@@ -81,9 +84,16 @@ export function VehicleDetails() {
       if (negotiationsRes.data) setNegotiations(negotiationsRes.data);
     } catch (err: any) {
       console.error('Error loading vehicle details:', err);
-      setError(err?.message || 'Erro ao carregar detalhes do veículo.');
+      const text = err?.message || 'Erro ao carregar detalhes do veículo.';
+      if (silent) {
+        toast.error(`Ação concluída, mas não foi possível atualizar os detalhes: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -294,7 +304,7 @@ export function VehicleDetails() {
           vehicleId={vehicle.id}
           onClose={() => {
             setShowCostForm(false);
-            loadVehicleDetails();
+            loadVehicleDetails({ silent: true });
           }}
         />
       )}

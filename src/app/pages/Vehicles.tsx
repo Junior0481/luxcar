@@ -60,10 +60,12 @@ export function Vehicles() {
     filterVehicles();
   }, [searchTerm, statusFilter, vehicles]);
 
-  const loadVehicles = async () => {
+  const loadVehicles = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const { data, error } = await supabase
         .from("vehicles")
         .select("*")
@@ -74,9 +76,16 @@ export function Vehicles() {
       setVehicles(data || []);
     } catch (err: any) {
       console.error("Error loading vehicles:", err);
-      setError(err?.message || "Erro ao carregar veículos.");
+      const text = err?.message || "Erro ao carregar veículos.";
+      if (silent) {
+        toast.error(`Ação concluída, mas não foi possível atualizar a lista: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -120,7 +129,7 @@ export function Vehicles() {
       if (error) throw error;
 
       toast.success("Veículo excluído com sucesso.");
-      loadVehicles();
+      loadVehicles({ silent: true });
     } catch (error: any) {
       toast.error("Erro ao excluir veículo: " + (error.message || "Erro desconhecido"));
     } finally {
@@ -136,7 +145,7 @@ export function Vehicles() {
   const handleFormClose = () => {
     setShowForm(false);
     setEditingVehicle(null);
-    loadVehicles();
+    loadVehicles({ silent: true });
   };
 
   if (loading) {

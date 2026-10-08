@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '../components/ui/select';
+import { toast } from 'sonner';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
@@ -65,10 +66,12 @@ export function Negotiations() {
     filterNegotiations();
   }, [searchTerm, stageFilter, negotiations]);
 
-  const loadNegotiations = async () => {
+  const loadNegotiations = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const { data, error } = await supabase
         .from('negotiations')
         .select(`
@@ -83,9 +86,16 @@ export function Negotiations() {
       setNegotiations(data || []);
     } catch (err: any) {
       console.error('Error loading negotiations:', err);
-      setError(err?.message || 'Erro ao carregar negociações.');
+      const text = err?.message || 'Erro ao carregar negociações.';
+      if (silent) {
+        toast.error(`Ação concluída, mas não foi possível atualizar a lista: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -280,7 +290,7 @@ export function Negotiations() {
       {showForm && (
         <NegotiationForm onClose={() => {
           setShowForm(false);
-          loadNegotiations();
+          loadNegotiations({ silent: true });
         }} />
       )}
     </div>

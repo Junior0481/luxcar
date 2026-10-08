@@ -81,10 +81,12 @@ export function NegotiationDetails() {
     }
   }, [id, profile?.company_id]);
 
-  const loadNegotiationDetails = async () => {
+  const loadNegotiationDetails = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const [negotiationRes, interactionsRes] = await Promise.all([
         supabase
           .from('negotiations')
@@ -132,9 +134,16 @@ export function NegotiationDetails() {
       }
     } catch (err: any) {
       console.error('Error loading negotiation details:', err);
-      setError(err?.message || 'Erro ao carregar detalhes da negociação.');
+      const text = err?.message || 'Erro ao carregar detalhes da negociação.';
+      if (silent) {
+        setMessage({ type: 'error', text: `Ação concluída, mas não foi possível atualizar a tela: ${text}` });
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -206,7 +215,7 @@ export function NegotiationDetails() {
 
       await syncVehicleAndSaleForStage(newStage, negotiation);
       setMessage({ type: 'success', text: 'Estágio atualizado com sucesso.' });
-      await loadNegotiationDetails();
+      await loadNegotiationDetails({ silent: true });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Erro ao atualizar estágio.' });
     } finally {
@@ -231,7 +240,7 @@ export function NegotiationDetails() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Prioridade atualizada com sucesso.' });
-      await loadNegotiationDetails();
+      await loadNegotiationDetails({ silent: true });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Erro ao atualizar prioridade.' });
     }
@@ -506,7 +515,7 @@ export function NegotiationDetails() {
           vehicleId={negotiation.vehicle_id}
           onClose={() => {
             setShowInteractionForm(false);
-            loadNegotiationDetails();
+            loadNegotiationDetails({ silent: true });
           }}
         />
       )}
@@ -517,7 +526,7 @@ export function NegotiationDetails() {
           companyId={negotiation.company_id || ''}
           onClose={() => {
             setShowTradeInForm(false);
-            loadNegotiationDetails();
+            loadNegotiationDetails({ silent: true });
           }}
         />
       )}

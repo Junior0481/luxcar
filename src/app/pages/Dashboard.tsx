@@ -21,6 +21,7 @@ import { EmptyState } from '../components/ui/empty-state';
 import { MetricCard } from '../components/ui/metric-card';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -73,10 +74,12 @@ export function Dashboard() {
     if (profile?.company_id) loadDashboardData();
   }, [profile?.company_id]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const companyId = profile?.company_id;
       if (!companyId) throw new Error('Usuário sem empresa vinculada.');
 
@@ -104,9 +107,16 @@ export function Dashboard() {
       setRecentNegotiations(negotiations.slice(0, 5));
     } catch (err: any) {
       console.error('Error loading dashboard data:', err);
-      setError(err?.message || 'Erro ao carregar dados do painel.');
+      const text = err?.message || 'Erro ao carregar dados do painel.';
+      if (silent) {
+        toast.error(`Ação concluída, mas não foi possível atualizar o painel: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
