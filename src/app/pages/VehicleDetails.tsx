@@ -6,6 +6,7 @@ import {
   DollarSign,
   AlertCircle,
   Plus,
+  RefreshCw,
   Wrench,
   TrendingUp
 } from 'lucide-react';
@@ -46,6 +47,7 @@ export function VehicleDetails() {
   const [costs, setCosts] = useState<VehicleCost[]>([]);
   const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCostForm, setShowCostForm] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
@@ -57,17 +59,29 @@ export function VehicleDetails() {
 
   const loadVehicleDetails = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const [vehicleRes, costsRes, negotiationsRes] = await Promise.all([
         supabase.from('vehicles').select('*').eq('id', id).single(),
         supabase.from('vehicle_costs').select('*').eq('vehicle_id', id).order('service_date', { ascending: false }),
         supabase.from('negotiations').select('*').eq('vehicle_id', id).order('created_at', { ascending: false })
       ]);
 
+      if (vehicleRes.error && vehicleRes.error.code !== 'PGRST116') {
+        throw vehicleRes.error;
+      }
       if (vehicleRes.data) setVehicle(vehicleRes.data);
+      if (costsRes.error && costsRes.error.code !== '42P01') {
+        throw costsRes.error;
+      }
       if (costsRes.data) setCosts(costsRes.data);
+      if (negotiationsRes.error && negotiationsRes.error.code !== '42P01') {
+        throw negotiationsRes.error;
+      }
       if (negotiationsRes.data) setNegotiations(negotiationsRes.data);
-    } catch (error) {
-      console.error('Error loading vehicle details:', error);
+    } catch (err: any) {
+      console.error('Error loading vehicle details:', err);
+      setError(err?.message || 'Erro ao carregar detalhes do veículo.');
     } finally {
       setLoading(false);
     }
@@ -75,8 +89,28 @@ export function VehicleDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64" role="status">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="sr-only">Carregando detalhes do veículo...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="text-center py-12">
+        <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar veículo</h2>
+        <p className="text-sm text-destructive/80 mb-6">{error}</p>
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" onClick={() => loadVehicleDetails()}>
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+          <Button asChild>
+            <Link to="/dashboard/vehicles">Voltar para veículos</Link>
+          </Button>
+        </div>
       </div>
     );
   }

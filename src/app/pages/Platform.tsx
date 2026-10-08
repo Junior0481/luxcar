@@ -116,19 +116,37 @@ export function Platform() {
       <Card>
         <CardHeader><CardTitle>Nova empresa</CardTitle></CardHeader>
         <CardContent>
-          <form onSubmit={submit} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {field('name', 'Nome da empresa')}
-            {field('slug', 'Identificador (slug)')}
-            {field('email', 'Email comercial', 'email')}
-            {field('phone', 'Telefone')}
-            {field('city', 'Cidade')}
-            {field('state', 'Estado')}
-            {field('primaryColor', 'Cor principal', 'color')}
-            {field('secondaryColor', 'Cor secundária', 'color')}
-            {field('adminName', 'Nome do administrador')}
-            {field('adminEmail', 'Email do administrador', 'email')}
-            {field('adminPassword', 'Senha inicial', 'password')}
-            <Button disabled={saving} type="submit" className="md:col-span-2 lg:col-span-3">
+          <form onSubmit={submit} className="space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Dados da Empresa</h3>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {field('name', 'Nome da empresa')}
+                {field('slug', 'Identificador (slug)')}
+                {field('email', 'Email comercial', 'email')}
+                {field('phone', 'Telefone')}
+                {field('city', 'Cidade')}
+                {field('state', 'Estado')}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Identidade Visual</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {field('primaryColor', 'Cor principal', 'color')}
+                {field('secondaryColor', 'Cor secundária', 'color')}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Administrador Inicial</h3>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {field('adminName', 'Nome do administrador')}
+                {field('adminEmail', 'Email do administrador', 'email')}
+                {field('adminPassword', 'Senha inicial', 'password')}
+              </div>
+            </div>
+
+            <Button disabled={saving} type="submit" className="w-full sm:w-auto">
               {saving ? 'Provisionando...' : 'Criar empresa e administrador'}
             </Button>
           </form>

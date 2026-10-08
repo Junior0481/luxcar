@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
-import { Calendar, Car, Gauge, MapPin, Search, SlidersHorizontal } from 'lucide-react';
+import { AlertCircle, Calendar, Car, Gauge, MapPin, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useCompany } from '../../contexts/CompanyContext';
@@ -37,6 +37,7 @@ export function PublicHome() {
   const [vehicles, setVehicles] = useState<PublicVehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<PublicVehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState(ANY);
@@ -59,13 +60,15 @@ export function PublicHome() {
 
   const loadVehicles = async () => {
     try {
-      let { data, error } = await supabase
+      setLoading(true);
+      setError(null);
+      let { data, error: queryError } = await supabase
         .from('public_vehicles')
         .select('*')
         .eq('status', 'disponivel')
         .order('created_at', { ascending: false });
 
-      if (error && error.code === '42P01') {
+      if (queryError && queryError.code === '42P01') {
         const result = await supabase
           .from('vehicles')
           .select('*')
@@ -82,13 +85,14 @@ export function PublicHome() {
           company_state: null,
           company_phone: null
         }));
-      } else if (error) {
-        throw error;
+      } else if (queryError) {
+        throw queryError;
       }
 
       setVehicles(data || []);
-    } catch (error) {
-      console.error('Error loading vehicles:', error);
+    } catch (err: any) {
+      console.error('Error loading vehicles:', err);
+      setError(err?.message || 'Erro ao carregar veículos do catálogo.');
     } finally {
       setLoading(false);
     }
@@ -297,6 +301,20 @@ export function PublicHome() {
             <Skeleton className="h-96" />
             <Skeleton className="h-96" />
             <Skeleton className="h-96" />
+          </div>
+        ) : error ? (
+          <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-destructive sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="mt-0.5 size-5 shrink-0" />
+              <div>
+                <p className="font-medium">Erro ao carregar catálogo</p>
+                <p className="text-sm text-destructive/80">{error}</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => loadVehicles()} className="w-fit">
+              <RefreshCw className="size-4" />
+              Tentar novamente
+            </Button>
           </div>
         ) : filteredVehicles.length === 0 ? (
           <EmptyState

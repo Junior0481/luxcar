@@ -1,8 +1,8 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { CalendarDays, Filter, Handshake, Plus, Search, UserRound } from 'lucide-react';
+import { AlertCircle, CalendarDays, Filter, Handshake, Plus, RefreshCw, Search, UserRound } from 'lucide-react';
 import { NegotiationForm } from '../components/NegotiationForm';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -52,6 +52,7 @@ export function Negotiations() {
   const [negotiations, setNegotiations] = useState<NegotiationWithDetails[]>([]);
   const [filteredNegotiations, setFilteredNegotiations] = useState<NegotiationWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<string>('active');
   const [showForm, setShowForm] = useState(false);
@@ -66,6 +67,8 @@ export function Negotiations() {
 
   const loadNegotiations = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from('negotiations')
         .select(`
@@ -78,8 +81,9 @@ export function Negotiations() {
 
       if (error) throw error;
       setNegotiations(data || []);
-    } catch (error) {
-      console.error('Error loading negotiations:', error);
+    } catch (err: any) {
+      console.error('Error loading negotiations:', err);
+      setError(err?.message || 'Erro ao carregar negociações.');
     } finally {
       setLoading(false);
     }
@@ -144,17 +148,18 @@ export function Negotiations() {
         )}
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <MetricCard title="Pipeline ativo" value={summary.active} description="Conversas em andamento" icon={Handshake} accent />
         <MetricCard title="Alta prioridade" value={summary.highPriority} description="Precisam de ação rápida" icon={UserRound} />
         <MetricCard title="Finalizadas" value={summary.closed} description="Negócios ganhos" icon={CalendarDays} />
       </div>
 
       <Card>
-        <CardContent className="flex flex-col gap-4 sm:flex-row">
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Buscar por cliente ou veículo"
               placeholder="Buscar por cliente ou veículo"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -164,7 +169,7 @@ export function Negotiations() {
           <div className="relative sm:w-72">
             <Filter className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
             <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="pl-10">
+              <SelectTrigger className="pl-10" aria-label="Filtrar por etapa">
                 <SelectValue placeholder="Etapa" />
               </SelectTrigger>
               <SelectContent>
@@ -186,7 +191,21 @@ export function Negotiations() {
         </CardContent>
       </Card>
 
-      {filteredNegotiations.length === 0 ? (
+      {error ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 size-5 shrink-0" />
+            <div>
+              <p className="font-medium">Erro ao carregar negociações</p>
+              <p className="text-sm text-destructive/80">{error}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadNegotiations()} className="w-fit">
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+        </div>
+      ) : filteredNegotiations.length === 0 ? (
         <EmptyState
           icon={Handshake}
           title="Nenhuma negociação encontrada"

@@ -155,7 +155,7 @@ export function Landing() {
                 </a>
               ))}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-1 min-[340px]:grid-cols-2 gap-3">
               <Button asChild variant="secondary"><Link to="/auth/login">Entrar</Link></Button>
               <Button asChild><Link to="/auth/register">Começar</Link></Button>
             </div>

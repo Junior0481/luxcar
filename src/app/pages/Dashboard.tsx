@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Vehicle, Negotiation } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,6 +10,7 @@ import {
   Handshake,
   LayoutDashboard,
   Plus,
+  RefreshCw,
   TrendingUp
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
@@ -66,6 +67,7 @@ export function Dashboard() {
   const [recentVehicles, setRecentVehicles] = useState<Vehicle[]>([]);
   const [recentNegotiations, setRecentNegotiations] = useState<Negotiation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile?.company_id) loadDashboardData();
@@ -73,6 +75,8 @@ export function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const companyId = profile?.company_id;
       if (!companyId) throw new Error('Usuário sem empresa vinculada.');
 
@@ -98,8 +102,9 @@ export function Dashboard() {
       });
       setRecentVehicles(vehicles.slice(0, 5));
       setRecentNegotiations(negotiations.slice(0, 5));
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
+    } catch (err: any) {
+      console.error('Error loading dashboard data:', err);
+      setError(err?.message || 'Erro ao carregar dados do painel.');
     } finally {
       setLoading(false);
     }
@@ -177,7 +182,23 @@ export function Dashboard() {
         )}
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {error ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 size-5 shrink-0" />
+            <div>
+              <p className="font-medium">Erro ao carregar dados do painel</p>
+              <p className="text-sm text-destructive/80">{error}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadDashboardData()} className="w-fit">
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
           <MetricCard
             key={stat.title}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
-import { Car, Edit, Filter, Plus, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Car, Edit, Filter, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { VehicleForm } from "../components/VehicleForm";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -45,6 +45,7 @@ export function Vehicles() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showForm, setShowForm] = useState(false);
@@ -61,6 +62,8 @@ export function Vehicles() {
 
   const loadVehicles = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const { data, error } = await supabase
         .from("vehicles")
         .select("*")
@@ -69,8 +72,9 @@ export function Vehicles() {
 
       if (error) throw error;
       setVehicles(data || []);
-    } catch (error) {
-      console.error("Error loading vehicles:", error);
+    } catch (err: any) {
+      console.error("Error loading vehicles:", err);
+      setError(err?.message || "Erro ao carregar veículos.");
     } finally {
       setLoading(false);
     }
@@ -165,7 +169,7 @@ export function Vehicles() {
       />
 
       <Card>
-        <CardContent className="flex flex-col gap-4 sm:flex-row">
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -193,7 +197,21 @@ export function Vehicles() {
         </CardContent>
       </Card>
 
-      {filteredVehicles.length === 0 ? (
+      {error ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 size-5 shrink-0" />
+            <div>
+              <p className="font-medium">Erro ao carregar estoque</p>
+              <p className="text-sm text-destructive/80">{error}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadVehicles()} className="w-fit">
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+        </div>
+      ) : filteredVehicles.length === 0 ? (
         <EmptyState
           title="Nenhum veículo encontrado"
           description={
@@ -262,12 +280,12 @@ export function Vehicles() {
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     Compra: <span className="font-medium text-foreground">{brl(vehicle.purchase_price)}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <Button asChild variant="secondary" size="sm" className="flex-1">
-                      <Link to={`/dashboard/vehicles/${vehicle.id}`}>Ver ficha</Link>
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="secondary" size="sm" className="flex-1 min-w-0">
+                      <Link to={`/dashboard/vehicles/${vehicle.id}`} className="truncate">Ver ficha</Link>
                     </Button>
                     {isAdmin && (
-                      <Button variant="outline" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo">
+                      <Button variant="outline" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo" className="shrink-0">
                         <Edit className="size-4" />
                       </Button>
                     )}
@@ -277,7 +295,7 @@ export function Vehicles() {
                         size="icon"
                         onClick={() => setVehicleToDelete(vehicle)}
                         aria-label="Excluir veículo"
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive shrink-0"
                       >
                         <Trash2 className="size-4" />
                       </Button>

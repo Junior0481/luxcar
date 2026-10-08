@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Plus,
   MessageSquare,
+  RefreshCw,
   Car
 } from 'lucide-react';
 import { InteractionForm } from '../components/InteractionForm';
@@ -67,6 +68,7 @@ export function NegotiationDetails() {
   const [interactions, setInteractions] = useState<InteractionWithUser[]>([]);
   const [tradeInVehicles, setTradeInVehicles] = useState<TradeInVehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showInteractionForm, setShowInteractionForm] = useState(false);
   const [showTradeInForm, setShowTradeInForm] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -81,6 +83,8 @@ export function NegotiationDetails() {
 
   const loadNegotiationDetails = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const [negotiationRes, interactionsRes] = await Promise.all([
         supabase
           .from('negotiations')
@@ -102,7 +106,13 @@ export function NegotiationDetails() {
           .order('created_at', { ascending: false })
       ]);
 
+      if (negotiationRes.error && negotiationRes.error.code !== 'PGRST116') {
+        throw negotiationRes.error;
+      }
       if (negotiationRes.data) setNegotiation(negotiationRes.data);
+      if (interactionsRes.error && interactionsRes.error.code !== '42P01') {
+        throw interactionsRes.error;
+      }
       if (interactionsRes.data) setInteractions(interactionsRes.data);
 
       const tradeInRes = await supabase
@@ -120,8 +130,9 @@ export function NegotiationDetails() {
         setTradeInAvailable(true);
         setTradeInVehicles(tradeInRes.data || []);
       }
-    } catch (error) {
-      console.error('Error loading negotiation details:', error);
+    } catch (err: any) {
+      console.error('Error loading negotiation details:', err);
+      setError(err?.message || 'Erro ao carregar detalhes da negociação.');
     } finally {
       setLoading(false);
     }
@@ -228,8 +239,28 @@ export function NegotiationDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64" role="status">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="sr-only">Carregando detalhes da negociação...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="text-center py-12">
+        <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar negociação</h2>
+        <p className="text-sm text-destructive/80 mb-6">{error}</p>
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" onClick={() => loadNegotiationDetails()}>
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+          <Button asChild>
+            <Link to="/dashboard/negotiations">Voltar para negociações</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -420,13 +451,13 @@ export function NegotiationDetails() {
                           <p className="text-sm text-muted-foreground">{vehicle.version}</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div><span className="text-muted-foreground">Ano:</span> <span className="font-medium text-foreground">{vehicle.year}</span></div>
-                        <div><span className="text-muted-foreground">KM:</span> <span className="font-medium text-foreground">{vehicle.mileage?.toLocaleString('pt-BR')}</span></div>
-                        <div><span className="text-muted-foreground">Placa:</span> <span className="font-medium text-foreground">{vehicle.plate}</span></div>
-                        <div><span className="text-muted-foreground">Cor:</span> <span className="font-medium text-foreground capitalize">{vehicle.color}</span></div>
-                        <div><span className="text-muted-foreground">Avaliado:</span> <span className="font-semibold text-primary">{vehicle.evaluated_value ? brl(vehicle.evaluated_value) : 'Pendente'}</span></div>
-                        <div><span className="text-muted-foreground">Ofertado:</span> <span className="font-semibold text-foreground">{vehicle.offered_value ? brl(vehicle.offered_value) : '-'}</span></div>
+                      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 text-sm">
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Ano:</span> <span className="font-medium text-foreground">{vehicle.year}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">KM:</span> <span className="font-medium text-foreground">{vehicle.mileage?.toLocaleString('pt-BR')}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Placa:</span> <span className="font-medium text-foreground">{vehicle.plate}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Cor:</span> <span className="font-medium text-foreground capitalize">{vehicle.color}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Avaliado:</span> <span className="font-semibold text-primary">{vehicle.evaluated_value ? brl(vehicle.evaluated_value) : 'Pendente'}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Ofertado:</span> <span className="font-semibold text-foreground">{vehicle.offered_value ? brl(vehicle.offered_value) : '-'}</span></div>
                       </div>
                     </div>
                   ))}

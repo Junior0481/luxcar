@@ -289,11 +289,11 @@ export function Reports() {
               </CardHeader>
               <CardContent>
                 {topVehicles.length === 0 ? emptyState : (
-                  <div className="h-72 w-full">
+                  <div className="h-80 w-full">
                     <ResponsiveContainer>
                       <BarChart data={topVehicles}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                        <XAxis dataKey="veículo" angle={-35} textAnchor="end" height={92} tick={axisStyle} stroke="var(--border)" />
+                        <XAxis dataKey="veículo" angle={-35} textAnchor="end" height={80} interval={0} tick={axisStyle} stroke="var(--border)" />
                         <YAxis tick={axisStyle} stroke="var(--border)" />
                         <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--accent)' }} />
                         <Legend />
