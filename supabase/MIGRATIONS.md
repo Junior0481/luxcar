@@ -18,6 +18,7 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 14. `20261007001600_t9_security.sql` — permite que administradores atribuam negociações a vendedores da própria loja, restringe vendedores aos próprios registros relacionados e endurece o guard de perfil.
 15. `20261007001700_manual_lead_insert.sql` — libera criação autenticada de leads dentro da loja, valida atribuição de vendedor e permite lead manual sem veículo.
 16. `20261007001800_composite_fk_relationships.sql` — remove as FKs simples duplicadas: `negotiations_vehicle_id_fkey`, `sales_negotiation_id_fkey`, `sales_vehicle_id_fkey`, `payments_negotiation_id_fkey`, `payments_sale_id_fkey`, `trade_in_vehicles_negotiation_id_fkey`, `interaction_history_negotiation_id_fkey` e `interaction_history_vehicle_id_fkey`. Mantém as FKs compostas correspondentes; exige `company_id NOT NULL` em veículos, negociações, vendas, pagamentos e trocas.
+17. `20261007001900_platform_companies.sql` — restaura leitura e atualização de empresas por `platform_admin`, mantendo o acesso tenant dos demais usuários.
 
 ## Formulário público de leads (Turnstile)
 
