@@ -15,6 +15,7 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 11. `20261007001200_rls_views_ownership.sql` — aplica RLS às views de relatório, retira leitura anônima, corrige bypass administrativo do guard e limita leads/negociações de vendedores aos próprios registros.
 12. `20261007001300_tenant_integrity_storage.sql` — adiciona chaves estrangeiras compostas para vínculos entre tenants, restringe escrita no Storage pelo prefixo da empresa e limita `EXECUTE` das funções `SECURITY DEFINER`.
 13. `20261007001400_public_lead_captcha.sql` — remove a inserção pública direta em `leads`; novos leads devem passar pela Edge Function `public-lead`, que valida o Turnstile e grava com `service_role`. Restringe também registros financeiros e de troca ao ownership das negociações.
+14. `20261007001600_t9_security.sql` — permite que administradores atribuam negociações a vendedores da própria loja, restringe vendedores aos próprios registros relacionados e endurece o guard de perfil.
 
 ## Formulário público de leads (Turnstile)
 

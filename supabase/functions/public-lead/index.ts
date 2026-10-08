@@ -96,6 +96,7 @@ Deno.serve(async (request) => {
       customer_email: customerEmail || null,
       customer_phone: customerPhone || null,
       message: message || null,
+      assigned_to: null,
       source: 'website',
       status: 'new'
     }).select('*').single();
