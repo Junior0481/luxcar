@@ -29,7 +29,7 @@ export type CreateLeadInput = {
 };
 
 /** Cria um lead público pela Edge Function, após validação Turnstile no servidor. */
-export async function createLead(input: CreateLeadInput): Promise<Lead> {
+export async function createLead(input: CreateLeadInput): Promise<{ id: string }> {
   const valid = assertValid(
     validateLead({
       company_id: input.company_id,
@@ -57,7 +57,10 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
     log.error('createLead falhou', error);
     throw normalizeSupabaseError(error);
   }
-  return data.lead as Lead;
+  if (!data || typeof data.id !== 'string') {
+    throw new Error('Resposta inválida ao criar lead.');
+  }
+  return { id: data.id };
 }
 
 export type LeadListFilters = { status?: Lead['status']; assignedTo?: string };

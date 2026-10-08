@@ -11,7 +11,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   headers: { ...corsHeaders, 'Content-Type': 'application/json' }
 });
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 Deno.serve(async (request) => {
@@ -27,17 +27,23 @@ Deno.serve(async (request) => {
       return json({ error: 'Serviço temporariamente indisponível.' }, 500);
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Corpo JSON inválido.' }, 400);
+    }
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return json({ error: 'Dados do formulário inválidos.' }, 400);
     }
-    const companyId = typeof body.company_id === 'string' ? body.company_id.trim() : '';
-    const vehicleId = typeof body.vehicle_id === 'string' ? body.vehicle_id.trim() : '';
-    const customerName = typeof body.customer_name === 'string' ? body.customer_name.trim() : '';
-    const customerEmail = typeof body.customer_email === 'string' ? body.customer_email.trim() : '';
-    const customerPhone = typeof body.customer_phone === 'string' ? body.customer_phone.trim() : '';
-    const message = typeof body.message === 'string' ? body.message.trim() : '';
-    const token = typeof body.turnstile_token === 'string' ? body.turnstile_token.trim() : '';
+    const payload = body as Record<string, unknown>;
+    const companyId = typeof payload.company_id === 'string' ? payload.company_id.trim() : '';
+    const vehicleId = typeof payload.vehicle_id === 'string' ? payload.vehicle_id.trim() : '';
+    const customerName = typeof payload.customer_name === 'string' ? payload.customer_name.trim() : '';
+    const customerEmail = typeof payload.customer_email === 'string' ? payload.customer_email.trim() : '';
+    const customerPhone = typeof payload.customer_phone === 'string' ? payload.customer_phone.trim() : '';
+    const message = typeof payload.message === 'string' ? payload.message.trim() : '';
+    const token = typeof payload.turnstile_token === 'string' ? payload.turnstile_token.trim() : '';
 
     if (!UUID_RE.test(companyId) || !UUID_RE.test(vehicleId)) {
       return json({ error: 'Empresa ou veículo inválido.' }, 400);
@@ -57,23 +63,8 @@ Deno.serve(async (request) => {
     if (message.length > 2000) return json({ error: 'A mensagem excede o limite de 2000 caracteres.' }, 400);
     if (!token || token.length > 2048) return json({ error: 'Conclua a verificação antispam.' }, 400);
 
-    const service = createClient(supabaseUrl, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
-    });
-
-    const [{ data: company, error: companyError }, { data: vehicle, error: vehicleError }] = await Promise.all([
-      service.from('companies').select('id').eq('id', companyId).eq('status', 'active').maybeSingle(),
-      service.from('vehicles').select('id').eq('id', vehicleId).eq('company_id', companyId)
-        .eq('status', 'disponivel').maybeSingle()
-    ]);
-    if (companyError || vehicleError) {
-      console.error('Falha ao validar empresa/veículo do lead.', companyError ?? vehicleError);
-      return json({ error: 'Não foi possível validar a empresa ou o veículo.' }, 500);
-    }
-    if (!company || !vehicle) return json({ error: 'Este veículo não está disponível para contato.' }, 400);
-
     const verificationBody = new URLSearchParams({ secret: turnstileSecret, response: token });
-    const remoteIp = request.headers.get('cf-connecting-ip');
+    const remoteIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
     if (remoteIp) verificationBody.set('remoteip', remoteIp);
 
     const verificationResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -89,6 +80,34 @@ Deno.serve(async (request) => {
     const verification = await verificationResponse.json();
     if (verification.success !== true) return json({ error: 'Verificação antispam inválida. Tente novamente.' }, 403);
 
+    const allowedHostnames = Deno.env.get('ALLOWED_HOSTNAMES');
+    if (allowedHostnames !== undefined) {
+      const hostnameAllowlist = allowedHostnames
+        .split(',')
+        .map((hostname) => hostname.trim().toLowerCase())
+        .filter(Boolean);
+      const verifiedHostname = typeof verification.hostname === 'string'
+        ? verification.hostname.trim().toLowerCase()
+        : '';
+      if (!verifiedHostname || !hostnameAllowlist.includes(verifiedHostname)) {
+        return json({ error: 'Origem da verificação antispam inválida.' }, 403);
+      }
+    }
+
+    const service = createClient(supabaseUrl, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+    const [{ data: company, error: companyError }, { data: vehicle, error: vehicleError }] = await Promise.all([
+      service.from('companies').select('id').eq('id', companyId).eq('status', 'active').maybeSingle(),
+      service.from('vehicles').select('id').eq('id', vehicleId).eq('company_id', companyId)
+        .eq('status', 'disponivel').maybeSingle()
+    ]);
+    if (companyError || vehicleError) {
+      console.error('Falha ao validar empresa/veículo do lead.', companyError ?? vehicleError);
+      return json({ error: 'Não foi possível validar a empresa ou o veículo.' }, 500);
+    }
+    if (!company || !vehicle) return json({ error: 'Este veículo não está disponível para contato.' }, 400);
+
     const { data: lead, error: insertError } = await service.from('leads').insert({
       company_id: companyId,
       vehicle_id: vehicleId,
@@ -99,13 +118,13 @@ Deno.serve(async (request) => {
       assigned_to: null,
       source: 'website',
       status: 'new'
-    }).select('*').single();
+    }).select('id').single();
 
     if (insertError) {
       console.error('Falha ao inserir lead público.', insertError);
       return json({ error: 'Não foi possível enviar sua mensagem agora.' }, 500);
     }
-    return json({ success: true, lead }, 201);
+    return json({ id: lead.id }, 201);
   } catch (error) {
     console.error('Erro inesperado no envio do lead público.', error);
     return json({ error: 'Erro inesperado ao enviar sua mensagem.' }, 500);
