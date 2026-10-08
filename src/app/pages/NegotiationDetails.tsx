@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile, InteractionHistory, TradeInVehicle } from '../../lib/supabase';
 import {
@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Plus,
   MessageSquare,
+  RefreshCw,
   Car
 } from 'lucide-react';
 import { InteractionForm } from '../components/InteractionForm';
@@ -67,6 +68,7 @@ export function NegotiationDetails() {
   const [interactions, setInteractions] = useState<InteractionWithUser[]>([]);
   const [tradeInVehicles, setTradeInVehicles] = useState<TradeInVehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showInteractionForm, setShowInteractionForm] = useState(false);
   const [showTradeInForm, setShowTradeInForm] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -79,8 +81,12 @@ export function NegotiationDetails() {
     }
   }, [id, profile?.company_id]);
 
-  const loadNegotiationDetails = async () => {
+  const loadNegotiationDetails = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const [negotiationRes, interactionsRes] = await Promise.all([
         supabase
           .from('negotiations')
@@ -102,7 +108,13 @@ export function NegotiationDetails() {
           .order('created_at', { ascending: false })
       ]);
 
+      if (negotiationRes.error && negotiationRes.error.code !== 'PGRST116') {
+        throw negotiationRes.error;
+      }
       if (negotiationRes.data) setNegotiation(negotiationRes.data);
+      if (interactionsRes.error && interactionsRes.error.code !== '42P01') {
+        throw interactionsRes.error;
+      }
       if (interactionsRes.data) setInteractions(interactionsRes.data);
 
       const tradeInRes = await supabase
@@ -120,51 +132,36 @@ export function NegotiationDetails() {
         setTradeInAvailable(true);
         setTradeInVehicles(tradeInRes.data || []);
       }
-    } catch (error) {
-      console.error('Error loading negotiation details:', error);
+    } catch (err: any) {
+      console.error('Error loading negotiation details:', err);
+      const text = err?.message || 'Erro ao carregar detalhes da negociação.';
+      if (silent) {
+        setMessage({ type: 'error', text: `Ação concluída, mas não foi possível atualizar a tela: ${text}` });
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
-  const syncVehicleAndSaleForStage = async (nextStage: string, current: NegotiationWithDetails) => {
-    if (nextStage === 'finalizado') {
-      const { error: vehicleError } = await supabase
-        .from('vehicles')
-        .update({ status: 'vendido' })
-        .eq('id', current.vehicle_id)
-        .eq('company_id', current.company_id!);
-
-      if (vehicleError) throw vehicleError;
-
-      const { data: existingSale, error: saleLookupError } = await supabase
-        .from('sales')
-        .select('id')
-        .eq('negotiation_id', current.id)
-        .maybeSingle();
-
-      if (saleLookupError) throw saleLookupError;
-
-      if (!existingSale) {
-        const { error: saleInsertError } = await supabase
-          .from('sales')
-          .insert([{
-            negotiation_id: current.id,
-            company_id: current.company_id,
-            vehicle_id: current.vehicle_id,
-            seller_id: current.seller_id,
-            final_price: current.offered_price || current.vehicle?.sale_price || 0,
-            payment_method: 'a_definir',
-            commission: null,
-            sale_date: new Date().toISOString().split('T')[0]
-          }]);
-
-        if (saleInsertError) throw saleInsertError;
-      }
-
-      return;
+  // Venda, estágio e status do veículo são gravados de forma atômica no banco
+  // (RPC finalize_sale): exige administrador e pagamentos que cubram o preço acordado.
+  const finalizeSale = async (current: NegotiationWithDetails) => {
+    const { error } = await supabase.rpc('finalize_sale', { target_negotiation: current.id });
+    if (!error) return;
+    if (error.code === '42501') {
+      throw new Error('Apenas o administrador da loja pode finalizar a venda.');
     }
+    if (error.code === 'PGRST202' || error.code === '42883') {
+      throw new Error('A finalização de vendas ainda não foi configurada no banco. Aplique as migrations antes de usar.');
+    }
+    throw new Error(error.message || 'Não foi possível finalizar a venda.');
+  };
 
+  const syncVehicleForStage = async (nextStage: string, current: NegotiationWithDetails) => {
     const nextVehicleStatus = nextStage === 'perdido' ? 'disponivel' : 'em_negociacao';
 
     const { error: vehicleError } = await supabase
@@ -183,19 +180,24 @@ export function NegotiationDetails() {
     setMessage(null);
 
     try {
-      const { error } = await supabase
-        .from('negotiations')
-        .update({ stage: newStage })
-        .eq('id', negotiation.id)
-        .eq('company_id', profile!.company_id!)
-        .select('id')
-        .single();
+      if (newStage === 'finalizado') {
+        await finalizeSale(negotiation);
+        setMessage({ type: 'success', text: 'Venda finalizada com sucesso.' });
+      } else {
+        const { error } = await supabase
+          .from('negotiations')
+          .update({ stage: newStage })
+          .eq('id', negotiation.id)
+          .eq('company_id', profile!.company_id!)
+          .select('id')
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      await syncVehicleAndSaleForStage(newStage, negotiation);
-      setMessage({ type: 'success', text: 'Estágio atualizado com sucesso.' });
-      await loadNegotiationDetails();
+        await syncVehicleForStage(newStage, negotiation);
+        setMessage({ type: 'success', text: 'Estágio atualizado com sucesso.' });
+      }
+      await loadNegotiationDetails({ silent: true });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Erro ao atualizar estágio.' });
     } finally {
@@ -220,7 +222,7 @@ export function NegotiationDetails() {
       if (error) throw error;
 
       setMessage({ type: 'success', text: 'Prioridade atualizada com sucesso.' });
-      await loadNegotiationDetails();
+      await loadNegotiationDetails({ silent: true });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Erro ao atualizar prioridade.' });
     }
@@ -228,8 +230,28 @@ export function NegotiationDetails() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64" role="status">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="sr-only">Carregando detalhes da negociação...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="text-center py-12">
+        <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar negociação</h2>
+        <p className="text-sm text-destructive/80 mb-6">{error}</p>
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" onClick={() => loadNegotiationDetails()}>
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+          <Button asChild>
+            <Link to="/dashboard/negotiations">Voltar para negociações</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -340,7 +362,7 @@ export function NegotiationDetails() {
                           <span className="text-sm font-medium text-foreground">
                             {interactionTypeLabels[interaction.interaction_type]}
                           </span>
-                          <span className="text-xs text-muted-foreground">â€¢</span>
+                          <span className="text-xs text-muted-foreground">•</span>
                           <span className="text-xs text-muted-foreground">{interaction.user?.full_name || 'Usuário'}</span>
                         </div>
                         <p className="text-sm text-foreground">{interaction.description}</p>
@@ -420,13 +442,13 @@ export function NegotiationDetails() {
                           <p className="text-sm text-muted-foreground">{vehicle.version}</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div><span className="text-muted-foreground">Ano:</span> <span className="font-medium text-foreground">{vehicle.year}</span></div>
-                        <div><span className="text-muted-foreground">KM:</span> <span className="font-medium text-foreground">{vehicle.mileage?.toLocaleString('pt-BR')}</span></div>
-                        <div><span className="text-muted-foreground">Placa:</span> <span className="font-medium text-foreground">{vehicle.plate}</span></div>
-                        <div><span className="text-muted-foreground">Cor:</span> <span className="font-medium text-foreground capitalize">{vehicle.color}</span></div>
-                        <div><span className="text-muted-foreground">Avaliado:</span> <span className="font-semibold text-primary">{vehicle.evaluated_value ? brl(vehicle.evaluated_value) : 'Pendente'}</span></div>
-                        <div><span className="text-muted-foreground">Ofertado:</span> <span className="font-semibold text-foreground">{vehicle.offered_value ? brl(vehicle.offered_value) : '-'}</span></div>
+                      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 text-sm">
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Ano:</span> <span className="font-medium text-foreground">{vehicle.year}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">KM:</span> <span className="font-medium text-foreground">{vehicle.mileage?.toLocaleString('pt-BR')}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Placa:</span> <span className="font-medium text-foreground">{vehicle.plate}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Cor:</span> <span className="font-medium text-foreground capitalize">{vehicle.color}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Avaliado:</span> <span className="font-semibold text-primary">{vehicle.evaluated_value ? brl(vehicle.evaluated_value) : 'Pendente'}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Ofertado:</span> <span className="font-semibold text-foreground">{vehicle.offered_value ? brl(vehicle.offered_value) : '-'}</span></div>
                       </div>
                     </div>
                   ))}
@@ -469,26 +491,28 @@ export function NegotiationDetails() {
         </div>
       </div>
 
-      {showInteractionForm && negotiation && (
-        <InteractionForm
-          negotiationId={negotiation.id}
-          vehicleId={negotiation.vehicle_id}
-          onClose={() => {
-            setShowInteractionForm(false);
-            loadNegotiationDetails();
-          }}
-        />
-      )}
+      {negotiation && (
+        <>
+          <InteractionForm
+            open={showInteractionForm}
+            negotiationId={negotiation.id}
+            vehicleId={negotiation.vehicle_id}
+            onClose={() => {
+              setShowInteractionForm(false);
+              loadNegotiationDetails({ silent: true });
+            }}
+          />
 
-      {showTradeInForm && negotiation && (
-        <TradeInVehicleForm
-          negotiationId={negotiation.id}
-          companyId={negotiation.company_id || ''}
-          onClose={() => {
-            setShowTradeInForm(false);
-            loadNegotiationDetails();
-          }}
-        />
+          <TradeInVehicleForm
+            open={showTradeInForm}
+            negotiationId={negotiation.id}
+            companyId={negotiation.company_id || ''}
+            onClose={() => {
+              setShowTradeInForm(false);
+              loadNegotiationDetails({ silent: true });
+            }}
+          />
+        </>
       )}
     </div>
   );

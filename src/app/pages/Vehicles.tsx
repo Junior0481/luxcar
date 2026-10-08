@@ -1,8 +1,8 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
-import { Car, Edit, Filter, Plus, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Car, Edit, Filter, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { VehicleForm } from "../components/VehicleForm";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -18,13 +18,24 @@ import {
   SelectTrigger,
   SelectValue
 } from "../components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   disponivel: { label: "Disponível", variant: "default" },
-  em_negociacao: { label: "Em negociação", variant: "secondary" },
+  em_negociacao: { label: "Em negociação", variant: "outline" },
   vendido: { label: "Vendido", variant: "outline" },
 };
 
@@ -34,10 +45,12 @@ export function Vehicles() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showForm, setShowForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     if (profile?.company_id) loadVehicles();
@@ -47,8 +60,12 @@ export function Vehicles() {
     filterVehicles();
   }, [searchTerm, statusFilter, vehicles]);
 
-  const loadVehicles = async () => {
+  const loadVehicles = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const { data, error } = await supabase
         .from("vehicles")
         .select("*")
@@ -57,10 +74,18 @@ export function Vehicles() {
 
       if (error) throw error;
       setVehicles(data || []);
-    } catch (error) {
-      console.error("Error loading vehicles:", error);
+    } catch (err: any) {
+      console.error("Error loading vehicles:", err);
+      const text = err?.message || "Erro ao carregar veículos.";
+      if (silent) {
+        toast.error(`Ação concluída, mas não foi possível atualizar a lista: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -83,8 +108,9 @@ export function Vehicles() {
     setFilteredVehicles(filtered);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este veículo? Essa ação não pode ser desfeita.")) return;
+  const confirmDelete = async () => {
+    if (!vehicleToDelete) return;
+    const id = vehicleToDelete.id;
 
     try {
       const { data: sales } = await supabase
@@ -94,16 +120,20 @@ export function Vehicles() {
         .limit(1);
 
       if (sales && sales.length > 0) {
-        alert("Não é possível excluir: este veículo já possui vendas registradas.");
+        toast.error("Não é possível excluir: este veículo já possui vendas registradas.");
+        setVehicleToDelete(null);
         return;
       }
 
       const { error } = await supabase.from("vehicles").delete().eq("id", id);
       if (error) throw error;
 
-      loadVehicles();
+      toast.success("Veículo excluído com sucesso.");
+      loadVehicles({ silent: true });
     } catch (error: any) {
-      alert("Erro ao excluir veículo: " + error.message);
+      toast.error("Erro ao excluir veículo: " + (error.message || "Erro desconhecido"));
+    } finally {
+      setVehicleToDelete(null);
     }
   };
 
@@ -115,7 +145,7 @@ export function Vehicles() {
   const handleFormClose = () => {
     setShowForm(false);
     setEditingVehicle(null);
-    loadVehicles();
+    loadVehicles({ silent: true });
   };
 
   if (loading) {
@@ -148,10 +178,11 @@ export function Vehicles() {
       />
 
       <Card>
-        <CardContent className="flex flex-col gap-4 sm:flex-row">
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Buscar por marca, modelo ou ano"
               placeholder="Buscar por marca, modelo ou ano"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -161,7 +192,7 @@ export function Vehicles() {
           <div className="relative sm:w-64">
             <Filter className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="pl-10">
+              <SelectTrigger className="pl-10" aria-label="Filtrar por status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -175,7 +206,21 @@ export function Vehicles() {
         </CardContent>
       </Card>
 
-      {filteredVehicles.length === 0 ? (
+      {error ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 size-5 shrink-0" />
+            <div>
+              <p className="font-medium">Erro ao carregar estoque</p>
+              <p className="text-sm text-destructive/80">{error}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadVehicles()} className="w-fit">
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+        </div>
+      ) : filteredVehicles.length === 0 ? (
         <EmptyState
           title="Nenhum veículo encontrado"
           description={
@@ -244,12 +289,12 @@ export function Vehicles() {
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     Compra: <span className="font-medium text-foreground">{brl(vehicle.purchase_price)}</span>
                   </div>
-                  <div className="flex gap-2">
-                    <Button asChild variant="secondary" size="sm" className="flex-1">
-                      <Link to={`/dashboard/vehicles/${vehicle.id}`}>Ver ficha</Link>
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="secondary" size="sm" className="flex-1 min-w-0">
+                      <Link to={`/dashboard/vehicles/${vehicle.id}`} className="truncate">Ver ficha</Link>
                     </Button>
                     {isAdmin && (
-                      <Button variant="outline" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo">
+                      <Button variant="outline" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo" className="shrink-0">
                         <Edit className="size-4" />
                       </Button>
                     )}
@@ -257,9 +302,9 @@ export function Vehicles() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleDelete(vehicle.id)}
+                        onClick={() => setVehicleToDelete(vehicle)}
                         aria-label="Excluir veículo"
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive shrink-0"
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -272,7 +317,27 @@ export function Vehicles() {
         </div>
       )}
 
-      {showForm && <VehicleForm vehicle={editingVehicle} onClose={handleFormClose} />}
+      <VehicleForm open={showForm} vehicle={editingVehicle} onClose={handleFormClose} />
+
+      <AlertDialog open={!!vehicleToDelete} onOpenChange={(open) => { if (!open) setVehicleToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir veículo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O veículo {vehicleToDelete ? `"${vehicleToDelete.brand} ${vehicleToDelete.model}"` : ''} será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

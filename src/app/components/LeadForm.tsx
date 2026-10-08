@@ -1,94 +1,211 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { X, AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: {
+        sitekey: string;
+        callback: (token: string) => void;
+        'expired-callback': () => void;
+        'error-callback': () => void;
+      }) => string;
+      remove: (widgetId: string) => void;
+      reset: (widgetId?: string) => void;
+    };
+  }
+}
 
 type LeadFormProps = {
+  open?: boolean;
   vehicleId: string;
   companyId: string;
   vehicleName: string;
   onClose: () => void;
 };
 
-export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFormProps) {
+const initialFormData = {
+  customer_name: '',
+  customer_email: '',
+  customer_phone: '',
+  message: ''
+};
+
+export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClose }: LeadFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileError, setTurnstileError] = useState(false);
+  const turnstileContainer = useRef<HTMLDivElement>(null);
+  const turnstileWidget = useRef<string | null>(null);
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 
-  const [formData, setFormData] = useState({
-    customer_name: '',
-    customer_email: '',
-    customer_phone: '',
-    message: ''
-  });
+  // O LeadForm fica montado com o Dialog fechado (T10): o widget só existe com o
+  // conteúdo aberto, então renderiza ao abrir e é removido ao fechar.
+  useEffect(() => {
+    if (!turnstileSiteKey || !open) return;
+
+    let disposed = false;
+    const renderWidget = () => {
+      if (disposed || !turnstileContainer.current || !window.turnstile || turnstileWidget.current) return;
+      turnstileWidget.current = window.turnstile.render(turnstileContainer.current, {
+        sitekey: turnstileSiteKey,
+        callback: setTurnstileToken,
+        'expired-callback': () => setTurnstileToken(''),
+        'error-callback': () => {
+          setTurnstileToken('');
+          setTurnstileError(true);
+        },
+      });
+    };
+
+    let script = document.querySelector<HTMLScriptElement>('script[data-cloudflare-turnstile]');
+    if (window.turnstile) {
+      renderWidget();
+    } else {
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.cloudflareTurnstile = 'true';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', renderWidget);
+      script.addEventListener('error', () => setTurnstileError(true), { once: true });
+    }
+
+    return () => {
+      disposed = true;
+      if (turnstileWidget.current) {
+        window.turnstile?.remove(turnstileWidget.current);
+        turnstileWidget.current = null;
+      }
+      script?.removeEventListener('load', renderWidget);
+      setTurnstileToken('');
+    };
+  }, [turnstileSiteKey, open]);
+
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  const [formData, setFormData] = useState(initialFormData);
+
+  useEffect(() => {
+    if (open) {
+      setFormData(initialFormData);
+      setError('');
+      setSuccess(false);
+      setLoading(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      errorRef.current.focus();
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => {
+      onClose();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [success, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!turnstileSiteKey) {
+      setError('A verificação antispam não está configurada. Tente novamente mais tarde.');
+      return;
+    }
+    if (!turnstileToken) {
+      setError('Conclua a verificação antispam antes de enviar.');
+      return;
+    }
+    if (!formData.customer_email.trim() && !formData.customer_phone.trim()) {
+      setError('Informe e-mail ou telefone para contato.');
+      return;
+    }
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('leads').insert([
-        {
+      const { data, error: invokeError } = await supabase.functions.invoke('public-lead', {
+        body: {
           company_id: companyId,
           vehicle_id: vehicleId,
           customer_name: formData.customer_name,
-          customer_email: formData.customer_email || null,
-          customer_phone: formData.customer_phone || null,
-          message: formData.message || null,
-          source: 'website',
-          status: 'new'
-        }
-      ]);
-
-      if (error) throw error;
+          customer_email: formData.customer_email,
+          customer_phone: formData.customer_phone,
+          message: formData.message,
+          turnstile_token: turnstileToken,
+        },
+      });
+      if (invokeError) throw invokeError;
+      if (!data?.success) throw new Error('Não foi possível enviar sua mensagem.');
 
       setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
     } catch (err: any) {
-      if (err.code === '42P01') {
-        setError('O módulo de leads ainda não foi configurado no banco. Execute o SQL complementar antes de usar este formulário.');
-      } else {
-        setError(err.message || 'Erro ao enviar mensagem');
+      let message = err.message || 'Erro ao enviar mensagem';
+      if (err.context instanceof Response) {
+        const body = await err.context.json().catch(() => null);
+        message = body?.error || message;
       }
+      setError(message);
+      setTurnstileToken('');
+      if (turnstileWidget.current) window.turnstile?.reset(turnstileWidget.current);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-xl shadow-xl border border-border w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Tenho Interesse</h2>
-            <p className="text-sm text-muted-foreground mt-1">{vehicleName}</p>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onInteractOutside={(e) => { if (loading) e.preventDefault(); }}
+      >
+        <DialogHeader className="pr-6">
+          <DialogTitle className="text-xl font-bold text-foreground">Tenho Interesse</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">{vehicleName}</DialogDescription>
+        </DialogHeader>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="mx-6 mt-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-start gap-3">
+          <div role="status" aria-live="polite" className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <p className="text-sm text-emerald-700 dark:text-emerald-300">Mensagem enviada com sucesso! Em breve entraremos em contato.</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="customer_name">Seu Nome *</Label>
             <Input
@@ -133,8 +250,14 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
             />
           </div>
 
+          <div className="space-y-2" aria-label="Verificação antispam">
+            <div ref={turnstileContainer} />
+            {!turnstileSiteKey && <p className="text-sm text-destructive">Verificação antispam indisponível.</p>}
+            {turnstileError && <p className="text-sm text-destructive">Não foi possível carregar a verificação antispam.</p>}
+          </div>
+
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || success} className="flex-1">
@@ -142,7 +265,7 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

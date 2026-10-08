@@ -1,0 +1,1 @@
+-- REFERÊNCIA NÃO EXECUTÁVEL. Conteúdo preservado em ../reference/MODELO_FISICO_COMPLETO.sql.

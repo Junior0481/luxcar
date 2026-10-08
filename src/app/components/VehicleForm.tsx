@@ -1,15 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
-import { X, AlertCircle, Upload, Trash2 } from "lucide-react";
+import { AlertCircle, Upload, Trash2 } from "lucide-react";
 import { FipeSearch } from "./FipeSearch";
 import { CAR_BRANDS } from "../../constants/carBrands";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 
 type VehicleFormProps = {
+  open?: boolean;
   vehicle?: Vehicle | null;
   onClose: () => void;
 };
@@ -17,55 +25,69 @@ type VehicleFormProps = {
 const selectClass =
   "w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
-export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
+const initialFormData = {
+  brand: "",
+  model: "",
+  year: new Date().getFullYear(),
+  version: "",
+  purchase_price: "",
+  sale_price: "",
+  fipe_code: "",
+  images: [] as string[],
+  status: "disponivel" as "disponivel" | "em_negociacao" | "vendido",
+  color: "",
+  plate: "",
+  mileage: "",
+  fuel_type: "",
+  transmission: "",
+  description: "",
+};
+
+export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps) {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-
-  const [formData, setFormData] = useState({
-    brand: "",
-    model: "",
-    year: new Date().getFullYear(),
-    version: "",
-    purchase_price: "",
-    sale_price: "",
-    fipe_code: "",
-    images: [] as string[],
-    status: "disponivel" as "disponivel" | "em_negociacao" | "vendido",
-    color: "",
-    plate: "",
-    mileage: "",
-    fuel_type: "",
-    transmission: "",
-    description: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
-    if (vehicle) {
-      setFormData({
-        brand: vehicle.brand,
-        model: vehicle.model,
-        year: vehicle.year,
-        version: vehicle.version || "",
-        purchase_price: vehicle.purchase_price.toString(),
-        sale_price: vehicle.sale_price.toString(),
-        fipe_code: vehicle.fipe_code || "",
-        images: vehicle.images || [],
-        status: vehicle.status,
-        color: vehicle.color || "",
-        plate: vehicle.plate || "",
-        mileage: vehicle.mileage?.toString() || "",
-        fuel_type: vehicle.fuel_type || "",
-        transmission: vehicle.transmission || "",
-        description: vehicle.description || "",
-      });
-      if (vehicle.images) {
-        setImageUrls(vehicle.images);
+    if (open) {
+      setError("");
+      setLoading(false);
+      if (vehicle) {
+        setFormData({
+          brand: vehicle.brand,
+          model: vehicle.model,
+          year: vehicle.year,
+          version: vehicle.version || "",
+          purchase_price: vehicle.purchase_price.toString(),
+          sale_price: vehicle.sale_price.toString(),
+          fipe_code: vehicle.fipe_code || "",
+          images: vehicle.images || [],
+          status: vehicle.status,
+          color: vehicle.color || "",
+          plate: vehicle.plate || "",
+          mileage: vehicle.mileage?.toString() || "",
+          fuel_type: vehicle.fuel_type || "",
+          transmission: vehicle.transmission || "",
+          description: vehicle.description || "",
+        });
+        setImageUrls(vehicle.images || []);
+      } else {
+        setFormData({ ...initialFormData, year: new Date().getFullYear() });
+        setImageUrls([]);
       }
     }
-  }, [vehicle]);
+  }, [open, vehicle]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   const formatPlate = (value: string): string => {
     let cleaned = value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
@@ -170,25 +192,34 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6">
-      <div className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-7xl h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
-          <h2 className="text-2xl font-bold text-foreground">
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-6xl max-h-[90vh] overflow-y-auto"
+        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="pr-6">
+          <DialogTitle className="text-2xl font-bold text-foreground">
             {vehicle ? "Editar Veículo" : "Cadastrar Novo Veículo"}
-          </h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Fechar">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {vehicle ? "Edite as informações do veículo." : "Preencha as informações para cadastrar um novo veículo."}
+          </DialogDescription>
+        </DialogHeader>
 
         {error && (
-          <div className="mx-6 mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label htmlFor="brand">Marca *</Label>
@@ -297,8 +328,9 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
                     <img src={url} alt={`Foto ${index + 1}`} className="w-full h-32 object-cover rounded-lg border-2 border-border" />
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                       onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                      aria-label={`Excluir foto ${index + 1}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -321,7 +353,7 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
@@ -329,7 +361,7 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

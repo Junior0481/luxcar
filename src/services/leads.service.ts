@@ -10,7 +10,7 @@
  */
 
 import { supabase, type Lead } from '../lib/supabase';
-import { normalizeSupabaseError, AppError } from '../lib/errors';
+import { normalizeSupabaseError } from '../lib/errors';
 import { createLogger } from '../lib/logger';
 import { scopeToTenant, resolveRange, buildPage, type TenantContext, type PageParams, type Paginated } from './shared';
 import { assertValid, validateLead } from './validation';
@@ -25,10 +25,11 @@ export type CreateLeadInput = {
   customer_phone?: string | null;
   message?: string | null;
   source?: string;
+  turnstile_token: string;
 };
 
-/** Cria um lead público. Valida contato (e-mail ou telefone) no backend. */
-export async function createLead(input: CreateLeadInput): Promise<Lead> {
+/** Cria um lead público pela Edge Function, após validação Turnstile no servidor. */
+export async function createLead(input: CreateLeadInput): Promise<{ id: string }> {
   const valid = assertValid(
     validateLead({
       company_id: input.company_id,
@@ -49,22 +50,17 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
     status: 'new' as const,
   };
 
-  const { data, error } = await supabase.from('leads').insert([payload]).select().single();
+  const { data, error } = await supabase.functions.invoke('public-lead', {
+    body: { ...payload, turnstile_token: input.turnstile_token },
+  });
   if (error) {
-    // Preserva a mensagem amigável do form atual quando a tabela não existe.
-    if ((error as { code?: string }).code === '42P01') {
-      log.warn('createLead: tabela leads inexistente', error);
-      throw new AppError('conflict', {
-        userMessage:
-          'O módulo de leads ainda não foi configurado no banco. Execute o SQL complementar antes de usar este formulário.',
-        technical: (error as { message?: string }).message,
-        cause: error,
-      });
-    }
     log.error('createLead falhou', error);
     throw normalizeSupabaseError(error);
   }
-  return data as Lead;
+  if (!data || typeof data.id !== 'string') {
+    throw new Error('Resposta inválida ao criar lead.');
+  }
+  return { id: data.id };
 }
 
 export type LeadListFilters = { status?: Lead['status']; assignedTo?: string };

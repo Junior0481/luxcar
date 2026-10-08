@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { supabase, Vehicle, VehicleCost, Negotiation } from '../../lib/supabase';
 import {
@@ -6,6 +6,7 @@ import {
   DollarSign,
   AlertCircle,
   Plus,
+  RefreshCw,
   Wrench,
   TrendingUp
 } from 'lucide-react';
@@ -13,13 +14,21 @@ import { CostForm } from '../components/CostForm';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { toast } from 'sonner';
 
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   disponivel: { label: 'Disponível', variant: 'default' },
-  em_negociacao: { label: 'Em Negociação', variant: 'secondary' },
+  em_negociacao: { label: 'Em Negociação', variant: 'outline' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
 
@@ -39,7 +48,9 @@ export function VehicleDetails() {
   const [costs, setCosts] = useState<VehicleCost[]>([]);
   const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCostForm, setShowCostForm] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -47,28 +58,69 @@ export function VehicleDetails() {
     }
   }, [id]);
 
-  const loadVehicleDetails = async () => {
+  const loadVehicleDetails = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const [vehicleRes, costsRes, negotiationsRes] = await Promise.all([
         supabase.from('vehicles').select('*').eq('id', id).single(),
         supabase.from('vehicle_costs').select('*').eq('vehicle_id', id).order('service_date', { ascending: false }),
         supabase.from('negotiations').select('*').eq('vehicle_id', id).order('created_at', { ascending: false })
       ]);
 
+      if (vehicleRes.error && vehicleRes.error.code !== 'PGRST116') {
+        throw vehicleRes.error;
+      }
       if (vehicleRes.data) setVehicle(vehicleRes.data);
+      if (costsRes.error && costsRes.error.code !== '42P01') {
+        throw costsRes.error;
+      }
       if (costsRes.data) setCosts(costsRes.data);
+      if (negotiationsRes.error && negotiationsRes.error.code !== '42P01') {
+        throw negotiationsRes.error;
+      }
       if (negotiationsRes.data) setNegotiations(negotiationsRes.data);
-    } catch (error) {
-      console.error('Error loading vehicle details:', error);
+    } catch (err: any) {
+      console.error('Error loading vehicle details:', err);
+      const text = err?.message || 'Erro ao carregar detalhes do veículo.';
+      if (silent) {
+        toast.error(`Ação concluída, mas não foi possível atualizar os detalhes: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64" role="status">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="sr-only">Carregando detalhes do veículo...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="text-center py-12">
+        <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar veículo</h2>
+        <p className="text-sm text-destructive/80 mb-6">{error}</p>
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" onClick={() => loadVehicleDetails()}>
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+          <Button asChild>
+            <Link to="/dashboard/vehicles">Voltar para veículos</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -118,7 +170,7 @@ export function VehicleDetails() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {vehicle.year}
-            {vehicle.version ? ` â€¢ ${vehicle.version}` : ''}
+            {vehicle.version ? ` • ${vehicle.version}` : ''}
           </p>
         </div>
         <div className="ml-auto shrink-0">
@@ -151,16 +203,19 @@ export function VehicleDetails() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {vehicle.images.map((image, index) => (
-                <div
+                <button
                   key={index}
-                  className="aspect-square overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer"
+                  type="button"
+                  onClick={() => setSelectedPhoto(image)}
+                  aria-label={`Ver foto ${index + 1} ampliada`}
+                  className="aspect-square overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <img
                     src={image}
                     alt={`${vehicle.brand} ${vehicle.model} - Foto ${index + 1}`}
                     className="w-full h-full object-cover hover:scale-110 transition-transform"
                   />
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -244,15 +299,32 @@ export function VehicleDetails() {
         </Card>
       </div>
 
-      {showCostForm && vehicle && (
+      {vehicle && (
         <CostForm
+          open={showCostForm}
           vehicleId={vehicle.id}
           onClose={() => {
             setShowCostForm(false);
-            loadVehicleDetails();
+            loadVehicleDetails({ silent: true });
           }}
         />
       )}
+
+      <Dialog open={!!selectedPhoto} onOpenChange={(open) => { if (!open) setSelectedPhoto(null); }}>
+        <DialogContent className="sm:max-w-3xl p-3 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Foto do veículo</DialogTitle>
+            <DialogDescription>{vehicle.brand} {vehicle.model}</DialogDescription>
+          </DialogHeader>
+          {selectedPhoto && (
+            <img
+              src={selectedPhoto}
+              alt={`${vehicle.brand} ${vehicle.model}`}
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,7 +1,7 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
-import { Calendar, Car, Gauge, MapPin, Search, SlidersHorizontal } from 'lucide-react';
+import { AlertCircle, Calendar, Car, Gauge, MapPin, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useCompany } from '../../contexts/CompanyContext';
@@ -37,6 +37,7 @@ export function PublicHome() {
   const [vehicles, setVehicles] = useState<PublicVehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<PublicVehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState(ANY);
@@ -59,13 +60,15 @@ export function PublicHome() {
 
   const loadVehicles = async () => {
     try {
-      let { data, error } = await supabase
+      setLoading(true);
+      setError(null);
+      let { data, error: queryError } = await supabase
         .from('public_vehicles')
         .select('*')
         .eq('status', 'disponivel')
         .order('created_at', { ascending: false });
 
-      if (error && error.code === '42P01') {
+      if (queryError && queryError.code === '42P01') {
         const result = await supabase
           .from('vehicles')
           .select('*')
@@ -82,13 +85,14 @@ export function PublicHome() {
           company_state: null,
           company_phone: null
         }));
-      } else if (error) {
-        throw error;
+      } else if (queryError) {
+        throw queryError;
       }
 
       setVehicles(data || []);
-    } catch (error) {
-      console.error('Error loading vehicles:', error);
+    } catch (err: any) {
+      console.error('Error loading vehicles:', err);
+      setError(err?.message || 'Erro ao carregar veículos do catálogo.');
     } finally {
       setLoading(false);
     }
@@ -171,7 +175,7 @@ export function PublicHome() {
       <section className="lux-gradient border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-14">
           <div className="max-w-3xl">
-            <p className="text-sm font-medium uppercase text-muted-foreground">Estoque disponivel</p>
+            <p className="text-sm font-medium uppercase text-muted-foreground">Estoque disponível</p>
             <h2 className="mt-3 text-4xl font-medium tracking-normal text-foreground md:text-5xl">
               Encontre o carro certo em uma vitrine organizada.
             </h2>
@@ -225,9 +229,9 @@ export function PublicHome() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Ano mínimo</Label>
+                  <Label htmlFor="min-year-filter">Ano mínimo</Label>
                   <Select value={minYear} onValueChange={setMinYear}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="min-year-filter" aria-label="Ano mínimo"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={ANY}>Todos</SelectItem>
                       {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
@@ -235,9 +239,9 @@ export function PublicHome() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Ano máximo</Label>
+                  <Label htmlFor="max-year-filter">Ano máximo</Label>
                   <Select value={maxYear} onValueChange={setMaxYear}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="max-year-filter" aria-label="Ano máximo"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={ANY}>Todos</SelectItem>
                       {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
@@ -245,9 +249,9 @@ export function PublicHome() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Combustível</Label>
+                  <Label htmlFor="fuel-filter">Combustível</Label>
                   <Select value={fuelType} onValueChange={setFuelType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="fuel-filter" aria-label="Combustível"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={ANY}>Todos</SelectItem>
                       <SelectItem value="gasolina">Gasolina</SelectItem>
@@ -268,13 +272,13 @@ export function PublicHome() {
                   <Input id="maxPrice" type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="R$ 200000" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Câmbio</Label>
+                  <Label htmlFor="transmission-filter">Câmbio</Label>
                   <Select value={transmission} onValueChange={setTransmission}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="transmission-filter" aria-label="Câmbio"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={ANY}>Todos</SelectItem>
                       <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="automatica">Automatica</SelectItem>
+                      <SelectItem value="automatica">Automática</SelectItem>
                       <SelectItem value="automatizada">Automatizada</SelectItem>
                       <SelectItem value="cvt">CVT</SelectItem>
                     </SelectContent>
@@ -297,6 +301,20 @@ export function PublicHome() {
             <Skeleton className="h-96" />
             <Skeleton className="h-96" />
             <Skeleton className="h-96" />
+          </div>
+        ) : error ? (
+          <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-destructive sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="mt-0.5 size-5 shrink-0" />
+              <div>
+                <p className="font-medium">Erro ao carregar catálogo</p>
+                <p className="text-sm text-destructive/80">{error}</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => loadVehicles()} className="w-fit">
+              <RefreshCw className="size-4" />
+              Tentar novamente
+            </Button>
           </div>
         ) : filteredVehicles.length === 0 ? (
           <EmptyState

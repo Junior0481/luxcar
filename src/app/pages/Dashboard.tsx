@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Vehicle, Negotiation } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,6 +10,7 @@ import {
   Handshake,
   LayoutDashboard,
   Plus,
+  RefreshCw,
   TrendingUp
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
@@ -20,6 +21,7 @@ import { EmptyState } from '../components/ui/empty-state';
 import { MetricCard } from '../components/ui/metric-card';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -43,7 +45,7 @@ const brl = (v: number) =>
 
 const statusBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   disponivel: { label: 'Disponível', variant: 'default' },
-  em_negociacao: { label: 'Em negociação', variant: 'secondary' },
+  em_negociacao: { label: 'Em negociação', variant: 'outline' },
   vendido: { label: 'Vendido', variant: 'outline' }
 };
 
@@ -66,13 +68,18 @@ export function Dashboard() {
   const [recentVehicles, setRecentVehicles] = useState<Vehicle[]>([]);
   const [recentNegotiations, setRecentNegotiations] = useState<Negotiation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile?.company_id) loadDashboardData();
   }, [profile?.company_id]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
       const companyId = profile?.company_id;
       if (!companyId) throw new Error('Usuário sem empresa vinculada.');
 
@@ -98,10 +105,18 @@ export function Dashboard() {
       });
       setRecentVehicles(vehicles.slice(0, 5));
       setRecentNegotiations(negotiations.slice(0, 5));
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
+    } catch (err: any) {
+      console.error('Error loading dashboard data:', err);
+      const text = err?.message || 'Erro ao carregar dados do painel.';
+      if (silent) {
+        toast.error(`Ação concluída, mas não foi possível atualizar o painel: ${text}`);
+      } else {
+        setError(text);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -177,7 +192,23 @@ export function Dashboard() {
         )}
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {error ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 size-5 shrink-0" />
+            <div>
+              <p className="font-medium">Erro ao carregar dados do painel</p>
+              <p className="text-sm text-destructive/80">{error}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadDashboardData()} className="w-fit">
+            <RefreshCw className="size-4" />
+            Tentar novamente
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
           <MetricCard
             key={stat.title}
@@ -311,7 +342,7 @@ export function Dashboard() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
+                      <Badge variant="outline">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge

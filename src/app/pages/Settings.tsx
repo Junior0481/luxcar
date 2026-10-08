@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { supabase } from '../../lib/supabase';
@@ -9,6 +9,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { PageHeader } from '../components/ui/page-header';
+import { Skeleton } from '../components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { cn } from '../components/ui/utils';
 
 type MessageState = {
@@ -17,7 +19,7 @@ type MessageState = {
 } | null;
 
 export function Settings() {
-  const { profile, user, refreshProfile } = useAuth();
+  const { profile, user, refreshProfile, loading } = useAuth();
   const { company } = useCompany();
   const [activeTab, setActiveTab] = useState('profile');
   const [saving, setSaving] = useState(false);
@@ -231,6 +233,23 @@ export function Settings() {
     { key: 'linkedVehicleUpdates' as const, title: 'Veículo vinculado', desc: 'Notificar apenas sobre atualizações importantes do veículo negociado' }
   ];
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          icon={Palette}
+          eyebrow="Operação e identidade"
+          title="Configurações"
+          description="Ajuste perfil, segurança, preferências e dados operacionais da loja."
+        />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          <Skeleton className="h-64 lg:col-span-1" />
+          <Skeleton className="h-96 lg:col-span-3" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -256,31 +275,32 @@ export function Settings() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        <aside className="lg:col-span-1">
-          <Card className="gap-0 overflow-hidden py-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors',
-                  activeTab === tab.id
-                    ? 'border-primary bg-accent text-primary'
-                    : 'border-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                )}
-              >
-                <tab.icon className="size-5" />
-                <span>
-                  <span className="block text-sm font-medium">{tab.label}</span>
-                  <span className="block text-xs opacity-70">{tab.desc}</span>
-                </span>
-              </button>
-            ))}
-          </Card>
-        </aside>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          <aside className="lg:col-span-1">
+            <Card className="gap-0 overflow-hidden p-1 lg:py-2">
+              <TabsList className="flex w-full overflow-x-auto lg:flex-col lg:overflow-visible h-auto bg-transparent p-0 gap-1 justify-start">
+                {tabs.map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 text-left justify-start transition-colors rounded-lg w-full shrink-0',
+                      'data-[state=active]:bg-accent data-[state=active]:text-primary border-l-2 data-[state=active]:border-primary border-transparent'
+                    )}
+                  >
+                    <tab.icon className="size-5 shrink-0" />
+                    <span className="text-left">
+                      <span className="block text-sm font-medium">{tab.label}</span>
+                      <span className="hidden lg:block text-xs opacity-70 text-muted-foreground">{tab.desc}</span>
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Card>
+          </aside>
 
-        <section className="lg:col-span-3">
+          <section className="lg:col-span-3">
           <Card>
             <CardHeader>
               <CardTitle>{tabs.find((tab) => tab.id === activeTab)?.label}</CardTitle>
@@ -408,6 +428,7 @@ export function Settings() {
                 </Button>
                 <Button
                   variant="secondary"
+                  disabled={saving}
                   onClick={() => {
                     setProfileForm({
                       fullName: profile?.full_name || '',
@@ -423,6 +444,7 @@ export function Settings() {
           </Card>
         </section>
       </div>
+      </Tabs>
     </div>
   );
 }
