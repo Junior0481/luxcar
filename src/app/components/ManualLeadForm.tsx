@@ -271,7 +271,7 @@ export function ManualLeadForm({ open = true, onClose, onSuccess }: ManualLeadFo
           <div className="flex gap-3 pt-4 border-t border-border">
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               className="flex-1"
               onClick={onClose}
               disabled={loading}

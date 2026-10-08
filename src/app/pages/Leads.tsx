@@ -47,15 +47,18 @@ const statusLabels: Record<string, string> = {
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   new: 'default',
-  contacted: 'secondary',
-  qualified: 'secondary',
+  contacted: 'outline',
+  qualified: 'outline',
   converted: 'outline',
   lost: 'destructive',
 };
 
-const sourceLabels: Record<string, string> = {
-  manual: 'Manual (Loja)',
-  website: 'Site',
+const getSourceLabel = (source?: string | null): string => {
+  if (!source) return 'Não informada';
+  const normalized = source.trim().toLowerCase();
+  if (normalized === 'website') return 'Site';
+  if (normalized === 'manual') return 'Manual';
+  return source;
 };
 
 export function Leads() {
@@ -120,7 +123,9 @@ export function Leads() {
     }
 
     if (sourceFilter !== 'all') {
-      result = result.filter((item) => item.source === sourceFilter);
+      result = result.filter(
+        (item) => (item.source || '').trim().toLowerCase() === sourceFilter.toLowerCase()
+      );
     }
 
     if (searchTerm) {
@@ -240,7 +245,7 @@ export function Leads() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as origens</SelectItem>
-                <SelectItem value="manual">Manual (Loja)</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
                 <SelectItem value="website">Site</SelectItem>
               </SelectContent>
             </Select>
@@ -291,9 +296,9 @@ export function Leads() {
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {filteredLeads.map((lead) => {
-            const vBadge = statusVariant[lead.status] || 'secondary';
+            const vBadge = statusVariant[lead.status] || 'outline';
             const sLabel = statusLabels[lead.status] || lead.status;
-            const srcLabel = sourceLabels[lead.source] || lead.source;
+            const srcLabel = getSourceLabel(lead.source);
 
             return (
               <Card key={lead.id} className="lux-card-hover">

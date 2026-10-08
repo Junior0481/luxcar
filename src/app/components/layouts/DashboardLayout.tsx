@@ -96,9 +96,15 @@ export function DashboardLayout() {
     navigate('/auth/login');
   };
 
+  const isPlatformAdmin = profile.role === 'platform_admin';
+
   const brand = (
     <div className="flex items-center gap-3">
-      {company?.logo_url ? (
+      {isPlatformAdmin ? (
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
+          <Building2 className="size-6" aria-hidden="true" />
+        </div>
+      ) : company?.logo_url ? (
         <img src={company.logo_url} alt={`Logo ${company.name}`} className="size-11 rounded-2xl object-contain" />
       ) : (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
@@ -106,8 +112,12 @@ export function DashboardLayout() {
         </div>
       )}
       <div>
-        <h1 className="text-lg font-medium leading-tight text-sidebar-foreground">{company?.name || 'LuxCar'}</h1>
-        <p className="text-xs text-sidebar-foreground/60">Centro da loja</p>
+        <h1 className="text-lg font-medium leading-tight text-sidebar-foreground">
+          {isPlatformAdmin ? 'LuxCar Plataforma' : (company?.name || 'LuxCar')}
+        </h1>
+        {!isPlatformAdmin && (
+          <p className="text-xs text-sidebar-foreground/60">Centro da loja</p>
+        )}
       </div>
     </div>
   );
@@ -202,9 +212,11 @@ export function DashboardLayout() {
           </Button>
           <div className="flex items-center gap-2">
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Car className="size-5" />
+              {isPlatformAdmin ? <Building2 className="size-5" /> : <Car className="size-5" />}
             </div>
-            <span className="font-medium text-foreground">{company?.name || 'LuxCar'}</span>
+            <span className="font-medium text-foreground">
+              {isPlatformAdmin ? 'LuxCar Plataforma' : (company?.name || 'LuxCar')}
+            </span>
           </div>
           <ThemeToggle />
         </header>

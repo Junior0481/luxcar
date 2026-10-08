@@ -9,11 +9,35 @@ type CompanyContextValue = {
 
 const CompanyContext = createContext<CompanyContextValue>({ company: null, loading: true });
 
+function getContrastForeground(hex: string): string {
+  const clean = hex.replace('#', '').trim();
+  let r = 0, g = 0, b = 0;
+  if (clean.length === 3) {
+    r = parseInt(clean[0] + clean[0], 16);
+    g = parseInt(clean[1] + clean[1], 16);
+    b = parseInt(clean[2] + clean[2], 16);
+  } else if (clean.length === 6) {
+    r = parseInt(clean.substring(0, 2), 16);
+    g = parseInt(clean.substring(2, 4), 16);
+    b = parseInt(clean.substring(4, 6), 16);
+  } else {
+    return '#ffffff';
+  }
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? '#0a0a0b' : '#ffffff';
+}
+
 function applyBranding(company: Company | null) {
   if (!company) return;
   document.title = company.name;
-  if (company.primary_color) document.documentElement.style.setProperty('--primary', company.primary_color);
-  if (company.secondary_color) document.documentElement.style.setProperty('--secondary', company.secondary_color);
+  if (company.primary_color) {
+    document.documentElement.style.setProperty('--primary', company.primary_color);
+    document.documentElement.style.setProperty('--primary-foreground', getContrastForeground(company.primary_color));
+  }
+  if (company.secondary_color) {
+    document.documentElement.style.setProperty('--secondary', company.secondary_color);
+    document.documentElement.style.setProperty('--secondary-foreground', getContrastForeground(company.secondary_color));
+  }
 
   if (company.favicon_url) {
     let favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
