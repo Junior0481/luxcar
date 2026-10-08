@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import { AlertCircle, Upload, Trash2 } from "lucide-react";
@@ -17,6 +17,7 @@ import {
 } from "./ui/dialog";
 
 type VehicleFormProps = {
+  open?: boolean;
   vehicle?: Vehicle | null;
   onClose: () => void;
 };
@@ -24,55 +25,69 @@ type VehicleFormProps = {
 const selectClass =
   "w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
-export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
+const initialFormData = {
+  brand: "",
+  model: "",
+  year: new Date().getFullYear(),
+  version: "",
+  purchase_price: "",
+  sale_price: "",
+  fipe_code: "",
+  images: [] as string[],
+  status: "disponivel" as "disponivel" | "em_negociacao" | "vendido",
+  color: "",
+  plate: "",
+  mileage: "",
+  fuel_type: "",
+  transmission: "",
+  description: "",
+};
+
+export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps) {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-
-  const [formData, setFormData] = useState({
-    brand: "",
-    model: "",
-    year: new Date().getFullYear(),
-    version: "",
-    purchase_price: "",
-    sale_price: "",
-    fipe_code: "",
-    images: [] as string[],
-    status: "disponivel" as "disponivel" | "em_negociacao" | "vendido",
-    color: "",
-    plate: "",
-    mileage: "",
-    fuel_type: "",
-    transmission: "",
-    description: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
-    if (vehicle) {
-      setFormData({
-        brand: vehicle.brand,
-        model: vehicle.model,
-        year: vehicle.year,
-        version: vehicle.version || "",
-        purchase_price: vehicle.purchase_price.toString(),
-        sale_price: vehicle.sale_price.toString(),
-        fipe_code: vehicle.fipe_code || "",
-        images: vehicle.images || [],
-        status: vehicle.status,
-        color: vehicle.color || "",
-        plate: vehicle.plate || "",
-        mileage: vehicle.mileage?.toString() || "",
-        fuel_type: vehicle.fuel_type || "",
-        transmission: vehicle.transmission || "",
-        description: vehicle.description || "",
-      });
-      if (vehicle.images) {
-        setImageUrls(vehicle.images);
+    if (open) {
+      setError("");
+      setLoading(false);
+      if (vehicle) {
+        setFormData({
+          brand: vehicle.brand,
+          model: vehicle.model,
+          year: vehicle.year,
+          version: vehicle.version || "",
+          purchase_price: vehicle.purchase_price.toString(),
+          sale_price: vehicle.sale_price.toString(),
+          fipe_code: vehicle.fipe_code || "",
+          images: vehicle.images || [],
+          status: vehicle.status,
+          color: vehicle.color || "",
+          plate: vehicle.plate || "",
+          mileage: vehicle.mileage?.toString() || "",
+          fuel_type: vehicle.fuel_type || "",
+          transmission: vehicle.transmission || "",
+          description: vehicle.description || "",
+        });
+        setImageUrls(vehicle.images || []);
+      } else {
+        setFormData({ ...initialFormData, year: new Date().getFullYear() });
+        setImageUrls([]);
       }
     }
-  }, [vehicle]);
+  }, [open, vehicle]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   const formatPlate = (value: string): string => {
     let cleaned = value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
@@ -177,7 +192,7 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
       <DialogContent
         className="sm:max-w-6xl max-h-[90vh] overflow-y-auto"
         onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
@@ -193,7 +208,12 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
         </DialogHeader>
 
         {error && (
-          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>

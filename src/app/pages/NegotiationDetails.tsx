@@ -509,26 +509,28 @@ export function NegotiationDetails() {
         </div>
       </div>
 
-      {showInteractionForm && negotiation && (
-        <InteractionForm
-          negotiationId={negotiation.id}
-          vehicleId={negotiation.vehicle_id}
-          onClose={() => {
-            setShowInteractionForm(false);
-            loadNegotiationDetails({ silent: true });
-          }}
-        />
-      )}
+      {negotiation && (
+        <>
+          <InteractionForm
+            open={showInteractionForm}
+            negotiationId={negotiation.id}
+            vehicleId={negotiation.vehicle_id}
+            onClose={() => {
+              setShowInteractionForm(false);
+              loadNegotiationDetails({ silent: true });
+            }}
+          />
 
-      {showTradeInForm && negotiation && (
-        <TradeInVehicleForm
-          negotiationId={negotiation.id}
-          companyId={negotiation.company_id || ''}
-          onClose={() => {
-            setShowTradeInForm(false);
-            loadNegotiationDetails({ silent: true });
-          }}
-        />
+          <TradeInVehicleForm
+            open={showTradeInForm}
+            negotiationId={negotiation.id}
+            companyId={negotiation.company_id || ''}
+            onClose={() => {
+              setShowTradeInForm(false);
+              loadNegotiationDetails({ silent: true });
+            }}
+          />
+        </>
       )}
     </div>
   );

@@ -299,8 +299,9 @@ export function VehicleDetails() {
         </Card>
       </div>
 
-      {showCostForm && vehicle && (
+      {vehicle && (
         <CostForm
+          open={showCostForm}
           vehicleId={vehicle.id}
           onClose={() => {
             setShowCostForm(false);

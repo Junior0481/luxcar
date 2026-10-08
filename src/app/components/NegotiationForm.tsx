@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
@@ -15,6 +15,7 @@ import {
 } from './ui/dialog';
 
 type NegotiationFormProps = {
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -24,27 +25,41 @@ const brl = (v: number) =>
 const selectClass =
   'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
-export function NegotiationForm({ onClose }: NegotiationFormProps) {
+const initialFormData = {
+  vehicle_id: '',
+  client_name: '',
+  client_phone: '',
+  client_email: '',
+  client_cpf: '',
+  stage: 'primeiro_contato' as any,
+  offered_price: '',
+  notes: '',
+  priority: 'media' as 'baixa' | 'media' | 'alta'
+};
+
+export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLDivElement>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-
-  const [formData, setFormData] = useState({
-    vehicle_id: '',
-    client_name: '',
-    client_phone: '',
-    client_email: '',
-    client_cpf: '',
-    stage: 'primeiro_contato' as any,
-    offered_price: '',
-    notes: '',
-    priority: 'media' as 'baixa' | 'media' | 'alta'
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
-    if (profile?.company_id) loadVehicles();
-  }, [profile?.company_id]);
+    if (open) {
+      setFormData(initialFormData);
+      setError('');
+      setLoading(false);
+      if (profile?.company_id) loadVehicles();
+    }
+  }, [open, profile?.company_id]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   const loadVehicles = async () => {
     try {
@@ -99,7 +114,7 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
       <DialogContent
         className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
         onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
@@ -115,7 +130,12 @@ export function NegotiationForm({ onClose }: NegotiationFormProps) {
         </DialogHeader>
 
         {error && (
-          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>

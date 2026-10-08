@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
@@ -15,6 +15,7 @@ import {
 } from './ui/dialog';
 
 type CostFormProps = {
+  open?: boolean;
   vehicleId: string;
   onClose: () => void;
 };
@@ -22,17 +23,39 @@ type CostFormProps = {
 const selectClass =
   'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
-export function CostForm({ vehicleId, onClose }: CostFormProps) {
+const initialFormData = {
+  cost_type: 'manutencao' as 'manutencao' | 'estetica' | 'mecanica' | 'revisao' | 'laudo' | 'outro',
+  description: '',
+  amount: '',
+  service_date: new Date().toISOString().split('T')[0]
+};
+
+export function CostForm({ open = true, vehicleId, onClose }: CostFormProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLDivElement>(null);
+  const [formData, setFormData] = useState(initialFormData);
 
-  const [formData, setFormData] = useState({
-    cost_type: 'manutencao' as 'manutencao' | 'estetica' | 'mecanica' | 'revisao' | 'laudo' | 'outro',
-    description: '',
-    amount: '',
-    service_date: new Date().toISOString().split('T')[0]
-  });
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        cost_type: 'manutencao',
+        description: '',
+        amount: '',
+        service_date: new Date().toISOString().split('T')[0]
+      });
+      setError('');
+      setLoading(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +84,7 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
       <DialogContent
         className="sm:max-w-md max-h-[90vh] overflow-y-auto"
         onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
@@ -77,7 +100,12 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
         </DialogHeader>
 
         {error && (
-          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>

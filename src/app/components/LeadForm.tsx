@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
@@ -14,23 +14,43 @@ import {
 } from './ui/dialog';
 
 type LeadFormProps = {
+  open?: boolean;
   vehicleId: string;
   companyId: string;
   vehicleName: string;
   onClose: () => void;
 };
 
-export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFormProps) {
+const initialFormData = {
+  customer_name: '',
+  customer_email: '',
+  customer_phone: '',
+  message: ''
+};
+
+export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClose }: LeadFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const errorRef = useRef<HTMLDivElement>(null);
 
-  const [formData, setFormData] = useState({
-    customer_name: '',
-    customer_email: '',
-    customer_phone: '',
-    message: ''
-  });
+  const [formData, setFormData] = useState(initialFormData);
+
+  useEffect(() => {
+    if (open) {
+      setFormData(initialFormData);
+      setError('');
+      setSuccess(false);
+      setLoading(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!success) return;
@@ -74,7 +94,7 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
       <DialogContent
         className="sm:max-w-md max-h-[90vh] overflow-y-auto"
         onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
@@ -86,7 +106,12 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
         </DialogHeader>
 
         {error && (
-          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>

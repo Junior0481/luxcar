@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, TradeInVehicle } from '../../lib/supabase';
 import { AlertCircle, Upload, Trash2 } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
@@ -15,6 +15,7 @@ import {
 } from './ui/dialog';
 
 type TradeInVehicleFormProps = {
+  open?: boolean;
   negotiationId: string;
   companyId: string;
   existingTradeIn?: TradeInVehicle | null;
@@ -24,53 +25,67 @@ type TradeInVehicleFormProps = {
 const selectClass =
   'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
-export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, onClose }: TradeInVehicleFormProps) {
+const initialFormData = {
+  brand: '',
+  model: '',
+  year: new Date().getFullYear(),
+  version: '',
+  plate: '',
+  mileage: '',
+  color: '',
+  fuel_type: '',
+  transmission: '',
+  condition_notes: '',
+  evaluated_value: '',
+  offered_value: '',
+  evaluator_name: '',
+  evaluation_date: '',
+  needs_evaluation: true
+};
+
+export function TradeInVehicleForm({ open = true, negotiationId, companyId, existingTradeIn, onClose }: TradeInVehicleFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLDivElement>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-
-  const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    year: new Date().getFullYear(),
-    version: '',
-    plate: '',
-    mileage: '',
-    color: '',
-    fuel_type: '',
-    transmission: '',
-    condition_notes: '',
-    evaluated_value: '',
-    offered_value: '',
-    evaluator_name: '',
-    evaluation_date: '',
-    needs_evaluation: true
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
-    if (existingTradeIn) {
-      setFormData({
-        brand: existingTradeIn.brand,
-        model: existingTradeIn.model,
-        year: existingTradeIn.year,
-        version: existingTradeIn.version || '',
-        plate: existingTradeIn.plate || '',
-        mileage: existingTradeIn.mileage?.toString() || '',
-        color: existingTradeIn.color || '',
-        fuel_type: existingTradeIn.fuel_type || '',
-        transmission: existingTradeIn.transmission || '',
-        condition_notes: existingTradeIn.condition_notes || '',
-        evaluated_value: existingTradeIn.evaluated_value?.toString() || '',
-        offered_value: existingTradeIn.offered_value?.toString() || '',
-        evaluator_name: existingTradeIn.evaluator_name || '',
-        evaluation_date: existingTradeIn.evaluation_date || '',
-        needs_evaluation: existingTradeIn.needs_evaluation
-      });
-      if (existingTradeIn.images) {
-        setImageUrls(existingTradeIn.images);
+    if (open) {
+      setError('');
+      setLoading(false);
+      if (existingTradeIn) {
+        setFormData({
+          brand: existingTradeIn.brand,
+          model: existingTradeIn.model,
+          year: existingTradeIn.year,
+          version: existingTradeIn.version || '',
+          plate: existingTradeIn.plate || '',
+          mileage: existingTradeIn.mileage?.toString() || '',
+          color: existingTradeIn.color || '',
+          fuel_type: existingTradeIn.fuel_type || '',
+          transmission: existingTradeIn.transmission || '',
+          condition_notes: existingTradeIn.condition_notes || '',
+          evaluated_value: existingTradeIn.evaluated_value?.toString() || '',
+          offered_value: existingTradeIn.offered_value?.toString() || '',
+          evaluator_name: existingTradeIn.evaluator_name || '',
+          evaluation_date: existingTradeIn.evaluation_date || '',
+          needs_evaluation: existingTradeIn.needs_evaluation
+        });
+        setImageUrls(existingTradeIn.images || []);
+      } else {
+        setFormData({ ...initialFormData, year: new Date().getFullYear() });
+        setImageUrls([]);
       }
     }
-  }, [existingTradeIn]);
+  }, [open, existingTradeIn]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   const formatPlate = (value: string): string => {
     let cleaned = value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
@@ -168,7 +183,7 @@ export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, 
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
       <DialogContent
         className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
         onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
@@ -184,7 +199,12 @@ export function TradeInVehicleForm({ negotiationId, companyId, existingTradeIn, 
         </DialogHeader>
 
         {error && (
-          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>

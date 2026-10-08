@@ -287,12 +287,13 @@ export function Negotiations() {
         </div>
       )}
 
-      {showForm && (
-        <NegotiationForm onClose={() => {
+      <NegotiationForm
+        open={showForm}
+        onClose={() => {
           setShowForm(false);
           loadNegotiations({ silent: true });
-        }} />
-      )}
+        }}
+      />
     </div>
   );
 }

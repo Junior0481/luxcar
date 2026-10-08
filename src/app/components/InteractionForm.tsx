@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
@@ -14,6 +14,7 @@ import {
 } from './ui/dialog';
 
 type InteractionFormProps = {
+  open?: boolean;
   negotiationId: string;
   vehicleId: string;
   onClose: () => void;
@@ -22,15 +23,33 @@ type InteractionFormProps = {
 const selectClass =
   'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
-export function InteractionForm({ negotiationId, vehicleId, onClose }: InteractionFormProps) {
+const initialFormData = {
+  interaction_type: 'ligacao' as 'ligacao' | 'whatsapp' | 'email' | 'visita' | 'test_drive' | 'proposta' | 'observacao' | 'outro',
+  description: ''
+};
+
+export function InteractionForm({ open = true, negotiationId, vehicleId, onClose }: InteractionFormProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLDivElement>(null);
 
-  const [formData, setFormData] = useState({
-    interaction_type: 'ligacao' as 'ligacao' | 'whatsapp' | 'email' | 'visita' | 'test_drive' | 'proposta' | 'observacao' | 'outro',
-    description: ''
-  });
+  const [formData, setFormData] = useState(initialFormData);
+
+  useEffect(() => {
+    if (open) {
+      setFormData(initialFormData);
+      setError('');
+      setLoading(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      errorRef.current.focus();
+    }
+  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +77,7 @@ export function InteractionForm({ negotiationId, vehicleId, onClose }: Interacti
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
       <DialogContent
         className="sm:max-w-md max-h-[90vh] overflow-y-auto"
         onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
@@ -74,7 +93,12 @@ export function InteractionForm({ negotiationId, vehicleId, onClose }: Interacti
         </DialogHeader>
 
         {error && (
-          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 outline-none"
+          >
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
