@@ -61,8 +61,12 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onInteractOutside={(e) => { if (loading) e.preventDefault(); }}
+      >
         <DialogHeader className="pr-6">
           <DialogTitle className="text-xl font-bold text-foreground">
             Adicionar Custo/Manutenção
@@ -73,7 +77,7 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
         </DialogHeader>
 
         {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
@@ -134,7 +138,7 @@ export function CostForm({ vehicleId, onClose }: CostFormProps) {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">

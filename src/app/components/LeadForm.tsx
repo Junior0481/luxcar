@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
@@ -32,6 +32,14 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
     message: ''
   });
 
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => {
+      onClose();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [success, onClose]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -54,9 +62,6 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
       if (error) throw error;
 
       setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
     } catch (err: any) {
       if (err.code === '42P01') {
         setError('O módulo de leads ainda não foi configurado no banco. Execute o SQL complementar antes de usar este formulário.');
@@ -69,22 +74,26 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onInteractOutside={(e) => { if (loading) e.preventDefault(); }}
+      >
         <DialogHeader className="pr-6">
           <DialogTitle className="text-xl font-bold text-foreground">Tenho Interesse</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">{vehicleName}</DialogDescription>
         </DialogHeader>
 
         {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-start gap-3">
+          <div role="status" aria-live="polite" className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <p className="text-sm text-emerald-700 dark:text-emerald-300">Mensagem enviada com sucesso! Em breve entraremos em contato.</p>
           </div>
@@ -136,7 +145,7 @@ export function LeadForm({ vehicleId, companyId, vehicleName, onClose }: LeadFor
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading || success} className="flex-1">

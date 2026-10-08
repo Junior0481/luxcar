@@ -177,8 +177,12 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+    <Dialog open onOpenChange={(open) => { if (!open && !loading) onClose(); }}>
+      <DialogContent
+        className="sm:max-w-6xl max-h-[90vh] overflow-y-auto"
+        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className="pr-6">
           <DialogTitle className="text-2xl font-bold text-foreground">
             {vehicle ? "Editar Veículo" : "Cadastrar Novo Veículo"}
@@ -189,7 +193,7 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
         </DialogHeader>
 
         {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div role="alert" className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
@@ -304,8 +308,8 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
                     <img src={url} alt={`Foto ${index + 1}`} className="w-full h-32 object-cover rounded-lg border-2 border-border" />
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                       onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                       aria-label={`Excluir foto ${index + 1}`}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -329,7 +333,7 @@ export function VehicleForm({ vehicle, onClose }: VehicleFormProps) {
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
               Cancelar
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
