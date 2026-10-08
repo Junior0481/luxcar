@@ -164,6 +164,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- =====================================================
 
 -- View de veículos públicos com informações da empresa
+DROP VIEW IF EXISTS public.public_vehicles;
 CREATE OR REPLACE VIEW public_vehicles AS
 SELECT
   v.*,
