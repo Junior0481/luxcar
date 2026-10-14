@@ -71,7 +71,7 @@ export function Register() {
                 {input('ownerEmail', 'Email para acesso *', Mail, { type: 'email', required: true, autoComplete: 'email' })}
                 {input('phone', 'Telefone', Phone, { type: 'tel', autoComplete: 'tel' })}
                 {input('city', 'Cidade', MapPin, { autoComplete: 'address-level2' })}
-                {input('state', 'Estado (UF)', MapPin, { maxLength: '2', autoComplete: 'address-level1' })}
+                {input('state', 'Estado (UF)', MapPin, { maxLength: 2, autoComplete: 'address-level1' })}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="paymentReference">Referência do pagamento (opcional)</Label>

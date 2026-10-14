@@ -160,7 +160,7 @@ export function DashboardLayout() {
       <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-foreground" aria-hidden="true">{initials || 'U'}</div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-medium leading-tight text-sidebar-foreground">{profile.full_name}</p>
-        <p className="truncate text-xs capitalize text-sidebar-foreground/55">{profile.role.replaceAll('_', ' ')}</p>
+        <p className="truncate text-xs capitalize text-sidebar-foreground/55">{profile.role.replace(/_/g, ' ')}</p>
       </div>
       <ThemeToggle className="size-8 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
       <button type="button" onClick={handleSignOut} aria-label="Sair da conta" title="Sair da conta" className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground">

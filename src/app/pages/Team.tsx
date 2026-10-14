@@ -128,7 +128,7 @@ export function Team() {
               className="min-h-40 border-0 shadow-none"
             />
           ) : (
-            <Table className="min-w-[520px]"><TableHeader><TableRow><TableHead>Colaborador</TableHead><TableHead>Email</TableHead><TableHead>Perfil</TableHead><TableHead>Desde</TableHead></TableRow></TableHeader><TableBody>{members.map((member) => <TableRow key={member.id}><TableCell className="font-medium">{member.full_name}</TableCell><TableCell className="text-muted-foreground">{member.email}</TableCell><TableCell><span className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold capitalize">{member.role.replaceAll('_', ' ')}</span></TableCell><TableCell className="text-muted-foreground">{new Date(member.created_at).toLocaleDateString('pt-BR')}</TableCell></TableRow>)}</TableBody></Table>
+            <Table className="min-w-[520px]"><TableHeader><TableRow><TableHead>Colaborador</TableHead><TableHead>Email</TableHead><TableHead>Perfil</TableHead><TableHead>Desde</TableHead></TableRow></TableHeader><TableBody>{members.map((member) => <TableRow key={member.id}><TableCell className="font-medium">{member.full_name}</TableCell><TableCell className="text-muted-foreground">{member.email}</TableCell><TableCell><span className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold capitalize">{member.role.replace(/_/g, ' ')}</span></TableCell><TableCell className="text-muted-foreground">{new Date(member.created_at).toLocaleDateString('pt-BR')}</TableCell></TableRow>)}</TableBody></Table>
           )}
         </CardContent>
       </Card>
