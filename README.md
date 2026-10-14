@@ -1,5 +1,7 @@
 # LuxCar
 
+[![CI](https://github.com/Junior0481/luxcar/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Junior0481/luxcar/actions/workflows/ci.yml)
+
 > **LuxCar é uma plataforma de gestão para concessionárias e lojas de veículos.** Reúne estoque, custos, leads, negociações, pagamentos, vendas e uma vitrine digital personalizável por loja.
 
 **Acesse a aplicação:** [luxcar-six.vercel.app](https://luxcar-six.vercel.app)
@@ -303,6 +305,23 @@ A aplicação ficará disponível, por padrão, em `http://localhost:5173`.
 | `pnpm test:e2e:ui` | Abre a interface interativa do Playwright |
 | `pnpm test:e2e:report` | Abre o último relatório HTML |
 | `pnpm check` | Valida tipos, testes e build de produção |
+
+### Migrar fotos antigas para o Supabase Storage
+
+O script `scripts/migrate-images-to-storage.mjs` substitui imagens `data:` já salvas em `vehicles.images` e `trade_in_vehicles.images` por URLs do bucket público `vehicles`. Ele gera os arquivos WebP grande e miniatura e ignora imagens que já não estejam em base64.
+
+Defina as credenciais apenas no ambiente do terminal. A chave `SUPABASE_SERVICE_ROLE_KEY` é privilegiada: não a coloque no README, em arquivos versionados ou em variáveis `VITE_*`.
+
+```powershell
+$env:SUPABASE_URL = "https://seu-projeto.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY = "<chave service_role obtida no painel Supabase>"
+pnpm exec node scripts/migrate-images-to-storage.mjs --dry-run
+pnpm exec node scripts/migrate-images-to-storage.mjs
+Remove-Item Env:SUPABASE_URL
+Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
+```
+
+Revise a lista do `--dry-run` antes da execução real. Sem essa opção, o script envia os arquivos ao Storage e atualiza os arrays `images` no banco. A ferramenta lê somente as variáveis de ambiente do processo; não carrega credenciais de arquivos.
 
 ### Validação navegável com Playwright
 
