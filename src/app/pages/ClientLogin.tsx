@@ -67,6 +67,10 @@ export function ClientLogin() {
           </Button>
         </form>
 
+        <p className="mt-4 text-right text-sm">
+          <Link to="/auth/forgot-password" className="font-medium text-primary hover:underline">Esqueceu sua senha?</Link>
+        </p>
+
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Não tem uma conta?{' '}
           <Link to="/client/register" className="text-primary hover:underline font-medium">

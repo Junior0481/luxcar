@@ -31,10 +31,10 @@ export function Login() {
   };
 
   return (
-    <Card className="shadow-lux-lg">
+    <Card className="rounded-xl shadow-none">
       <CardHeader>
-        <CardTitle className="text-2xl">Entrar na loja</CardTitle>
-        <CardDescription>Acesse o centro de comando da sua operação.</CardDescription>
+        <CardTitle className="text-[34px] font-bold leading-tight [font-family:var(--font-display)]">Entrar no painel</CardTitle>
+        <CardDescription>Use o e-mail cadastrado pela sua loja.</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -82,10 +82,14 @@ export function Login() {
           </Button>
         </form>
 
+        <p className="mt-4 text-right text-sm">
+          <Link to="/auth/forgot-password" className="font-medium text-primary hover:underline">Esqueceu sua senha?</Link>
+        </p>
+
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Ainda não tem acesso?{' '}
+          Sua loja ainda não usa a LuxCar?{' '}
           <Link to="/auth/register" className="font-medium text-primary hover:underline">
-            Criar conta
+            Falar com vendas
           </Link>
         </p>
       </CardContent>

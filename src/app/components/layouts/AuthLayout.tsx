@@ -1,5 +1,5 @@
 ﻿import { useEffect } from 'react';
-import { Outlet, Link } from 'react-router';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Car } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
@@ -7,7 +7,15 @@ import { Skeleton } from '../ui/skeleton';
 import loginImg from '../../../assets/login_img.png';
 
 export function AuthLayout() {
-  const { loading } = useAuth();
+  const { loading, user, profile } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!loading && user && profile && location.pathname !== '/auth/update-password') {
+      navigate(profile.role === 'platform_admin' ? '/dashboard/platform' : '/dashboard', { replace: true });
+    }
+  }, [loading, user, profile, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -34,13 +42,13 @@ export function AuthLayout() {
           <span className="text-2xl font-medium text-white">LuxCar</span>
         </Link>
 
-        <div className="absolute bottom-12 left-8 right-8 z-10 max-w-xl">
-          <p className="text-sm font-medium uppercase text-white/55">SaaS white label para lojas automotivas</p>
-          <h1 className="mt-3 text-4xl font-medium leading-tight text-white">
-            Sua operação organizada para vender com mais controle.
+        <div className="absolute bottom-10 left-8 right-8 z-10 max-w-xl rounded-xl border border-white/10 bg-black/80 p-6 text-white backdrop-blur-sm xl:bottom-12 xl:left-10 xl:p-7">
+          <p className="text-sm font-semibold uppercase tracking-wide text-white/60">SaaS white label para lojas automotivas</p>
+          <h1 className="mt-3 text-3xl font-bold leading-tight [font-family:var(--font-display)] xl:text-4xl">
+            Estoque, leads e vendas da sua loja em um só lugar.
           </h1>
-          <p className="mt-4 max-w-md text-white/70">
-            Estoque, pipeline, relatórios e equipe em uma única plataforma com aparência de produto premium.
+          <p className="mt-3 max-w-md text-sm text-white/75">
+            Painel usado pela equipe para cadastrar carros, responder clientes e fechar negócios.
           </p>
         </div>
       </aside>

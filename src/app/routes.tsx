@@ -49,6 +49,8 @@ function withSuspense<T extends ComponentType<any>>(LazyComponent: T, Fallback =
 // Auth & Client pages (lazy)
 const Login = withSuspense(lazy(() => import('./pages/Login').then((m) => ({ default: m.Login }))), AuthFallback);
 const Register = withSuspense(lazy(() => import('./pages/Register').then((m) => ({ default: m.Register }))), AuthFallback);
+const ForgotPassword = withSuspense(lazy(() => import('./pages/ForgotPassword').then((m) => ({ default: m.ForgotPassword }))), AuthFallback);
+const UpdatePassword = withSuspense(lazy(() => import('./pages/UpdatePassword').then((m) => ({ default: m.UpdatePassword }))), AuthFallback);
 const ClientLogin = withSuspense(lazy(() => import('./pages/ClientLogin').then((m) => ({ default: m.ClientLogin }))), AuthFallback);
 const ClientRegister = withSuspense(lazy(() => import('./pages/ClientRegister').then((m) => ({ default: m.ClientRegister }))), AuthFallback);
 
@@ -88,7 +90,9 @@ export const router = createBrowserRouter([
         Component: AuthLayout,
         children: [
           { path: 'login', Component: Login },
-          { path: 'register', Component: Register }
+          { path: 'register', Component: Register },
+          { path: 'forgot-password', Component: ForgotPassword },
+          { path: 'update-password', Component: UpdatePassword }
         ]
       },
       {
