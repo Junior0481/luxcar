@@ -1,74 +1,75 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useLocation, useNavigate, NavLink } from 'react-router';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useCompany } from '../../../contexts/CompanyContext';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import {
-  Car,
-  LayoutDashboard,
-  Handshake,
   BarChart3,
+  Building2,
+  Car,
   CreditCard,
-  Settings,
+  Handshake,
+  LayoutDashboard,
   LogOut,
   Menu,
-  X,
-  User,
-  Users,
+  Settings,
   UserPlus,
-  Building2
+  Users,
 } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useCompany } from '../../../contexts/CompanyContext';
 import { ThemeToggle } from '../ThemeToggle';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '../ui/utils';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 
-const navItems = [
+const operationItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/dashboard/vehicles', icon: Car, label: 'Veículos' },
   { to: '/dashboard/leads', icon: UserPlus, label: 'Leads' },
   { to: '/dashboard/negotiations', icon: Handshake, label: 'Negociações' },
   { to: '/dashboard/payments', icon: CreditCard, label: 'Pagamentos' },
+];
+
+const managementItems = [
   { to: '/dashboard/reports', icon: BarChart3, label: 'Relatórios' },
-  { to: '/dashboard/settings', icon: Settings, label: 'Configurações' }
+  { to: '/dashboard/team', icon: Users, label: 'Equipe' },
+  { to: '/dashboard/settings', icon: Settings, label: 'Configurações' },
 ];
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex min-h-11 items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all duration-200 ease-out motion-reduce:transition-none',
+    'flex min-h-[38px] items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150 motion-reduce:transition-none',
     isActive
-      ? 'bg-accent text-primary shadow-lux-sm'
-      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
+      ? 'bg-sidebar-accent text-sidebar-foreground'
+      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground',
   );
 
 export function DashboardLayout() {
   const { user, profile, loading, signOut } = useAuth();
   const { company } = useCompany();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth/login', { replace: true });
     } else if (!loading && user && profile?.role === 'platform_admin' && location.pathname === '/dashboard') {
       navigate('/dashboard/platform', { replace: true });
-    } else if (!loading && user && !profile?.company_id && profile?.role !== 'platform_admin') {
-      navigate('/estoque', { replace: true });
     }
   }, [user, profile, loading, navigate, location.pathname]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-background">
-        <aside className="hidden w-72 border-r border-sidebar-border bg-sidebar p-4 md:block">
-          <Skeleton className="mb-8 h-12 w-40" />
+      <div className="flex min-h-screen flex-wrap bg-background">
+        <aside className="w-full border-b border-sidebar-border bg-sidebar p-4 md:min-h-screen md:w-[232px] md:flex-none md:border-b-0 md:border-r">
+          <Skeleton className="mb-8 h-10 w-40" />
           <div className="space-y-2">
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         </aside>
-        <main className="flex-1 p-4 md:p-8">
+        <main className="min-w-0 flex-1 p-5 md:p-8">
           <Skeleton className="mb-6 h-12 w-full max-w-xl" />
           <div className="grid gap-4 md:grid-cols-3">
             <Skeleton className="h-36" />
@@ -80,15 +81,31 @@ export function DashboardLayout() {
     );
   }
 
-  if (!user || !profile || (!profile.company_id && profile.role !== 'platform_admin')) {
-    return null;
+  if (!user || !profile) return null;
+
+  if (!profile.company_id && profile.role !== 'platform_admin') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <section className="w-full max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6 shadow-lux-md">
+          <p className="text-sm font-medium text-primary">Conta autenticada · {profile.role}</p>
+          <h1 className="text-2xl font-semibold text-foreground">Sua conta ainda não está vinculada a uma loja</h1>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Olá, {profile.full_name}. O acesso ao painel será liberado assim que um administrador vincular sua conta à empresa.
+          </p>
+          <Button type="button" variant="outline" onClick={async () => { await signOut(); navigate('/auth/login', { replace: true }); }}>
+            Sair da conta
+          </Button>
+        </section>
+      </main>
+    );
   }
 
-  const visibleNavItems = profile.role === 'platform_admin'
-    ? [{ to: '/dashboard/platform', icon: Building2, label: 'Empresas' }]
+  const isPlatformAdmin = profile.role === 'platform_admin';
+  const sections = isPlatformAdmin
+    ? [{ label: 'Plataforma', items: [{ to: '/dashboard/platform', icon: Building2, label: 'Empresas' }] }]
     : [
-        ...navItems,
-        ...(profile.role === 'administrador' ? [{ to: '/dashboard/team', icon: Users, label: 'Equipe' }] : [])
+        { label: 'Operação', items: operationItems },
+        { label: 'Gestão', items: profile.role === 'administrador' ? managementItems : [managementItems[0]] },
       ];
 
   const handleSignOut = async () => {
@@ -96,137 +113,89 @@ export function DashboardLayout() {
     navigate('/auth/login');
   };
 
-  const isPlatformAdmin = profile.role === 'platform_admin';
+  const initials = profile.full_name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 
-  const brand = (
-    <div className="flex items-center gap-3">
+  const renderBrand = () => (
+    <div className="flex min-w-0 items-center gap-2.5 px-1.5">
       {isPlatformAdmin ? (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
-          <Building2 className="size-6" aria-hidden="true" />
-        </div>
+        <div className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Building2 className="size-[18px]" aria-hidden="true" /></div>
       ) : company?.logo_url ? (
-        <img src={company.logo_url} alt={`Logo ${company.name}`} className="size-11 rounded-2xl object-contain" />
+        <img src={company.logo_url} alt={`Logo ${company.name}`} className="size-[34px] shrink-0 rounded-lg object-contain" />
       ) : (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
-          <Car className="size-6" aria-hidden="true" />
-        </div>
+        <div className="flex size-[34px] shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Car className="size-[18px]" aria-hidden="true" /></div>
       )}
-      <div>
-        <h1 className="text-lg font-medium leading-tight text-sidebar-foreground">
-          {isPlatformAdmin ? 'LuxCar Plataforma' : (company?.name || 'LuxCar')}
-        </h1>
-        {!isPlatformAdmin && (
-          <p className="text-xs text-sidebar-foreground/60">Centro da loja</p>
-        )}
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold leading-tight text-sidebar-foreground">{isPlatformAdmin ? 'LuxCar Plataforma' : (company?.name || 'LuxCar')}</p>
+        {!isPlatformAdmin && <p className="text-xs text-sidebar-foreground/55">Centro da loja</p>}
       </div>
     </div>
   );
 
-  const userCard = (
-    <div className="flex items-center gap-3 rounded-2xl border border-sidebar-border bg-sidebar-accent/50 px-3 py-3">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-        <User className="size-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-medium text-sidebar-foreground">{profile.full_name}</p>
-        <p className="text-xs capitalize text-sidebar-foreground/60">{profile.role}</p>
-      </div>
-      <ThemeToggle />
-    </div>
+  const renderNavigation = () => (
+    <nav aria-label="Navegação principal" className="flex-1 space-y-5">
+      {sections.map((section) => (
+        <section key={section.label}>
+          <h2 className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45">{section.label}</h2>
+          <div className="space-y-0.5">
+            {section.items.map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} onClick={() => setMobileMenuOpen(false)} className={navClass}>
+                <item.icon className="size-[17px] shrink-0" aria-hidden="true" />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        </section>
+      ))}
+    </nav>
   );
 
-  const signOutBtn = (
-    <Button
-      type="button"
-      variant="ghost"
-      onClick={handleSignOut}
-      className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
-    >
-      <LogOut className="size-5" />
-      <span>Sair</span>
-    </Button>
+  const renderAccountActions = () => (
+    <div className="flex items-center gap-2 border-t border-sidebar-border pt-3">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-foreground" aria-hidden="true">{initials || 'U'}</div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-medium leading-tight text-sidebar-foreground">{profile.full_name}</p>
+        <p className="truncate text-xs capitalize text-sidebar-foreground/55">{profile.role.replaceAll('_', ' ')}</p>
+      </div>
+      <ThemeToggle className="size-8 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground" />
+      <button type="button" onClick={handleSignOut} aria-label="Sair da conta" title="Sair da conta" className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground">
+        <LogOut className="size-4" aria-hidden="true" />
+      </button>
+    </div>
   );
 
   return (
-    <div className="min-h-screen lux-gradient">
-      {/* Sidebar Desktop */}
-      <aside className="z-sidebar hidden border-r border-sidebar-border bg-sidebar/95 backdrop-blur-xl md:fixed md:inset-y-0 md:flex md:w-72 md:flex-col">
-        <div className="flex items-center border-b border-sidebar-border px-6 py-5">{brand}</div>
+    <div className="flex min-h-screen flex-wrap bg-background text-foreground">
+      <header className="flex w-full items-center justify-between border-b border-sidebar-border bg-sidebar px-4 py-3 md:hidden">
+        {renderBrand()}
+        <Button type="button" variant="ghost" size="icon" aria-label="Abrir menu" onClick={() => setMobileMenuOpen(true)} className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+          <Menu className="size-5" aria-hidden="true" />
+        </Button>
+      </header>
 
-        <nav className="flex-1 space-y-1 px-3 py-6">
-          {visibleNavItems.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} className={navClass}>
-              <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="w-[min(86vw,320px)] border-sidebar-border bg-sidebar p-4 text-sidebar-foreground sm:max-w-[320px] md:hidden">
+          <SheetHeader className="sr-only"><SheetTitle>Menu de navegação</SheetTitle></SheetHeader>
+          {renderBrand()}
+          {renderNavigation()}
+          {renderAccountActions()}
+        </SheetContent>
+      </Sheet>
 
-        <div className="space-y-2 border-t border-sidebar-border p-3">
-          {userCard}
-          {signOutBtn}
-        </div>
+      <aside className="hidden w-[232px] flex-none flex-col gap-5 border-r border-sidebar-border bg-sidebar px-[14px] py-5 md:flex md:min-h-screen">
+        {renderBrand()}
+        {renderNavigation()}
+        {renderAccountActions()}
       </aside>
 
-      {/* Mobile Sidebar */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 flex w-72 flex-col border-r border-sidebar-border bg-sidebar shadow-lux-lg">
-            <div className="flex items-center justify-between border-b border-sidebar-border px-6 py-5">
-              {brand}
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} aria-label="Fechar menu">
-                <X className="size-5" />
-              </Button>
-            </div>
-
-            <nav className="flex-1 space-y-1 px-3 py-6">
-              {visibleNavItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/dashboard'}
-                  onClick={() => setSidebarOpen(false)}
-                  className={navClass}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </NavLink>
-              ))}
-            </nav>
-
-            <div className="space-y-2 border-t border-sidebar-border p-3">
-              {userCard}
-              {signOutBtn}
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="md:pl-72">
-        {/* Mobile Header */}
-        <header className="z-header sticky top-0 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
-            <Menu className="size-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              {isPlatformAdmin ? <Building2 className="size-5" /> : <Car className="size-5" />}
-            </div>
-            <span className="font-medium text-foreground">
-              {isPlatformAdmin ? 'LuxCar Plataforma' : (company?.name || 'LuxCar')}
-            </span>
-          </div>
-          <ThemeToggle />
-        </header>
-
-        <div className="relative">
-          <main className="relative mx-auto w-full max-w-7xl p-4 md:p-8">
-            <Outlet />
-          </main>
-        </div>
-      </div>
+      <main className="min-w-0 flex-[999_1_560px] p-4 sm:p-6 md:px-8 md:pb-12 md:pt-7">
+        <Outlet />
+      </main>
     </div>
   );
 }
