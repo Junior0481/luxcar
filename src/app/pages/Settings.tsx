@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { supabase } from '../../lib/supabase';
-import { AlertCircle, Bell, CheckCircle, Database, Palette, Shield, User } from 'lucide-react';
+import { AlertCircle, Bell, Car, CheckCircle, Database, Palette, Shield, Upload, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -18,11 +18,45 @@ type MessageState = {
   text: string;
 } | null;
 
+const hexRgb = (value: string) => {
+  const match = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(value.trim());
+  return match ? [Number.parseInt(match[1], 16), Number.parseInt(match[2], 16), Number.parseInt(match[3], 16)] as const : null;
+};
+
+const relativeLuminance = (color: readonly number[]) => {
+  const channels = color.map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+};
+
+const contrastRatio = (first: readonly number[], second: readonly number[]) => {
+  const values = [relativeLuminance(first), relativeLuminance(second)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+};
+
+const primaryColorWarning = (value: string) => {
+  const color = hexRgb(value);
+  const text = hexRgb('#170A02')!;
+  const panel = hexRgb('#0E1013')!;
+  if (!color) return 'Informe uma cor hexadecimal válida.';
+  const maximum = Math.max(...color);
+  const minimum = Math.min(...color);
+  const saturation = maximum === 0 ? 0 : (maximum - minimum) / maximum;
+  const tooSaturated = saturation > 0.95 && maximum / 255 > 0.92;
+  if (contrastRatio(color, text) < 4.5 || contrastRatio(color, panel) < 4.5 || tooSaturated) {
+    return 'Esse tom pode dificultar a leitura ou está muito saturado. Sugestão: experimente uma cor mais fechada, como #D66A2D.';
+  }
+  return '';
+};
+
 export function Settings() {
   const { profile, user, refreshProfile, loading } = useAuth();
   const { company } = useCompany();
   const [activeTab, setActiveTab] = useState('profile');
   const [saving, setSaving] = useState(false);
+  const [uploadingBrandAsset, setUploadingBrandAsset] = useState<'logo' | 'favicon' | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
   const [profileForm, setProfileForm] = useState({
     fullName: '',
@@ -82,6 +116,46 @@ export function Settings() {
     window.setTimeout(() => setMessage(null), 3000);
   };
 
+  const validateBrandImage = async (file: File, kind: 'logo' | 'favicon') => {
+    const dimensions = kind === 'logo' ? { width: 512, height: 256, label: '512 × 256 px' } : { width: 64, height: 64, label: '64 × 64 px' };
+    if (file.type !== 'image/png') throw new Error(`Envie um arquivo PNG com ${dimensions.label}.`);
+    if (file.size > 2 * 1024 * 1024) throw new Error('A imagem deve ter no máximo 2 MB.');
+    let image: ImageBitmap;
+    try { image = await createImageBitmap(file); } catch { throw new Error('Não foi possível ler a imagem. Escolha um arquivo PNG válido.'); }
+    const { width, height } = image;
+    image.close();
+    if (width !== dimensions.width || height !== dimensions.height) {
+      throw new Error(`Dimensões incorretas: a imagem enviada tem ${width} × ${height} px. O tamanho exigido é ${dimensions.label}.`);
+    }
+  };
+
+  const handleBrandImageUpload = async (kind: 'logo' | 'favicon', file?: File) => {
+    if (!file || !profile?.company_id || profile.role !== 'administrador') return;
+    setUploadingBrandAsset(kind);
+    setMessage(null);
+    try {
+      await validateBrandImage(file, kind);
+      const objectPath = `${profile.company_id}/${kind}-${crypto.randomUUID()}.png`;
+      const { error } = await supabase.storage.from('company-branding').upload(objectPath, file, {
+        cacheControl: '3600', contentType: 'image/png', upsert: false
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from('company-branding').getPublicUrl(objectPath);
+      setBrandingForm((current) => kind === 'logo' ? { ...current, logoUrl: data.publicUrl } : { ...current, faviconUrl: data.publicUrl });
+      showMessage('success', `${kind === 'logo' ? 'Logo' : 'Favicon'} enviado. Salve as alterações para aplicar na loja.`);
+    } catch (error: any) {
+      showMessage('error', error.message || 'Não foi possível enviar a imagem.');
+    } finally {
+      setUploadingBrandAsset(null);
+    }
+  };
+
+  const storagePathFromPublicUrl = (value: string) => {
+    const marker = '/storage/v1/object/public/company-branding/';
+    const index = value.indexOf(marker);
+    return index < 0 ? null : decodeURIComponent(value.slice(index + marker.length).split('?')[0]);
+  };
+
   const handleSave = async () => {
     if (!user || !profile) return;
 
@@ -137,6 +211,7 @@ export function Settings() {
 
       if (activeTab === 'branding') {
         if (profile.role !== 'administrador' || !profile.company_id) throw new Error('Apenas administradores podem alterar a marca.');
+        const previousAssets = [company?.logo_url, company?.favicon_url].filter((value): value is string => Boolean(value));
         const { error } = await supabase.from('companies').update({
           name: brandingForm.name.trim(),
           logo_url: brandingForm.logoUrl.trim() || null,
@@ -146,6 +221,9 @@ export function Settings() {
           custom_domain: brandingForm.customDomain.trim() || null
         }).eq('id', profile.company_id).select('id').single();
         if (error) throw error;
+        const nextAssets = [brandingForm.logoUrl, brandingForm.faviconUrl];
+        const obsoletePaths = [...new Set(previousAssets.filter((value) => !nextAssets.includes(value)).map(storagePathFromPublicUrl).filter((value): value is string => Boolean(value)))];
+        if (obsoletePaths.length) await supabase.storage.from('company-branding').remove(obsoletePaths);
         window.dispatchEvent(new Event('luxcar:branding-updated'));
         showMessage('success', 'Identidade da loja atualizada.');
       }
@@ -286,7 +364,7 @@ export function Settings() {
                     value={tab.id}
                     className={cn(
                       'flex items-center gap-3 px-4 py-3 text-left justify-start transition-colors rounded-lg w-full shrink-0',
-                      'data-[state=active]:bg-accent data-[state=active]:text-primary border-l-2 data-[state=active]:border-primary border-transparent'
+                      'data-[state=active]:bg-accent data-[state=active]:text-accent-foreground border-l-2 data-[state=active]:border-primary border-transparent'
                     )}
                   >
                     <tab.icon className="size-5 shrink-0" />
@@ -362,13 +440,50 @@ export function Settings() {
               )}
 
               {activeTab === 'branding' && (
+                <div className="grid gap-6 xl:grid-cols-2">
                 <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm md:col-span-2">
+                    <p className="font-medium">Arquivos de identidade da loja</p>
+                    <p className="mt-1 text-muted-foreground">Envie imagens PNG exatamente no tamanho indicado. Máximo de 2 MB por arquivo.</p>
+                  </div>
                   <div className="space-y-2"><Label htmlFor="brandName">Nome da loja</Label><Input id="brandName" value={brandingForm.name} onChange={(e) => setBrandingForm({ ...brandingForm, name: e.target.value })} /></div>
                   <div className="space-y-2"><Label htmlFor="brandDomain">Domínio personalizado</Label><Input id="brandDomain" placeholder="loja.exemplo.com.br" value={brandingForm.customDomain} onChange={(e) => setBrandingForm({ ...brandingForm, customDomain: e.target.value })} /></div>
-                  <div className="space-y-2"><Label htmlFor="brandLogo">URL do logotipo</Label><Input id="brandLogo" type="url" value={brandingForm.logoUrl} onChange={(e) => setBrandingForm({ ...brandingForm, logoUrl: e.target.value })} /></div>
-                  <div className="space-y-2"><Label htmlFor="brandFavicon">URL do favicon</Label><Input id="brandFavicon" type="url" value={brandingForm.faviconUrl} onChange={(e) => setBrandingForm({ ...brandingForm, faviconUrl: e.target.value })} /></div>
-                  <div className="space-y-2"><Label htmlFor="brandPrimary">Cor principal</Label><Input id="brandPrimary" type="color" value={brandingForm.primaryColor} onChange={(e) => setBrandingForm({ ...brandingForm, primaryColor: e.target.value })} className="h-12" /></div>
+                  <div className="space-y-3 rounded-xl border border-border p-4">
+                    <div><Label htmlFor="brandLogo">Logo · PNG · 512 × 256 px</Label><p className="mt-1 text-xs text-muted-foreground">Proporção horizontal 2:1, máximo 2 MB.</p></div>
+                    <Input id="brandLogo" type="file" accept="image/png,.png" disabled={!!uploadingBrandAsset} onChange={(event) => { void handleBrandImageUpload('logo', event.target.files?.[0]); event.currentTarget.value = ''; }} />
+                    {brandingForm.logoUrl && <img src={brandingForm.logoUrl} alt="Prévia da logo" className="h-16 max-w-full rounded-lg border border-border bg-white object-contain p-2" />}
+                    {uploadingBrandAsset === 'logo' && <p role="status" className="text-xs text-muted-foreground">Validando e enviando logo…</p>}
+                  </div>
+                  <div className="space-y-3 rounded-xl border border-border p-4">
+                    <div><Label htmlFor="brandFavicon">Favicon · PNG · 64 × 64 px</Label><p className="mt-1 text-xs text-muted-foreground">Imagem quadrada, máximo 2 MB.</p></div>
+                    <Input id="brandFavicon" type="file" accept="image/png,.png" disabled={!!uploadingBrandAsset} onChange={(event) => { void handleBrandImageUpload('favicon', event.target.files?.[0]); event.currentTarget.value = ''; }} />
+                    {brandingForm.faviconUrl && <img src={brandingForm.faviconUrl} alt="Prévia do favicon" className="size-12 rounded-lg border border-border bg-white object-contain p-1" />}
+                    {uploadingBrandAsset === 'favicon' && <p role="status" className="text-xs text-muted-foreground">Validando e enviando favicon…</p>}
+                  </div>
+                  <div className="space-y-2"><Label htmlFor="brandPrimary">Cor principal</Label><Input id="brandPrimary" type="color" value={brandingForm.primaryColor} onChange={(e) => setBrandingForm({ ...brandingForm, primaryColor: e.target.value })} className="h-12" />{primaryColorWarning(brandingForm.primaryColor) && <p className="text-xs leading-5 text-[#F5B54A]">{primaryColorWarning(brandingForm.primaryColor)}</p>}</div>
                   <div className="space-y-2"><Label htmlFor="brandSecondary">Cor secundária</Label><Input id="brandSecondary" type="color" value={brandingForm.secondaryColor} onChange={(e) => setBrandingForm({ ...brandingForm, secondaryColor: e.target.value })} className="h-12" /></div>
+                  <p className="text-xs text-muted-foreground md:col-span-2">Depois do upload, clique em “Salvar alterações” para aplicar a logo e o favicon à identidade pública da concessionária.</p>
+                </div>
+                <section aria-label="Prévia da vitrine" className="h-fit overflow-hidden rounded-xl border border-border bg-[#F6F6F4] text-[#15171A]">
+                  <div className="flex items-center justify-between gap-3 border-b border-[#E4E4E0] bg-white px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      {brandingForm.logoUrl ? <img src={brandingForm.logoUrl} alt="" className="h-8 max-w-28 rounded-md object-contain" /> : <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-md text-xs font-bold" style={{ backgroundColor: brandingForm.primaryColor, color: brandingForm.secondaryColor }}>{brandingForm.name.trim().slice(0, 2).toUpperCase() || 'LC'}</span>}
+                      <span className="truncate font-semibold [font-family:var(--font-display)]">{brandingForm.name || 'Nome da concessionária'}</span>
+                    </div>
+                    <span className="shrink-0 rounded-md px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: brandingForm.secondaryColor }}>Falar no WhatsApp</span>
+                  </div>
+                  <div className="p-4 sm:p-5">
+                    <h3 className="text-lg font-bold [font-family:var(--font-display)]">Estoque da loja</h3>
+                    <p className="mt-1 text-sm text-[#5C626B]">Prévia das cores e da identidade visual da sua vitrine pública.</p>
+                    <div className="mt-4 overflow-hidden rounded-lg border border-[#E4E4E0] bg-white">
+                      <div className="flex aspect-[16/7] items-center justify-center bg-[#ECEDEA] text-[#8A8D87]"><Car className="size-9" aria-hidden="true" /></div>
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3">
+                        <div><p className="text-sm font-semibold">Anúncios publicados pela loja</p><p className="text-xs text-[#5C626B]">Fotos, detalhes e preços do estoque ativo</p></div>
+                        <span className="rounded-md px-3 py-2 text-xs font-bold" style={{ backgroundColor: brandingForm.primaryColor, color: brandingForm.secondaryColor }}>Ver detalhes</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
                 </div>
               )}
 
@@ -423,7 +538,7 @@ export function Settings() {
               )}
 
               <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row">
-                <Button onClick={handleSave} disabled={saving}>
+                <Button onClick={handleSave} disabled={saving || !!uploadingBrandAsset}>
                   {saving ? 'Salvando...' : 'Salvar alterações'}
                 </Button>
                 <Button

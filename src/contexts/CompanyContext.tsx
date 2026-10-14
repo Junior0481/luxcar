@@ -2,6 +2,18 @@ import { createContext, ReactNode, useContext, useEffect, useState } from 'react
 import { Company, supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
+type CachedBranding = { name?: string; primaryColor?: string; secondaryColor?: string; faviconUrl?: string };
+const brandingCacheKey = (host: string, userId?: string) => userId ? `luxcar:branding:user:${userId}` : `luxcar:branding:host:${host}`;
+
+function readBrandingCache(key: string): CachedBranding | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) as CachedBranding : null;
+  } catch {
+    return null;
+  }
+}
+
 type CompanyContextValue = {
   company: Company | null;
   loading: boolean;
@@ -27,9 +39,9 @@ function getContrastForeground(hex: string): string {
   return yiq >= 128 ? '#0a0a0b' : '#ffffff';
 }
 
-function applyBranding(company: Company | null) {
+function applyBranding(company: { name?: string; primary_color?: string; secondary_color?: string; favicon_url?: string } | null) {
   if (!company) return;
-  document.title = company.name;
+  if (company.name) document.title = company.name;
   if (company.primary_color) {
     document.documentElement.style.setProperty('--primary', company.primary_color);
     document.documentElement.style.setProperty('--primary-foreground', getContrastForeground(company.primary_color));
@@ -51,7 +63,7 @@ function applyBranding(company: Company | null) {
 }
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  const { profile } = useAuth();
+  const { profile, user, loading: authLoading } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -59,8 +71,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     let active = true;
 
     async function loadCompany() {
+      if (authLoading) return;
       setLoading(true);
       const host = window.location.hostname;
+      const cacheKey = brandingCacheKey(host, user?.id);
+      const cached = readBrandingCache(cacheKey);
+      if (cached) applyBranding({ name: cached.name, primary_color: cached.primaryColor, secondary_color: cached.secondaryColor, favicon_url: cached.faviconUrl });
       const source = profile?.company_id ? 'companies' : 'public_company_branding';
       let query = supabase.from(source).select('*');
 
@@ -73,6 +89,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       const nextCompany = (data as Company | null) || null;
       setCompany(nextCompany);
       applyBranding(nextCompany);
+      if (nextCompany) {
+        const nextCache: CachedBranding = { name: nextCompany.name, primaryColor: nextCompany.primary_color, secondaryColor: nextCompany.secondary_color, faviconUrl: nextCompany.favicon_url };
+        try { localStorage.setItem(cacheKey, JSON.stringify(nextCache)); } catch { /* Storage can be disabled or full. */ }
+      }
       setLoading(false);
     }
 
@@ -83,7 +103,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       active = false;
       window.removeEventListener('luxcar:branding-updated', refresh);
     };
-  }, [profile?.company_id]);
+  }, [profile?.company_id, user?.id, authLoading]);
 
   return <CompanyContext.Provider value={{ company, loading }}>{children}</CompanyContext.Provider>;
 }
