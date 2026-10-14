@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Negociações — pipeline</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0E1013}
+a{color:#C9CFD8;text-decoration:none}a:hover{color:#FFFFFF}
+button,select{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0E1013; color: #E9ECF1; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<div style="flex: 1 1 232px; max-width: 100%; display: flex; background: #0A0C0F; border-right: 1px solid #1C2026">
+<dc-import name="Sidebar" active="negociacoes" accent="#FF7A2F" hint-size="232px,900px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div style="padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.05; color: #FFFFFF">Negociações</h1>
+<span class="num" style="font-size: 14px; color: #8A93A1">7 ativas · R$ 812 mil em propostas · 3 com prioridade alta</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<div role="tablist" aria-label="Visualização" style="display: flex; gap: 4px; padding: 4px; border: 1px solid #1F242B; border-radius: 10px; background: #121519">
+<button role="tab" aria-selected="true" style="height: 32px; padding: 0 12px; border: 0; border-radius: 7px; background: #20252C; color: #FFFFFF; font-size: 13px; font-weight: 600">Quadro</button>
+<button role="tab" aria-selected="false" style="height: 32px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: #A3ABB8; font-size: 13px">Lista</button>
+</div>
+<label style="display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 10px; border: 1px solid #232830; border-radius: 8px; background: #14171C; color: #8A93A1; font-size: 13px">Vendedor
+<select style="background: transparent; border: 0; color: #E9ECF1; font-size: 13px; outline: none"><option>Todos</option><option>jonathan</option><option>ricardo</option></select></label>
+<button style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: #FF7A2F; color: #170A02; font-size: 14px; font-weight: 700">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+Nova negociação</button>
+</div>
+</header>
+
+<!-- Board -->
+<div style="overflow-x: auto; padding-bottom: 8px">
+<div style="display: flex; gap: 12px; align-items: flex-start; min-width: max-content">
+
+<section aria-label="Primeiro contato" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Primeiro contato</h2><span class="num" style="font-size: 12px; color: #8A93A1">2</span></div>
+<a href="Negociacao.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #171B21; border: 1px solid #242930; color: #E9ECF1">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Carla Mendes</span><span style="padding: 1px 7px; border-radius: 999px; background: #2A2110; color: #F5B54A; font-size: 11px; font-weight: 600">Média</span></div>
+<span style="font-size: 13px; color: #A3ABB8">BYD Yuan Plus AWD</span>
+<div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: #8A93A1"><span>jonathan</span><span>hoje</span></div>
+</a>
+<a href="Negociacao.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #171B21; border: 1px solid #242930; color: #E9ECF1">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Bruno Teixeira</span><span style="padding: 1px 7px; border-radius: 999px; background: #1A1E24; color: #A3ABB8; font-size: 11px; font-weight: 600">Baixa</span></div>
+<span style="font-size: 13px; color: #A3ABB8">Fiat Pulse Impetus 2023</span>
+<div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: #8A93A1"><span>ricardo</span><span>2 dias</span></div>
+</a>
+</section>
+
+<section aria-label="Avaliação" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Avaliação</h2><span class="num" style="font-size: 12px; color: #8A93A1">1</span></div>
+<a href="Negociacao.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #171B21; border: 1px solid #242930; color: #E9ECF1">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Lucas Martins</span><span style="padding: 1px 7px; border-radius: 999px; background: #2A2110; color: #F5B54A; font-size: 11px; font-weight: 600">Média</span></div>
+<span style="font-size: 13px; color: #A3ABB8">VW T-Cross Highline 2022</span>
+<span style="font-size: 12px; color: #C9CFD8; padding: 4px 8px; border-radius: 6px; background: #1E232A; align-self: flex-start">Troca: Onix 2019</span>
+<div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: #8A93A1"><span>ricardo</span><span>1 dia</span></div>
+</a>
+</section>
+
+<section aria-label="Test drive agendado" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Test drive agendado</h2><span class="num" style="font-size: 12px; color: #8A93A1">1</span></div>
+<a href="Negociacao.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #171B21; border: 1px solid #242930; color: #E9ECF1">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Ana Souza</span><span style="padding: 1px 7px; border-radius: 999px; background: #2A2110; color: #F5B54A; font-size: 11px; font-weight: 600">Média</span></div>
+<span style="font-size: 13px; color: #A3ABB8">Honda HR-V EXL 2023</span>
+<span class="num" style="font-size: 12px; color: #8DB8FF; padding: 4px 8px; border-radius: 6px; background: #0F1B2E; align-self: flex-start">Qui, 15/10 · 14:00</span>
+<div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: #8A93A1"><span>jonathan</span><span style="color: #FF8C82">5 dias parado</span></div>
+</a>
+</section>
+
+<section aria-label="Test drive realizado" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Test drive realizado</h2><span class="num" style="font-size: 12px; color: #8A93A1">0</span></div>
+<div style="padding: 18px 12px; border-radius: 10px; border: 1px dashed #2A3038; color: #8A93A1; font-size: 12px; text-align: center">Arraste uma negociação para cá</div>
+</section>
+
+<section aria-label="Proposta enviada" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Proposta enviada</h2><span class="num" style="font-size: 12px; color: #8A93A1">1</span></div>
+<a href="Negociacao.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #171B21; border: 1px solid #242930; color: #E9ECF1">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Mariana Costa</span><span style="padding: 1px 7px; border-radius: 999px; background: #2A1512; color: #FF8C82; font-size: 11px; font-weight: 600">Alta</span></div>
+<span style="font-size: 13px; color: #A3ABB8">BYD Yuan Plus AWD</span>
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 18px; font-weight: 700">R$ 262.000</span>
+<div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: #8A93A1"><span>jonathan</span><span style="color: #FF8C82">4 dias parado</span></div>
+</a>
+</section>
+
+<section aria-label="Negociação de preço" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Negociação de preço</h2><span class="num" style="font-size: 12px; color: #8A93A1">1</span></div>
+<a href="Negociacao.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #171B21; border: 1px solid #242930; color: #E9ECF1">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Pedro Alves</span><span style="padding: 1px 7px; border-radius: 999px; background: #2A1512; color: #FF8C82; font-size: 11px; font-weight: 600">Alta</span></div>
+<span style="font-size: 13px; color: #A3ABB8">Toyota Corolla XEi 2021</span>
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 18px; font-weight: 700">R$ 113.500</span>
+<div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: #8A93A1"><span>jonathan</span><span>hoje</span></div>
+</a>
+</section>
+
+<section aria-label="Aprovação de crédito" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Aprovação de crédito</h2><span class="num" style="font-size: 12px; color: #8A93A1">1</span></div>
+<a href="Negociacao.dc.html" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: #171B21; border: 1px solid #242930; color: #E9ECF1">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">Rafael Lima</span><span style="padding: 1px 7px; border-radius: 999px; background: #2A1512; color: #FF8C82; font-size: 11px; font-weight: 600">Alta</span></div>
+<span style="font-size: 13px; color: #A3ABB8">Jeep Compass Longitude 2022</span>
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 18px; font-weight: 700">R$ 136.000</span>
+<div class="num" style="display: flex; justify-content: space-between; font-size: 12px; color: #8A93A1"><span>ricardo</span><span>ontem</span></div>
+</a>
+</section>
+
+<section aria-label="Documentação" style="width: 264px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #C9CFD8">Documentação</h2><span class="num" style="font-size: 12px; color: #8A93A1">0</span></div>
+<div style="padding: 18px 12px; border-radius: 10px; border: 1px dashed #2A3038; color: #8A93A1; font-size: 12px; text-align: center">Arraste uma negociação para cá</div>
+</section>
+
+<section aria-label="Finalizado" style="width: 220px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #0F1A15; border: 1px solid #1B3326">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #5BE3A0">Finalizado no mês</h2><span class="num" style="font-size: 12px; color: #8A93A1">3</span></div>
+<span class="num" style="font-size: 13px; color: #A3ABB8">R$ 389.300 vendidos</span>
+</section>
+
+<section aria-label="Perdido" style="width: 220px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #111418; border: 1px solid #1C2026">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #8A93A1">Perdido no mês</h2><span class="num" style="font-size: 12px; color: #8A93A1">2</span></div>
+<span style="font-size: 13px; color: #8A93A1">Motivo mais comum: preço</span>
+</section>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF7A2F","options":["#FF7A2F","#4C8DFF","#C6F05A"]},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF7A2F' };
+}
+}
+</script>
+</body>
+</html>

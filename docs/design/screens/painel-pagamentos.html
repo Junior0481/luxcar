@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Pagamentos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0E1013}
+a{color:#C9CFD8;text-decoration:none}a:hover{color:#FFFFFF}
+button,select{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0E1013; color: #E9ECF1; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<div style="flex: 1 1 232px; max-width: 100%; display: flex; background: #0A0C0F; border-right: 1px solid #1C2026">
+<dc-import name="Sidebar" active="pagamentos" accent="#FF7A2F" hint-size="232px,900px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div style="padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.05; color: #FFFFFF">Pagamentos</h1>
+<span style="font-size: 14px; color: #8A93A1">Recebimentos vinculados às negociações da loja.</span>
+</div>
+<label style="display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 10px; border: 1px solid #232830; border-radius: 8px; background: #14171C; color: #8A93A1; font-size: 13px">Período
+<select style="background: transparent; border: 0; color: #E9ECF1; font-size: 13px; outline: none"><option>Outubro de 2026</option><option>Setembro de 2026</option></select></label>
+</header>
+
+<div class="num" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden">
+<div style="padding: 16px 20px; border-right: 1px solid #1F242B; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; color: #A3ABB8">Recebido no mês</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 28px; font-weight: 700; color: #5BE3A0">R$ 251.400</span></div>
+<div style="padding: 16px 20px; border-right: 1px solid #1F242B; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; color: #A3ABB8">Aguardando autorização</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 28px; font-weight: 700; color: #F5B54A">R$ 136.000</span></div>
+<div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; color: #A3ABB8">Autorizado, a receber</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 28px; font-weight: 700">R$ 20.000</span></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section style="flex: 999 1 560px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden">
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 680px; border-collapse: collapse; font-size: 13px">
+<thead>
+<tr style="background: #0F1216; color: #8A93A1; text-align: left">
+<th scope="col" style="padding: 11px 20px; font-weight: 500; border-bottom: 1px solid #1F242B">Negociação</th>
+<th scope="col" style="padding: 11px 12px; font-weight: 500; border-bottom: 1px solid #1F242B">Forma</th>
+<th scope="col" style="padding: 11px 12px; font-weight: 500; border-bottom: 1px solid #1F242B; text-align: right">Valor</th>
+<th scope="col" style="padding: 11px 12px; font-weight: 500; border-bottom: 1px solid #1F242B">Status</th>
+<th scope="col" style="padding: 11px 20px; font-weight: 500; border-bottom: 1px solid #1F242B; text-align: right">Ação</th>
+</tr>
+</thead>
+<tbody class="num">
+<tr>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24"><div style="display: flex; flex-direction: column"><a href="Negociacao.dc.html" style="font-weight: 600; color: #E9ECF1">Rafael Lima</a><span style="color: #8A93A1">Jeep Compass Longitude 2022</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Financiamento</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; text-align: right; font-weight: 600">R$ 136.000</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #2A2110; border: 1px solid #4D3A16; color: #F5B54A; font-size: 12px; font-weight: 600">Pendente</span></td>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24; text-align: right"><button style="height: 32px; padding: 0 12px; border: 1px solid #4D3A16; border-radius: 7px; background: #2A2110; color: #FFE2A8; font-size: 13px; font-weight: 600">Autorizar</button></td>
+</tr>
+<tr>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24"><div style="display: flex; flex-direction: column"><a href="Negociacao.dc.html" style="font-weight: 600; color: #E9ECF1">Pedro Alves</a><span style="color: #8A93A1">Toyota Corolla XEi 2021 · sinal</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Pix</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; text-align: right; font-weight: 600">R$ 20.000</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #0F1B2E; border: 1px solid #1E3558; color: #8DB8FF; font-size: 12px; font-weight: 600">Autorizado</span></td>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24; text-align: right"><button style="height: 32px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 7px; background: #181C22; color: #E9ECF1; font-size: 13px; font-weight: 600">Marcar como pago</button></td>
+</tr>
+<tr>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24"><div style="display: flex; flex-direction: column"><span style="font-weight: 600">Patrícia Gomes</span><span style="color: #8A93A1">VW T-Cross Highline 2022</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Transferência</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; text-align: right; font-weight: 600">R$ 129.900</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #10261C; border: 1px solid #1E4D36; color: #5BE3A0; font-size: 12px; font-weight: 600">Pago · 07/10</span></td>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24; text-align: right"><a href="#" style="font-size: 13px; color: #A3ABB8">Comprovante</a></td>
+</tr>
+<tr>
+<td style="padding: 12px 20px"><div style="display: flex; flex-direction: column"><span style="font-weight: 600">Juliana Rocha</span><span style="color: #8A93A1">Fiat Argo Drive 2022</span></div></td>
+<td style="padding: 12px; color: #C9CFD8">Cartão</td>
+<td style="padding: 12px; text-align: right; font-weight: 600">R$ 121.500</td>
+<td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #10261C; border: 1px solid #1E4D36; color: #5BE3A0; font-size: 12px; font-weight: 600">Pago · 02/10</span></td>
+<td style="padding: 12px 20px; text-align: right"><a href="#" style="font-size: 13px; color: #A3ABB8">Comprovante</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- New payment form -->
+<section style="flex: 1 1 320px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Novo pagamento</h2>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">Negociação
+<select style="height: 40px; padding: 0 10px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 14px"><option>Mariana Costa — BYD Yuan Plus AWD</option><option>Ana Souza — Honda HR-V EXL</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">Valor
+<span style="display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C"><span style="color: #8A93A1">R$</span><input inputmode="decimal" placeholder="0,00" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #E9ECF1; font-size: 14px"></span></label>
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+<legend style="font-size: 13px; color: #A3ABB8; padding: 0 0 6px">Forma</legend>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+<button style="height: 38px; border: 1px solid #FF7A2F; border-radius: 8px; background: #1E1711; color: #FFFFFF; font-size: 13px; font-weight: 600">Pix</button>
+<button style="height: 38px; border: 1px solid #2A3038; border-radius: 8px; background: transparent; color: #C9CFD8; font-size: 13px">Financiamento</button>
+<button style="height: 38px; border: 1px solid #2A3038; border-radius: 8px; background: transparent; color: #C9CFD8; font-size: 13px">Cartão</button>
+<button style="height: 38px; border: 1px solid #2A3038; border-radius: 8px; background: transparent; color: #C9CFD8; font-size: 13px">Transferência</button>
+<button style="height: 38px; border: 1px solid #2A3038; border-radius: 8px; background: transparent; color: #C9CFD8; font-size: 13px">Dinheiro</button>
+<button style="height: 38px; border: 1px solid #2A3038; border-radius: 8px; background: transparent; color: #C9CFD8; font-size: 13px">Outro</button>
+</div>
+</fieldset>
+<button style="height: 42px; border: 0; border-radius: 8px; background: #FF7A2F; color: #170A02; font-size: 14px; font-weight: 700">Registrar pagamento</button>
+</section>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF7A2F","options":["#FF7A2F","#4C8DFF","#C6F05A"]},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF7A2F' };
+}
+}
+</script>
+</body>
+</html>

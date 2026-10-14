@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Configurações — Marca</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0E1013}
+a{color:#C9CFD8;text-decoration:none}a:hover{color:#FFFFFF}
+button,select{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0E1013; color: #E9ECF1; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<div style="flex: 1 1 232px; max-width: 100%; display: flex; background: #0A0C0F; border-right: 1px solid #1C2026">
+<dc-import name="Sidebar" active="configuracoes" accent="#FF7A2F" user-name="ricardo" user-role="Administrador" hint-size="232px,900px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div style="padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.05; color: #FFFFFF">Configurações</h1>
+<span style="font-size: 14px; color: #8A93A1">Perfil, marca da loja, segurança e dados operacionais.</span>
+</div>
+<div style="display: flex; gap: 8px">
+<button style="height: 40px; padding: 0 14px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 14px">Descartar</button>
+<button style="height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: #FF7A2F; color: #170A02; font-size: 14px; font-weight: 700">Salvar alterações</button>
+</div>
+</header>
+
+<div role="tablist" aria-label="Seções" style="display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #1F242B">
+<button role="tab" aria-selected="false" style="height: 42px; padding: 0 14px; border: 0; background: transparent; color: #A3ABB8; font-size: 14px">Perfil</button>
+<button role="tab" aria-selected="true" style="height: 42px; padding: 0 14px; border: 0; border-bottom: 2px solid #FF7A2F; margin-bottom: -1px; background: transparent; color: #FFFFFF; font-size: 14px; font-weight: 600">Marca</button>
+<button role="tab" aria-selected="false" style="height: 42px; padding: 0 14px; border: 0; background: transparent; color: #A3ABB8; font-size: 14px">Segurança</button>
+<button role="tab" aria-selected="false" style="height: 42px; padding: 0 14px; border: 0; background: transparent; color: #A3ABB8; font-size: 14px">Notificações</button>
+<button role="tab" aria-selected="false" style="height: 42px; padding: 0 14px; border: 0; background: transparent; color: #A3ABB8; font-size: 14px">Sistema</button>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<!-- Form -->
+<div style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section style="border: 1px solid #1F242B; border-radius: 12px; background: #121519; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Identidade</h2>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">Nome da loja
+<input value="Teste concessionária" style="height: 40px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 14px"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">Domínio personalizado
+<input placeholder="loja.exemplo.com.br" style="height: 40px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 14px">
+<span style="font-size: 12px; color: #8A93A1">Aponte um registro CNAME do seu domínio para a LuxCar. Mostramos o status aqui.</span></label>
+</section>
+
+<section style="border: 1px solid #1F242B; border-radius: 12px; background: #121519; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Arquivos</h2>
+<span style="font-size: 13px; color: #8A93A1">PNG no tamanho indicado, até 2 MB cada.</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px">
+<button style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; height: 128px; border: 1px dashed #343B45; border-radius: 10px; background: #14171C; color: #C9CFD8; font-size: 13px">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>
+<span style="font-weight: 600">Logo</span><span class="num" style="font-size: 12px; color: #8A93A1">512 × 256 px · 2:1</span></button>
+<button style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; height: 128px; border: 1px dashed #343B45; border-radius: 10px; background: #14171C; color: #C9CFD8; font-size: 13px">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>
+<span style="font-weight: 600">Favicon</span><span class="num" style="font-size: 12px; color: #8A93A1">64 × 64 px · quadrado</span></button>
+</div>
+</section>
+
+<section style="border: 1px solid #1F242B; border-radius: 12px; background: #121519; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Cores</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">Cor principal
+<span style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C"><span style="width: 22px; height: 22px; border-radius: 5px; background: #FF7A2F"></span><input value="#FF7A2F" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #E9ECF1; font-size: 14px; text-transform: uppercase"></span></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">Cor secundária
+<span style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C"><span style="width: 22px; height: 22px; border-radius: 5px; background: #15171A"></span><input value="#15171A" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #E9ECF1; font-size: 14px"></span></label>
+</div>
+<span style="font-size: 12px; color: #8A93A1">O contraste do texto sobre a cor principal é conferido automaticamente.</span>
+</section>
+</div>
+
+<!-- Live preview -->
+<section aria-label="Prévia da vitrine" style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Prévia da sua vitrine</h2>
+<a href="Vitrine.dc.html" style="font-size: 13px; color: #A3ABB8">Abrir vitrine</a>
+</div>
+<div style="border-radius: 12px; overflow: hidden; border: 1px solid #2A3038; background: #F6F6F4; color: #15171A">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #FFFFFF; border-bottom: 1px solid #E6E6E2">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="width: 30px; height: 30px; border-radius: 7px; background: #FF7A2F; color: #170A02; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px">TC</span>
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 17px">Teste concessionária</span>
+</div>
+<span style="height: 32px; padding: 0 12px; display: flex; align-items: center; border-radius: 7px; background: #15171A; color: #FFFFFF; font-size: 12px; font-weight: 600">Falar no WhatsApp</span>
+</div>
+<div style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; background: #FFFFFF; border: 1px solid #E6E6E2">
+<img src="./img/byd-1.jpg" alt="" style="width: 100%; aspect-ratio: 16 / 8; object-fit: cover; display: block">
+<div class="num" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-weight: 600; font-size: 15px">BYD Yuan Plus AWD</span>
+<span style="font-size: 12px; color: #5C626B">2026 · 120.036 km · Elétrico · Automático</span>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px">
+<span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 22px; font-weight: 700">R$ 269.214</span>
+<span style="height: 34px; padding: 0 14px; display: flex; align-items: center; border-radius: 7px; background: #FF7A2F; color: #170A02; font-size: 13px; font-weight: 700">Ver detalhes</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF7A2F","options":["#FF7A2F","#4C8DFF","#C6F05A"]},"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF7A2F' };
+}
+}
+</script>
+</body>
+</html>

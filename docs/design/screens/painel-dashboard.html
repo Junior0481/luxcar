@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Dashboard da loja</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0E1013}
+a{color:#C9CFD8;text-decoration:none}a:hover{color:#FFFFFF}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0E1013; color: #E9ECF1; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<div style="flex: 1 1 232px; max-width: 100%; display: flex; background: #0A0C0F; border-right: 1px solid #1C2026">
+<dc-import name="Sidebar" active="dashboard" accent="#FF7A2F" hint-size="232px,900px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 32px; border-bottom: 1px solid #1C2026">
+<span style="font-size: 13px; color: #E9ECF1">Dashboard</span>
+<div style="display: flex; align-items: center; gap: 8px">
+<label style="display: flex; align-items: center; gap: 8px; height: 38px; width: 300px; max-width: 60vw; padding: 0 12px; box-sizing: border-box; background: #14171C; border: 1px solid #232830; border-radius: 8px; color: #8A93A1">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+<span class="sr">Buscar</span>
+<input type="search" placeholder="Buscar placa, modelo ou cliente" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #E9ECF1; font-size: 13px">
+</label>
+<a href="Vitrine.dc.html" style="display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border: 1px solid #232830; border-radius: 8px; background: #14171C; font-size: 13px">
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
+Ver vitrine</a>
+</div>
+</div>
+
+<div style="padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; color: #8A93A1">Terça-feira, 13 de outubro</span>
+<h1 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.05; color: #FFFFFF">Bom dia, jonathan</h1>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 14px; font-weight: 500">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+Adicionar veículo</button>
+<button style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: #FF7A2F; color: #170A02; font-size: 14px; font-weight: 700">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+Criar negociação</button>
+</div>
+</header>
+
+<!-- KPIs -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden">
+<div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #1F242B">
+<span style="font-size: 13px; color: #A3ABB8">Prontos para vender</span>
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 34px; font-weight: 700; line-height: 1.1; color: #FFFFFF">12</span>
+<span style="font-size: 12px; color: #8A93A1">Estoque disponível agora</span>
+</div>
+<div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #1F242B">
+<span style="font-size: 13px; color: #A3ABB8">Em negociação</span>
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 34px; font-weight: 700; line-height: 1.1; color: #FFFFFF">4</span>
+<span style="font-size: 12px; color: #8A93A1">Veículos com conversa ativa</span>
+</div>
+<div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #1F242B">
+<span style="font-size: 13px; color: #A3ABB8">Pipeline ativo</span>
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 34px; font-weight: 700; line-height: 1.1; color: #FFFFFF">7</span>
+<span style="font-size: 12px; color: #8A93A1">Oportunidades abertas</span>
+</div>
+<div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; color: #A3ABB8">Lucro potencial</span>
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 34px; font-weight: 700; line-height: 1.1; color: #FFFFFF">R$ 84.300</span>
+<span style="font-size: 12px; color: #8A93A1">Estimativa sobre o estoque</span>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<!-- Attention table -->
+<section style="flex: 999 1 560px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Negociações que merecem atenção</h2>
+<span style="font-size: 13px; color: #8A93A1">Alta prioridade ou sem atualização há mais de 3 dias</span>
+</div>
+<a href="Negociacoes.dc.html" style="font-size: 13px; color: #A3ABB8">Ver pipeline</a>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px">
+<thead>
+<tr style="background: #0F1216; color: #8A93A1; text-align: left">
+<th scope="col" style="padding: 10px 20px; font-weight: 500; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Cliente</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Veículo</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Etapa</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Prioridade</th>
+<th scope="col" style="padding: 10px 20px; font-weight: 500; text-align: right; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Atualizada</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24"><a href="Negociacao.dc.html" style="font-weight: 600; color: #E9ECF1">Mariana Costa</a></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">BYD Yuan Plus AWD</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #161A20; border: 1px solid #262B33; color: #C9CFD8; font-size: 12px; white-space: nowrap">Proposta enviada</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #2A1512; border: 1px solid #4A221A; color: #FF8C82; font-size: 12px; font-weight: 600">Alta</span></td>
+<td class="num" style="padding: 12px 20px; border-bottom: 1px solid #1A1E24; text-align: right; color: #FF8C82">há 4 dias</td>
+</tr>
+<tr>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24"><a href="Negociacao.dc.html" style="font-weight: 600; color: #E9ECF1">Rafael Lima</a></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Jeep Compass Longitude 2022</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #161A20; border: 1px solid #262B33; color: #C9CFD8; font-size: 12px; white-space: nowrap">Aprovação de crédito</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #2A1512; border: 1px solid #4A221A; color: #FF8C82; font-size: 12px; font-weight: 600">Alta</span></td>
+<td class="num" style="padding: 12px 20px; border-bottom: 1px solid #1A1E24; text-align: right; color: #A3ABB8">ontem</td>
+</tr>
+<tr>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24"><a href="Negociacao.dc.html" style="font-weight: 600; color: #E9ECF1">Ana Souza</a></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Honda HR-V EXL 2023</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #161A20; border: 1px solid #262B33; color: #C9CFD8; font-size: 12px; white-space: nowrap">Test drive agendado</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #2A2110; border: 1px solid #4D3A16; color: #F5B54A; font-size: 12px; font-weight: 600">Média</span></td>
+<td class="num" style="padding: 12px 20px; border-bottom: 1px solid #1A1E24; text-align: right; color: #FF8C82">há 5 dias</td>
+</tr>
+<tr>
+<td style="padding: 12px 20px"><a href="Negociacao.dc.html" style="font-weight: 600; color: #E9ECF1">Pedro Alves</a></td>
+<td style="padding: 12px; color: #C9CFD8">Toyota Corolla XEi 2021</td>
+<td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #161A20; border: 1px solid #262B33; color: #C9CFD8; font-size: 12px; white-space: nowrap">Negociação de preço</span></td>
+<td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #2A1512; border: 1px solid #4A221A; color: #FF8C82; font-size: 12px; font-weight: 600">Alta</span></td>
+<td class="num" style="padding: 12px 20px; text-align: right; color: #A3ABB8">hoje</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- Stock health -->
+<section style="flex: 1 1 340px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Saúde do estoque</h2>
+<span class="num" style="font-size: 13px; color: #8A93A1">19 veículos</span>
+</div>
+<div aria-hidden="true" style="display: flex; height: 10px; border-radius: 999px; overflow: hidden; gap: 2px">
+<span style="flex: 12; background: #3DD68C"></span>
+<span style="flex: 4; background: #F5B54A"></span>
+<span style="flex: 3; background: #5B8DEF"></span>
+</div>
+<dl class="num" style="margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+<div style="display: flex; align-items: center; gap: 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #3DD68C"></span><dt style="flex: 1; color: #C9CFD8">Disponível</dt><dd style="margin: 0; font-weight: 600">12</dd></div>
+<div style="display: flex; align-items: center; gap: 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #F5B54A"></span><dt style="flex: 1; color: #C9CFD8">Em negociação</dt><dd style="margin: 0; font-weight: 600">4</dd></div>
+<div style="display: flex; align-items: center; gap: 10px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #5B8DEF"></span><dt style="flex: 1; color: #C9CFD8">Vendido no mês</dt><dd style="margin: 0; font-weight: 600">3</dd></div>
+</dl>
+<div style="padding: 12px 14px; border-radius: 10px; background: #2A2110; border: 1px solid #4D3A16; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 600; color: #F5B54A">2 veículos parados há mais de 60 dias</span>
+<span style="font-size: 13px; color: #D8C6A0">Revise o preço ou destaque na vitrine.</span>
+<a href="Estoque.dc.html" style="font-size: 13px; font-weight: 600; color: #FFE2A8">Ver no estoque</a>
+</div>
+</section>
+</div>
+
+<!-- Recent stock -->
+<section style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Entrada recente no estoque</h2>
+<a href="Estoque.dc.html" style="font-size: 13px; color: #A3ABB8">Ver estoque completo</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden; color: #E9ECF1">
+<img src="./img/byd-1.jpg" alt="BYD Yuan Plus AWD" style="width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block">
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600; font-size: 15px">BYD Yuan Plus AWD</span>
+<span class="num" style="font-size: 12px; color: #8A93A1">2026 · 120.036 km · Elétrico</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 20px; font-weight: 700">R$ 269.214</span>
+<span style="font-size: 12px; color: #FF8C82; font-weight: 600">Margem −0,66%</span>
+</div>
+</div>
+</a>
+<a href="Main.dc.html" style="display: flex; flex-direction: column; border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden; color: #E9ECF1">
+<div style="width: 100%; aspect-ratio: 16 / 10; background: #171B21; color: #4D5562; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px">
+<svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 8.5"/></svg>
+<span style="color: #8A93A1">Adicionar fotos</span>
+</div>
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600; font-size: 15px">Jeep Compass Longitude</span>
+<span class="num" style="font-size: 12px; color: #8A93A1">2022 · 48.200 km · Flex</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 20px; font-weight: 700">R$ 139.900</span>
+<span style="font-size: 12px; color: #5BE3A0; font-weight: 600">Margem 9,8%</span>
+</div>
+</div>
+</a>
+<a href="Main.dc.html" style="display: flex; flex-direction: column; border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden; color: #E9ECF1">
+<div style="width: 100%; aspect-ratio: 16 / 10; background: #171B21; color: #4D5562; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px">
+<svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 8.5"/></svg>
+<span style="color: #8A93A1">Adicionar fotos</span>
+</div>
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600; font-size: 15px">Honda HR-V EXL</span>
+<span class="num" style="font-size: 12px; color: #8A93A1">2023 · 22.900 km · Flex</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 20px; font-weight: 700">R$ 152.500</span>
+<span style="font-size: 12px; color: #5BE3A0; font-weight: 600">Margem 11,2%</span>
+</div>
+</div>
+</a>
+<a href="Main.dc.html" style="display: flex; flex-direction: column; border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden; color: #E9ECF1">
+<div style="width: 100%; aspect-ratio: 16 / 10; background: #171B21; color: #4D5562; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px">
+<svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 8.5"/></svg>
+<span style="color: #8A93A1">Adicionar fotos</span>
+</div>
+<div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600; font-size: 15px">Toyota Corolla XEi</span>
+<span class="num" style="font-size: 12px; color: #8A93A1">2021 · 61.300 km · Flex</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span class="num" style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 20px; font-weight: 700">R$ 118.900</span>
+<span style="font-size: 12px; color: #5BE3A0; font-weight: 600">Margem 7,4%</span>
+</div>
+</div>
+</a>
+</div>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF7A2F","options":["#FF7A2F","#4C8DFF","#C6F05A"]},"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF7A2F' };
+}
+}
+</script>
+</body>
+</html>

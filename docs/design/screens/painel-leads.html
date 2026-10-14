@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Leads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0E1013}
+a{color:#C9CFD8;text-decoration:none}a:hover{color:#FFFFFF}
+button,select{font-family:inherit;cursor:pointer}
+input,textarea{font-family:inherit}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0E1013; color: #E9ECF1; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<div style="flex: 1 1 232px; max-width: 100%; display: flex; background: #0A0C0F; border-right: 1px solid #1C2026">
+<dc-import name="Sidebar" active="leads" accent="#FF7A2F" hint-size="232px,900px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div style="padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.05; color: #FFFFFF">Leads</h1>
+<span style="font-size: 14px; color: #8A93A1">Clientes potenciais vindos da vitrine ou cadastrados pela equipe na loja.</span>
+</div>
+<button style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: #FF7A2F; color: #170A02; font-size: 14px; font-weight: 700">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+Novo lead</button>
+</header>
+
+<!-- Funnel strip -->
+<div class="num" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden">
+<div style="padding: 14px 18px; border-right: 1px solid #1F242B; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #8A93A1">Total de leads</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 26px; font-weight: 700">38</span></div>
+<div style="padding: 14px 18px; border-right: 1px solid #1F242B; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #8A93A1">Aguardando 1º contato</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 26px; font-weight: 700; color: #8DB8FF">6</span></div>
+<div style="padding: 14px 18px; border-right: 1px solid #1F242B; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #8A93A1">Em atendimento</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 26px; font-weight: 700">14</span></div>
+<div style="padding: 14px 18px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #8A93A1">Viraram negociação</span><span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 26px; font-weight: 700; color: #5BE3A0">11 <span style="font-size: 15px; color: #8A93A1; font-weight: 500">· 29%</span></span></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<!-- List -->
+<section style="flex: 999 1 520px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; border-bottom: 1px solid #1F242B">
+<label style="flex: 1 1 220px; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; box-sizing: border-box; background: #14171C; border: 1px solid #232830; border-radius: 8px; color: #8A93A1">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+<span class="sr">Buscar leads</span>
+<input type="search" placeholder="Buscar por cliente, contato ou veículo" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #E9ECF1; font-size: 13px">
+</label>
+<label style="display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px; border: 1px solid #232830; border-radius: 8px; background: #14171C; color: #8A93A1; font-size: 13px">Status
+<select style="background: transparent; border: 0; color: #E9ECF1; font-size: 13px; outline: none"><option>Todos</option><option>Novo</option><option>Em contato</option><option>Qualificado</option><option>Convertido</option><option>Perdido</option></select></label>
+<label style="display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px; border: 1px solid #232830; border-radius: 8px; background: #14171C; color: #8A93A1; font-size: 13px">Origem
+<select style="background: transparent; border: 0; color: #E9ECF1; font-size: 13px; outline: none"><option>Todas</option><option>Site</option><option>Manual</option></select></label>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px">
+<thead>
+<tr style="background: #0F1216; color: #8A93A1; text-align: left">
+<th scope="col" style="padding: 10px 16px; font-weight: 500; border-bottom: 1px solid #1F242B">Cliente</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-bottom: 1px solid #1F242B">Interesse</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-bottom: 1px solid #1F242B">Status</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-bottom: 1px solid #1F242B">Responsável</th>
+<th scope="col" style="padding: 10px 16px; font-weight: 500; border-bottom: 1px solid #1F242B; text-align: right">Chegou</th>
+</tr>
+</thead>
+<tbody class="num">
+<tr style="background: #181C22">
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24; box-shadow: inset 2px 0 0 #FF7A2F"><div style="display: flex; flex-direction: column"><span style="font-weight: 600; color: #FFFFFF">Carla Mendes</span><span style="color: #8A93A1">Site · (11) 98123-4410</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">BYD Yuan Plus AWD</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #0F1B2E; border: 1px solid #1E3558; color: #8DB8FF; font-size: 12px; font-weight: 600">Novo</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #8A93A1">Sem responsável</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24; text-align: right; color: #F5B54A; font-weight: 600">há 25 min</td>
+</tr>
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24"><div style="display: flex; flex-direction: column"><span style="font-weight: 600">Bruno Teixeira</span><span style="color: #8A93A1">Site · bruno.t@email.com</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Interesse geral</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #0F1B2E; border: 1px solid #1E3558; color: #8DB8FF; font-size: 12px; font-weight: 600">Novo</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #8A93A1">Sem responsável</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24; text-align: right; color: #C9CFD8">há 2 h</td>
+</tr>
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24"><div style="display: flex; flex-direction: column"><span style="font-weight: 600">Fernanda Ribeiro</span><span style="color: #8A93A1">Manual · (11) 97765-0021</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Honda HR-V EXL 2023</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #161A20; border: 1px solid #262B33; color: #C9CFD8; font-size: 12px; font-weight: 600">Em contato</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">jonathan</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24; text-align: right; color: #C9CFD8">ontem</td>
+</tr>
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24"><div style="display: flex; flex-direction: column"><span style="font-weight: 600">Lucas Martins</span><span style="color: #8A93A1">Site · (21) 99410-3387</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Jeep Compass Longitude 2022</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #10261C; border: 1px solid #1E4D36; color: #5BE3A0; font-size: 12px; font-weight: 600">Qualificado</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">ricardo</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24; text-align: right; color: #C9CFD8">2 dias</td>
+</tr>
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24"><div style="display: flex; flex-direction: column"><span style="font-weight: 600">Patrícia Gomes</span><span style="color: #8A93A1">Manual · (11) 96654-7781</span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">Toyota Corolla XEi 2021</td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #1C1730; border: 1px solid #352B5A; color: #B9A6FF; font-size: 12px; font-weight: 600">Convertido</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #C9CFD8">jonathan</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #1A1E24; text-align: right; color: #C9CFD8">5 dias</td>
+</tr>
+<tr>
+<td style="padding: 12px 16px"><div style="display: flex; flex-direction: column"><span style="font-weight: 600">Diego Santos</span><span style="color: #8A93A1">Site · diego.s@email.com</span></div></td>
+<td style="padding: 12px; color: #C9CFD8">Fiat Pulse Impetus 2023</td>
+<td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #1A1E24; border: 1px solid #2A3038; color: #8A93A1; font-size: 12px; font-weight: 600">Perdido</span></td>
+<td style="padding: 12px; color: #C9CFD8">ricardo</td>
+<td style="padding: 12px 16px; text-align: right; color: #C9CFD8">1 semana</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- Detail panel -->
+<aside aria-label="Lead selecionado" style="flex: 1 1 340px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519; display: flex; flex-direction: column">
+<div style="padding: 18px 20px; border-bottom: 1px solid #1F242B; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span style="padding: 3px 9px; border-radius: 999px; background: #0F1B2E; border: 1px solid #1E3558; color: #8DB8FF; font-size: 12px; font-weight: 600">Novo · via vitrine</span>
+<button aria-label="Fechar" style="width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent; color: #8A93A1; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 24px; font-weight: 700; color: #FFFFFF">Carla Mendes</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 7px; background: #0F3B23; color: #8BF0BA; font-size: 13px; font-weight: 600">
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/></svg>
+WhatsApp</a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 7px; font-size: 13px">Ligar</a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 7px; font-size: 13px">E-mail</a>
+</div>
+</div>
+<dl class="num" style="margin: 0; padding: 14px 20px; display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; font-size: 13px; border-bottom: 1px solid #1F242B">
+<dt style="color: #8A93A1">Telefone</dt><dd style="margin: 0">(11) 98123-4410</dd>
+<dt style="color: #8A93A1">E-mail</dt><dd style="margin: 0">carla.mendes@email.com</dd>
+<dt style="color: #8A93A1">Veículo</dt><dd style="margin: 0"><a href="Main.dc.html" style="font-weight: 600; color: #E9ECF1">BYD Yuan Plus AWD · R$ 269.214</a></dd>
+<dt style="color: #8A93A1">Chegou</dt><dd style="margin: 0">Hoje, 10:42</dd>
+</dl>
+<div style="padding: 14px 20px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #1F242B">
+<span style="font-size: 12px; color: #8A93A1">Mensagem do cliente</span>
+<p style="margin: 0; font-size: 14px; color: #C9CFD8; line-height: 1.5">"Olá, o Yuan ainda está disponível? Tenho um Corolla 2019 para dar na troca."</p>
+</div>
+<div style="padding: 14px 20px; display: flex; flex-direction: column; gap: 10px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #8A93A1">Vendedor responsável
+<select style="height: 38px; padding: 0 10px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 13px"><option>Atribuir a mim (jonathan)</option><option>ricardo</option></select></label>
+<button style="height: 42px; border: 0; border-radius: 8px; background: #FF7A2F; color: #170A02; font-size: 14px; font-weight: 700">Levar para negociação</button>
+<span style="font-size: 12px; color: #8A93A1">Os dados do cliente e o veículo vão para uma nova negociação.</span>
+</div>
+</aside>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF7A2F","options":["#FF7A2F","#4C8DFF","#C6F05A"]},"$preview":{"width":1440,"height":1250}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF7A2F' };
+}
+}
+</script>
+</body>
+</html>

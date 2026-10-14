@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Equipe</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&amp;family=Barlow+Semi+Condensed:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0E1013}
+a{color:#C9CFD8;text-decoration:none}a:hover{color:#FFFFFF}
+button,select{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0E1013; color: #E9ECF1; font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.45">
+<div style="flex: 1 1 232px; max-width: 100%; display: flex; background: #0A0C0F; border-right: 1px solid #1C2026">
+<dc-import name="Sidebar" active="equipe" accent="#FF7A2F" user-name="ricardo" user-role="Administrador" hint-size="232px,900px"></dc-import>
+</div>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<div style="padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.05; color: #FFFFFF">Equipe</h1>
+<span style="font-size: 14px; color: #8A93A1">Administradores e vendedores com acesso ao painel da loja.</span>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section style="flex: 999 1 560px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Usuários da loja</h2>
+<span class="num" style="font-size: 13px; color: #8A93A1">2 de 5 acessos do plano</span>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 600px; border-collapse: collapse; font-size: 13px">
+<thead>
+<tr style="background: #0F1216; color: #8A93A1; text-align: left">
+<th scope="col" style="padding: 10px 20px; font-weight: 500; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Pessoa</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Perfil</th>
+<th scope="col" style="padding: 10px 12px; font-weight: 500; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B">Situação</th>
+<th scope="col" style="padding: 10px 20px; border-top: 1px solid #1F242B; border-bottom: 1px solid #1F242B"><span class="sr">Ações</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24"><div style="display: flex; align-items: center; gap: 12px"><span style="width: 34px; height: 34px; border-radius: 50%; background: #232830; color: #C9CFD8; display: flex; align-items: center; justify-content: center; font-weight: 600">R</span><span style="display: flex; flex-direction: column"><span style="font-weight: 600">ricardo <span style="font-weight: 400; color: #8A93A1">(você)</span></span><span style="color: #8A93A1">ricardo@[email-da-loja]</span></span></div></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24"><span style="padding: 3px 9px; border-radius: 999px; background: #1E1711; border: 1px solid #4A3020; color: #FFB58A; font-size: 12px; font-weight: 600">Administrador</span></td>
+<td style="padding: 12px; border-bottom: 1px solid #1A1E24; color: #5BE3A0">Ativo</td>
+<td style="padding: 12px 20px; border-bottom: 1px solid #1A1E24; text-align: right; color: #6F7886">—</td>
+</tr>
+<tr>
+<td style="padding: 12px 20px"><div style="display: flex; align-items: center; gap: 12px"><span style="width: 34px; height: 34px; border-radius: 50%; background: #232830; color: #C9CFD8; display: flex; align-items: center; justify-content: center; font-weight: 600">J</span><span style="display: flex; flex-direction: column"><span style="font-weight: 600">jonathan</span><span style="color: #8A93A1">jonathan@[email-da-loja]</span></span></div></td>
+<td style="padding: 12px"><span style="padding: 3px 9px; border-radius: 999px; background: #161A20; border: 1px solid #262B33; color: #C9CFD8; font-size: 12px; font-weight: 600">Vendedor</span></td>
+<td style="padding: 12px; color: #5BE3A0">Ativo</td>
+<td style="padding: 12px 20px; text-align: right"><button aria-label="Ações para jonathan" style="width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent; color: #A3ABB8"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg></button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section style="flex: 1 1 340px; min-width: 0; border: 1px solid #1F242B; border-radius: 12px; background: #121519; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<h2 style="margin: 0; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 19px; font-weight: 600; color: #FFFFFF">Convidar pessoa</h2>
+<span style="font-size: 13px; color: #8A93A1">Ela recebe um e-mail para criar a própria senha.</span>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">Nome completo
+<input style="height: 40px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 14px"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB8">E-mail
+<input type="email" style="height: 40px; padding: 0 12px; border: 1px solid #2A3038; border-radius: 8px; background: #14171C; color: #E9ECF1; font-size: 14px"></label>
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+<legend style="font-size: 13px; color: #A3ABB8; padding: 0 0 6px">Perfil</legend>
+<label style="display: flex; gap: 10px; padding: 12px; border: 1px solid #FF7A2F; border-radius: 8px; background: #1E1711; cursor: pointer"><input type="radio" name="perfil" checked style="accent-color: #FF7A2F"><span style="display: flex; flex-direction: column"><span style="font-weight: 600">Vendedor</span><span style="font-size: 12px; color: #A3ABB8">Estoque, leads, negociações e pagamentos</span></span></label>
+<label style="display: flex; gap: 10px; padding: 12px; border: 1px solid #2A3038; border-radius: 8px; cursor: pointer"><input type="radio" name="perfil" style="accent-color: #FF7A2F"><span style="display: flex; flex-direction: column"><span style="font-weight: 600">Administrador</span><span style="font-size: 12px; color: #A3ABB8">Tudo, mais relatórios, equipe e marca</span></span></label>
+</fieldset>
+<button style="height: 42px; border: 0; border-radius: 8px; background: #FF7A2F; color: #170A02; font-size: 14px; font-weight: 700">Enviar convite</button>
+</section>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF7A2F","options":["#FF7A2F","#4C8DFF","#C6F05A"]},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF7A2F' };
+}
+}
+</script>
+</body>
+</html>
