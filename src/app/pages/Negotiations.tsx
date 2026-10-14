@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { AlertCircle, CalendarDays, Filter, Handshake, Plus, RefreshCw, Search, UserRound } from 'lucide-react';
+import { AlertCircle, Filter, Handshake, List, LayoutGrid, Plus, RefreshCw, Search } from 'lucide-react';
 import { NegotiationForm } from '../components/NegotiationForm';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { EmptyState } from '../components/ui/empty-state';
-import { MetricCard } from '../components/ui/metric-card';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
 import {
@@ -20,23 +19,11 @@ import {
   SelectValue
 } from '../components/ui/select';
 import { toast } from 'sonner';
+import { formatPhone, formatPriority, formatStage, pluralize, stageLabels } from '../../lib/format';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
   seller?: Profile;
-};
-
-const stageLabels: Record<string, string> = {
-  primeiro_contato: 'Primeiro contato',
-  avaliacao: 'Avaliação',
-  test_drive_agendado: 'Test drive agendado',
-  test_drive_realizado: 'Test drive realizado',
-  proposta_enviada: 'Proposta enviada',
-  negociacao_preco: 'Negociação de preço',
-  aprovacao_credito: 'Aprovação de crédito',
-  documentacao: 'Documentação',
-  finalizado: 'Finalizado',
-  perdido: 'Perdido'
 };
 
 const stageVariant = (stage: string): 'default' | 'secondary' | 'outline' | 'destructive' =>
@@ -44,7 +31,7 @@ const stageVariant = (stage: string): 'default' | 'secondary' | 'outline' | 'des
 
 const priorityMeta: Record<string, { label: string; variant: 'default' | 'outline' | 'destructive' }> = {
   alta: { label: 'Alta', variant: 'destructive' },
-  media: { label: 'Media', variant: 'default' },
+  media: { label: 'Média', variant: 'default' },
   baixa: { label: 'Baixa', variant: 'outline' }
 };
 
@@ -57,6 +44,7 @@ export function Negotiations() {
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<string>('active');
   const [showForm, setShowForm] = useState(false);
+  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
 
   useEffect(() => {
     if (profile?.company_id) loadNegotiations();
@@ -158,14 +146,20 @@ export function Negotiations() {
         )}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <MetricCard title="Pipeline ativo" value={summary.active} description="Conversas em andamento" icon={Handshake} accent />
-        <MetricCard title="Alta prioridade" value={summary.highPriority} description="Precisam de ação rápida" icon={UserRound} />
-        <MetricCard title="Finalizadas" value={summary.closed} description="Negócios ganhos" icon={CalendarDays} />
-      </div>
+      <section aria-label="Resumo das negociações" className="grid grid-cols-3 overflow-hidden rounded-xl border border-border bg-card">
+        {[
+          { title: 'Pipeline ativo', value: summary.active, note: pluralize(summary.active, 'negociação ativa', 'negociações ativas') },
+          { title: 'Alta prioridade', value: summary.highPriority, note: 'Precisam de ação rápida' },
+          { title: 'Finalizadas', value: summary.closed, note: 'Negócios ganhos' },
+        ].map((item) => <div key={item.title} className="border-r border-border px-3 py-3 last:border-r-0 sm:px-5"><p className="text-xs text-muted-foreground">{item.title}</p><p className="mt-1 text-2xl font-bold tabular-nums text-foreground [font-family:var(--font-display)]">{item.value}</p><p className="mt-0.5 hidden text-xs text-muted-foreground sm:block">{item.note}</p></div>)}
+      </section>
 
-      <Card>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1" aria-label="Modo de visualização">
+          <Button type="button" size="sm" variant={viewMode === 'board' ? 'secondary' : 'ghost'} aria-pressed={viewMode === 'board'} onClick={() => setViewMode('board')}><LayoutGrid className="size-4" /><span className="hidden sm:inline">Quadro</span></Button>
+          <Button type="button" size="sm" variant={viewMode === 'list' ? 'secondary' : 'ghost'} aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List className="size-4" /><span className="hidden sm:inline">Lista</span></Button>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:justify-end">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -198,8 +192,8 @@ export function Negotiations() {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {error ? (
         <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
@@ -234,7 +228,20 @@ export function Negotiations() {
           }
         />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        viewMode === 'board' ? <div className="flex gap-3 overflow-x-auto pb-3">
+          {Object.entries(stageLabels).filter(([stage]) => stage !== 'finalizado' && stage !== 'perdido').map(([stage, label]) => {
+            const cards = filteredNegotiations.filter((item) => item.stage === stage);
+            return <section key={stage} aria-label={label} className="flex w-[264px] shrink-0 flex-col gap-2 rounded-xl border border-border bg-muted/35 p-3">
+              <div className="flex items-center justify-between px-0.5"><h2 className="text-[13px] font-semibold text-secondary-foreground">{label}</h2><span className="text-xs tabular-nums text-muted-foreground">{cards.length}</span></div>
+              {cards.length ? cards.map((item) => <Link key={item.id} to={`/dashboard/negotiations/${item.id}`} className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/50">
+                <div className="flex items-start justify-between gap-2"><span className="truncate text-sm font-semibold text-foreground">{item.client_name}</span><Badge variant={priorityMeta[item.priority]?.variant ?? 'outline'} className="shrink-0">{formatPriority(item.priority) || 'Média'}</Badge></div>
+                <p className="mt-2 truncate text-xs text-muted-foreground">{item.vehicle ? `${item.vehicle.brand} ${item.vehicle.model}` : 'Veículo não informado'}</p>
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs text-muted-foreground"><span className="truncate">{item.seller?.full_name || 'Sem responsável'}</span><span className="tabular-nums">{new Date(item.created_at).toLocaleDateString('pt-BR')}</span></div>
+              </Link>) : <p className="rounded-lg border border-dashed border-border px-3 py-5 text-center text-xs text-muted-foreground">Nenhuma oportunidade</p>}
+            </section>;
+          })}
+          {['finalizado', 'perdido'].some((stage) => filteredNegotiations.some((item) => item.stage === stage)) && <section className="flex w-[220px] shrink-0 flex-col gap-2 rounded-xl border border-border bg-muted/35 p-3"><h2 className="px-0.5 text-[13px] font-semibold text-muted-foreground">Encerradas</h2>{filteredNegotiations.filter((item) => ['finalizado', 'perdido'].includes(item.stage)).map((item) => <Link key={item.id} to={`/dashboard/negotiations/${item.id}`} className="rounded-lg border border-border bg-card p-3"><span className="block truncate text-sm font-semibold">{item.client_name}</span><span className="mt-1 block text-xs text-muted-foreground">{stageLabels[item.stage]}</span></Link>)}</section>}
+        </div> : <div className="grid gap-4 xl:grid-cols-2">
           {filteredNegotiations.map((negotiation) => {
             const p = priorityMeta[negotiation.priority] ?? priorityMeta.media;
             return (
@@ -245,14 +252,14 @@ export function Negotiations() {
                       <p className="text-xs text-muted-foreground">Cliente</p>
                       <h3 className="truncate text-lg font-medium text-foreground">{negotiation.client_name}</h3>
                       {negotiation.client_phone ? (
-                        <p className="text-sm text-muted-foreground">{negotiation.client_phone}</p>
+                        <p className="text-sm text-muted-foreground">{formatPhone(negotiation.client_phone)}</p>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Badge variant={stageVariant(negotiation.stage)}>
-                        {stageLabels[negotiation.stage] ?? negotiation.stage}
+                        {formatStage(negotiation.stage)}
                       </Badge>
-                      <Badge variant={p.variant}>{p.label}</Badge>
+                      <Badge variant={p.variant}>{formatPriority(negotiation.priority)}</Badge>
                     </div>
                   </div>
 

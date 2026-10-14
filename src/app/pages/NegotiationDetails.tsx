@@ -6,13 +6,14 @@ import {
   Phone,
   Mail,
   FileText,
-  DollarSign,
   AlertCircle,
   CheckCircle,
   Plus,
   MessageSquare,
   RefreshCw,
-  Car
+  Car,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { InteractionForm } from '../components/InteractionForm';
 import { TradeInVehicleForm } from '../components/TradeInVehicleForm';
@@ -20,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatPercent, formatPhone, formatPriority, formatStage, stageLabels } from '../../lib/format';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
@@ -33,18 +35,7 @@ type InteractionWithUser = InteractionHistory & {
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const stageLabels: Record<string, string> = {
-  primeiro_contato: 'Primeiro Contato',
-  avaliacao: 'Avaliação',
-  test_drive_agendado: 'Test Drive Agendado',
-  test_drive_realizado: 'Test Drive Realizado',
-  proposta_enviada: 'Proposta Enviada',
-  negociacao_preco: 'Negociação de Preço',
-  aprovacao_credito: 'Aprovação de Crédito',
-  documentacao: 'Documentação',
-  finalizado: 'Finalizado',
-  perdido: 'Perdido'
-};
+const activeStages = Object.entries(stageLabels).filter(([stage]) => !['finalizado', 'perdido'].includes(stage));
 
 const stageVariant = (stage: string): 'default' | 'secondary' | 'destructive' =>
   stage === 'finalizado' ? 'default' : stage === 'perdido' ? 'destructive' : 'secondary';
@@ -54,7 +45,7 @@ const interactionTypeLabels: Record<string, string> = {
   whatsapp: 'WhatsApp',
   email: 'Email',
   visita: 'Visita',
-  test_drive: 'Test Drive',
+  test_drive: 'Test drive',
   proposta: 'Proposta',
   observacao: 'Observação',
   outro: 'Outro'
@@ -74,6 +65,7 @@ export function NegotiationDetails() {
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [tradeInAvailable, setTradeInAvailable] = useState(true);
+  const [showCpf, setShowCpf] = useState(false);
 
   useEffect(() => {
     if (id && profile?.company_id) {
@@ -269,11 +261,17 @@ export function NegotiationDetails() {
   }
 
   const clientRows = [
-    negotiation.client_phone && { icon: Phone, label: 'Telefone', value: negotiation.client_phone },
+    negotiation.client_phone && { icon: Phone, label: 'Telefone', value: formatPhone(negotiation.client_phone) },
     negotiation.client_email && { icon: Mail, label: 'Email', value: negotiation.client_email },
-    negotiation.client_cpf && { icon: FileText, label: 'CPF', value: negotiation.client_cpf },
-    negotiation.offered_price && { icon: DollarSign, label: 'Valor Proposto', value: brl(negotiation.offered_price), accent: true }
   ].filter(Boolean) as { icon: any; label: string; value: string; accent?: boolean }[];
+  const activeStageIndex = activeStages.findIndex(([stage]) => stage === negotiation.stage);
+  const announcedPrice = Number(negotiation.vehicle?.sale_price || 0);
+  const offeredPrice = Number(negotiation.offered_price || 0);
+  const discountPercent = announcedPrice > 0 && offeredPrice > 0 ? ((offeredPrice - announcedPrice) / announcedPrice) * 100 : null;
+  const cpfDigits = negotiation.client_cpf?.replace(/\D/g, '').slice(0, 11) || '';
+  const maskedCpf = cpfDigits.length === 11
+    ? cpfDigits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '•••.$2.$3-••')
+    : '•••.•••.•••-••';
 
   return (
     <div className="space-y-6">
@@ -294,23 +292,41 @@ export function NegotiationDetails() {
         </div>
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/negotiations')} aria-label="Voltar">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground truncate">{negotiation.client_name}</h1>
+          <h1 className="truncate text-[32px] font-bold tracking-tight text-foreground [font-family:var(--font-display)]">{negotiation.client_name}</h1>
           <p className="text-muted-foreground mt-1">
             {negotiation.vehicle && `${negotiation.vehicle.brand} ${negotiation.vehicle.model} ${negotiation.vehicle.year}`}
           </p>
         </div>
         <Badge variant={stageVariant(negotiation.stage)} className="text-sm shrink-0">
-          {stageLabels[negotiation.stage] ?? negotiation.stage}
+          {formatStage(negotiation.stage)}
         </Badge>
       </div>
 
+      <ol aria-label="Etapas da negociação" className="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-4 lg:grid-cols-8">
+        {activeStages.map(([stage, label], index) => {
+          const complete = activeStageIndex >= 0 && index < activeStageIndex;
+          const current = stage === negotiation.stage;
+          return <li key={stage} aria-current={current ? 'step' : undefined} className="flex min-w-0 flex-col gap-1.5"><span className={`h-1 rounded-sm ${complete || current ? 'bg-primary' : 'bg-border-strong'}`} /><span className={`truncate text-xs ${current ? 'font-bold text-foreground' : complete ? 'text-secondary-foreground' : 'text-muted-foreground'}`}>{label}</span></li>;
+        })}
+      </ol>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader><CardTitle>Proposta</CardTitle></CardHeader>
+            <CardContent>
+              {offeredPrice > 0 ? <div className="grid gap-4 sm:grid-cols-3">
+                <div><p className="text-xs text-muted-foreground">Valor proposto</p><p className="mt-1 text-2xl font-bold tabular-nums [font-family:var(--font-display)]">{brl(offeredPrice)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Preço anunciado</p><p className="mt-1 text-2xl font-semibold tabular-nums text-muted-foreground [font-family:var(--font-display)]">{announcedPrice ? brl(announcedPrice) : '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Desconto</p><p className="mt-1 text-2xl font-semibold tabular-nums text-muted-foreground [font-family:var(--font-display)]">{discountPercent === null ? '—' : formatPercent(discountPercent)}</p></div>
+              </div> : <p className="text-sm text-muted-foreground">Nenhum valor de proposta foi registrado.</p>}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>Informações do Cliente</CardTitle>
@@ -328,6 +344,21 @@ export function NegotiationDetails() {
                     </div>
                   </div>
                 ))}
+                {negotiation.client_cpf && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <FileText className="size-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-muted-foreground">CPF</p>
+                      <p className="font-medium text-foreground tabular-nums">{showCpf ? negotiation.client_cpf : maskedCpf}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setShowCpf((visible) => !visible)} aria-label={showCpf ? 'Ocultar CPF' : 'Mostrar CPF'}>
+                      {showCpf ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      {showCpf ? 'Ocultar' : 'Mostrar'}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {negotiation.notes && (
@@ -406,7 +437,7 @@ export function NegotiationDetails() {
                       className="flex-1 capitalize"
                       onClick={() => handlePriorityUpdate(priority)}
                     >
-                      {priority}
+                      {formatPriority(priority)}
                     </Button>
                   ))}
                 </div>
