@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
-import { AlertCircle, Upload, Trash2 } from "lucide-react";
+import { AlertCircle, LoaderCircle, Upload, Trash2 } from "lucide-react";
 import { FipeSearch } from "./FipeSearch";
 import { FipeVehicle } from "../../hooks/useFipe";
 import { motion } from "motion/react";
+import { toast } from "sonner";
 import { CAR_BRANDS } from "../../constants/carBrands";
+import { deleteVehicleImage, thumbUrl, uploadVehicleImage } from "../../services/storage.service";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -24,8 +26,8 @@ type VehicleFormProps = {
   onClose: () => void;
 };
 
-type VehiclePhoto = { id: string; url: string };
-const createPhoto = (url: string): VehiclePhoto => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url });
+type VehiclePhoto = { id: string; url: string; uploading: boolean; newUpload: boolean };
+const createPhoto = (url: string): VehiclePhoto => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url, uploading: false, newUpload: false });
 
 const selectClass =
   "w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
@@ -90,12 +92,18 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
   const [photos, setPhotos] = useState<VehiclePhoto[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
+  const [pendingImageUploads, setPendingImageUploads] = useState(0);
+  const cancelledImageUploads = useRef(new Set<string>());
+  const imagesToDeleteAfterSave = useRef(new Set<string>());
   const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
     if (open) {
       setError("");
       setLoading(false);
+      setPendingImageUploads(0);
+      cancelledImageUploads.current.clear();
+      imagesToDeleteAfterSave.current.clear();
       if (vehicle) {
         setFormData({
           brand: vehicle.brand,
@@ -161,23 +169,70 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
     const files = Array.from(input.files || []);
     if (files.length === 0) return;
     input.value = '';
-    const readFile = (file: File) => new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Não foi possível ler uma das imagens.'));
-      reader.onerror = () => reject(new Error('Não foi possível ler uma das imagens.'));
-      reader.readAsDataURL(file);
-    });
-    try {
-      const uploadedImages = await Promise.all(files.map(readFile));
-      setPhotos((current) => [...current, ...uploadedImages.map(createPhoto)]);
-    } catch (uploadError: any) {
-      setError(uploadError.message || 'Não foi possível ler as imagens selecionadas.');
+    if (!profile?.company_id) {
+      toast.error('Sua conta não está vinculada a uma concessionária.');
+      return;
     }
+
+    const pending = files.map((file) => ({ id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) }));
+    setPendingImageUploads((current) => current + pending.length);
+    setPhotos((current) => [...current, ...pending.map(({ id, previewUrl }) => ({ id, url: previewUrl, uploading: true, newUpload: false }))]);
+
+    await Promise.all(pending.map(async ({ id, file, previewUrl }) => {
+      try {
+        const url = await uploadVehicleImage(file, { companyId: profile.company_id!, kind: 'vehicles' });
+        if (cancelledImageUploads.current.delete(id)) {
+          await deleteVehicleImage(url);
+          return;
+        }
+        setPhotos((current) => current.map((photo) => photo.id === id ? { ...photo, url, uploading: false, newUpload: true } : photo));
+      } catch (uploadError) {
+        if (!cancelledImageUploads.current.has(id)) {
+          const detail = uploadError instanceof Error ? uploadError.message : 'Falha ao enviar a foto.';
+          toast.error(`${file.name}: ${detail}`);
+          setPhotos((current) => current.filter((photo) => photo.id !== id));
+        }
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+        setPendingImageUploads((current) => Math.max(0, current - 1));
+      }
+    }));
   };
 
   const removeImage = (photoId: string) => {
+    const photo = photos.find((current) => current.id === photoId);
+    if (!photo) return;
+    if (photo.uploading) {
+      cancelledImageUploads.current.add(photoId);
+      URL.revokeObjectURL(photo.url);
+    } else if (photo.newUpload) {
+      void deleteVehicleImage(photo.url).catch((deleteError) => {
+        toast.error(deleteError instanceof Error ? deleteError.message : 'Não foi possível remover a foto do Storage.');
+      });
+    } else if (!photo.url.startsWith('data:')) {
+      // Defer deletion of existing files until the database update succeeds.
+      imagesToDeleteAfterSave.current.add(photo.url);
+    }
     setPhotos((current) => current.filter((photo) => photo.id !== photoId));
     setSelectedImageId((current) => current === photoId ? null : current);
+  };
+
+  const discardUnsavedPhotos = () => {
+    const uploadsToDiscard = photos.filter((photo) => photo.newUpload).map((photo) => photo.url);
+    imagesToDeleteAfterSave.current.clear();
+    setPhotos((current) => current.filter((photo) => !photo.newUpload));
+    onClose();
+    void Promise.all(uploadsToDiscard.map((url) => deleteVehicleImage(url).catch((deleteError) => {
+      toast.error(deleteError instanceof Error ? deleteError.message : 'Não foi possível remover uma foto não salva.');
+    })));
+  };
+
+  const deleteRemovedPhotos = async () => {
+    const removed = Array.from(imagesToDeleteAfterSave.current);
+    imagesToDeleteAfterSave.current.clear();
+    await Promise.all(removed.map((url) => deleteVehicleImage(url).catch((deleteError) => {
+      toast.error(deleteError instanceof Error ? deleteError.message : 'Não foi possível remover uma foto antiga do Storage.');
+    })));
   };
 
   const moveImageTo = (targetId: string) => {
@@ -254,6 +309,8 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
         if (error) throw error;
       }
 
+      await deleteRemovedPhotos();
+      setPhotos((current) => current.map((photo) => ({ ...photo, newUpload: false })));
       onClose();
     } catch (err: any) {
       setError(err.message || "Erro ao salvar veículo");
@@ -272,10 +329,10 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading && pendingImageUploads === 0) discardUnsavedPhotos(); }}>
       <DialogContent
         className="sm:max-w-6xl max-h-[90vh] overflow-y-auto"
-        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (loading || pendingImageUploads > 0) e.preventDefault(); }}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="pr-6">
@@ -393,14 +450,14 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
 
             <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-card hover:border-primary transition-colors">
               <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <input type="file" id="image-upload" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+              <input type="file" id="image-upload" accept="image/*" multiple disabled={loading} onChange={handleImageUpload} className="hidden" />
               <label
                 htmlFor="image-upload"
                 className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
               >
                 Selecionar Fotos
               </label>
-              <p className="text-sm text-muted-foreground mt-3">PNG, JPG ou WEBP (máx. 5 MB cada)</p>
+              <p className="text-sm text-muted-foreground mt-3">PNG, JPG ou WEBP (máx. 15 MB cada). As fotos são otimizadas ao enviar.</p>
             </div>
 
             {photos.length > 0 && (
@@ -412,7 +469,7 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
                     transition={{ layout: { type: 'spring', stiffness: 480, damping: 38 } }}
                     draggable
                     onClick={() => setSelectedImageId(photo.id)}
-                    onDragStart={(event) => { event.dataTransfer.effectAllowed = 'move'; setDraggedImageId(photo.id); setSelectedImageId(photo.id); }}
+                    onDragStartCapture={(event) => { event.dataTransfer.effectAllowed = 'move'; setDraggedImageId(photo.id); setSelectedImageId(photo.id); }}
                     onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }}
                     onDragEnter={() => moveImageTo(photo.id)}
                     onDrop={(event) => { event.preventDefault(); moveImageTo(photo.id); }}
@@ -422,8 +479,9 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
                     data-vehicle-photo
                     aria-label={`Foto ${index + 1}. Arraste para alterar a ordem.`}
                   >
-                    <img src={photo.url} alt={`Foto ${index + 1}`} className="h-32 w-full object-cover" draggable={false} />
+                    <img src={thumbUrl(photo.url)} alt={`Foto ${index + 1}`} className="h-32 w-full object-cover" draggable={false} />
                     <div className={`absolute inset-0 transition-colors ${selectedImageId === photo.id ? 'bg-black/45' : 'bg-transparent group-hover:bg-black/25'}`} />
+                    {photo.uploading && <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/65 text-xs font-medium text-white"><LoaderCircle className="size-6 animate-spin" aria-hidden="true" />Enviando foto…</div>}
                     <span className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full border-2 border-primary/65 bg-primary/90 text-sm font-bold text-primary-foreground shadow" aria-label={`Posição ${index + 1}`}>
                       {index + 1}
                     </span>
@@ -454,11 +512,11 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={discardUnsavedPhotos} disabled={loading || pendingImageUploads > 0}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Salvando..." : vehicle ? "Atualizar" : "Cadastrar"}
+            <Button type="submit" disabled={loading || pendingImageUploads > 0} className="flex-1">
+              {loading ? "Salvando..." : pendingImageUploads > 0 ? "Enviando fotos..." : vehicle ? "Atualizar" : "Cadastrar"}
             </Button>
           </div>
         </form>
