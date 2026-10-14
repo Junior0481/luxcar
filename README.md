@@ -1,5 +1,33 @@
 # LuxCar
 
+> **LuxCar é uma plataforma de gestão para concessionárias e lojas de veículos.** Reúne estoque, custos, leads, negociações, pagamentos, vendas e uma vitrine digital personalizável por loja.
+
+**Acesse a aplicação:** [luxcar-six.vercel.app](https://luxcar-six.vercel.app)
+
+O produto foi pensado para a operação diária de uma concessionária: o cliente encontra veículos na vitrine pública, a equipe acompanha o atendimento no painel e a gestão consulta os resultados comerciais. Cada loja pode configurar a própria identidade visual e administra seus dados em um espaço isolado.
+
+## Sumário
+
+- [Sobre o projeto](#sobre-o-projeto)
+- [Objetivos](#objetivos)
+- [Funcionalidades](#funcionalidades)
+- [Tecnologias utilizadas](#tecnologias-utilizadas)
+- [Arquitetura](#arquitetura)
+- [Arquitetura técnica detalhada](#arquitetura-técnica-detalhada)
+- [Estrutura do repositório](#estrutura-do-repositório)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação e execução](#instalação-e-execução)
+- [Scripts disponíveis](#scripts-disponíveis)
+- [Principais rotas](#principais-rotas)
+- [Fluxo de desenvolvimento](#fluxo-de-desenvolvimento)
+- [Arquitetura white label](#arquitetura-white-label)
+- [Processo de deploy](#processo-de-deploy)
+- [Banco de dados e segurança](#banco-de-dados-e-segurança)
+- [Documentação acadêmica](#documentação-acadêmica)
+- [Status do projeto](#status-do-projeto)
+- [Autoria](#autoria)
+- [Licença](#licença)
+
 Sistema web para gestão de concessionárias e lojas de veículos, desenvolvido como projeto acadêmico. A aplicação centraliza o controle de estoque, custos, negociações, leads e indicadores comerciais, além de disponibilizar uma vitrine pública para consulta dos veículos cadastrados.
 
 ## Sobre o projeto
@@ -73,6 +101,122 @@ Auth + PostgreSQL   Valores de referência
 ```
 
 No frontend, as páginas e os componentes são responsáveis pela apresentação e pela interação com o usuário. A camada de serviços concentra o acesso aos dados. O Supabase fornece autenticação e persistência em PostgreSQL, com políticas de segurança em nível de linha (RLS).
+
+## Arquitetura técnica detalhada
+
+O LuxCar é uma SPA em React com Vite que se conecta diretamente ao Supabase. A aplicação não mantém um servidor de API próprio: autenticação, PostgreSQL, funções RPC, Edge Functions e Storage são fornecidos pelo Supabase. Cada concessionária funciona como um tenant identificado por `company_id`.
+
+### Diagramas
+
+![Diagrama da arquitetura do LuxCar](docs/architecture/luxcar-arquitetura.svg)
+
+![Diagrama do fluxo de venda do LuxCar](docs/architecture/luxcar-fluxo-de-venda.svg)
+
+### Usuários, aplicação e serviços
+
+```mermaid
+flowchart LR
+    subgraph users[Quem usa]
+        buyer[Comprador]
+        staff[Equipe da loja: admin e vendedor]
+        platform[Admin da plataforma]
+    end
+
+    subgraph spa[SPA React + Vite]
+        public[Site público: /, /estoque e /vehicles/:id]
+        auth[Autenticação: /auth/* e /client/*]
+        panel[Painel da loja: /dashboard/*]
+        plat[Plataforma: /dashboard/platform]
+    end
+
+    subgraph supabase[Supabase]
+        sbauth[Auth]
+        db[(Postgres e views públicas)]
+        rpc[RPC: finalize_sale e set_payment_status]
+        edge[Edge Functions: public-lead e admin-provision]
+        storage[Storage: company-branding]
+    end
+
+    turnstile[Cloudflare Turnstile]
+    fipe[API FIPE]
+    wa[WhatsApp]
+
+    buyer --> public
+    staff --> auth --> panel
+    platform --> auth --> plat
+    public -->|public_vehicles e public_company_branding| db
+    public -->|formulário de interesse| edge
+    public -. antispam .-> turnstile
+    public -. contato .-> wa
+    auth --> sbauth
+    panel --> db
+    panel --> rpc
+    panel --> storage
+    panel -. consulta .-> fipe
+    plat -->|provisionamento| edge
+    edge --> db
+    rpc --> db
+```
+
+### Aplicação da identidade white label
+
+Ao carregar a aplicação, o domínio e a sessão determinam a origem da marca. Usuários autenticados consultam a empresa associada ao perfil; visitantes usam a configuração pública do domínio ou do identificador da loja. A marca em cache é aplicada de imediato e atualizada após a consulta.
+
+```mermaid
+flowchart TD
+    start([Aplicação carrega]) --> host[Lê o domínio atual]
+    host --> cache{Há identidade visual em cache?}
+    cache -->|sim| apply1[Aplica nome, cores e favicon]
+    cache -->|não| logged
+    apply1 --> logged{Usuário tem company_id?}
+    logged -->|sim| companies[Consulta companies pelo perfil]
+    logged -->|não| publicb[Consulta public_company_branding pelo domínio ou slug]
+    companies --> apply2[Aplica a marca atual e atualiza o cache]
+    publicb --> apply2
+```
+
+### Modelo de dados principal
+
+```mermaid
+erDiagram
+    companies ||--o{ profiles : equipe
+    companies ||--o{ vehicles : estoque
+    companies ||--o{ leads : recebe
+    companies ||--o{ negotiations : conduz
+    vehicles ||--o{ vehicle_costs : custos_e_preparacao
+    vehicles ||--o{ negotiations : negociado_em
+    leads |o--o| negotiations : convertido_em
+    profiles ||--o{ negotiations : vendedor_responsavel
+    negotiations ||--o{ interaction_history : historico
+    negotiations ||--o{ trade_in_vehicles : veiculo_na_troca
+    negotiations ||--o{ payments : recebimentos
+    negotiations ||--o| sales : venda_finalizada
+```
+
+`public_vehicles` e `public_company_branding` são as fontes de leitura do site público. `subscription_requests` registra solicitações de assinatura enviadas pelo formulário público.
+
+### Jornada de venda
+
+```mermaid
+sequenceDiagram
+    actor C as Comprador
+    participant V as Vitrine
+    participant EF as Edge Function public-lead
+    participant DB as Postgres
+    actor S as Vendedor
+    actor A as Admin da loja
+
+    C->>V: Abre um anúncio e envia interesse
+    V->>V: Valida o Turnstile
+    V->>EF: Envia dados do lead e token
+    EF->>DB: Registra o lead
+    S->>DB: Converte o lead em negociação
+    S->>DB: Registra interações, troca e proposta
+    S->>DB: Registra recebimento
+    A->>DB: Autoriza ou marca pagamento como pago
+    A->>DB: Finaliza a venda
+    DB-->>A: Registra a venda em sales
+```
 
 ## Estrutura do repositório
 
@@ -263,6 +407,12 @@ O arquivo [`DOCUMENTACAO_ACADEMICA.md`](DOCUMENTACAO_ACADEMICA.md) apresenta det
 
 Projeto acadêmico em desenvolvimento. Algumas funcionalidades e regras de negócio podem passar por ajustes conforme a evolução dos requisitos e a validação dos testes.
 
+O produto está estruturado como uma plataforma SaaS white label: uma assinatura completa reúne os recursos essenciais e profissionais, e cada concessionária recebe sua própria operação, equipe e vitrine personalizada.
+
 ## Autoria
 
 Projeto desenvolvido para fins acadêmicos. Consulte o histórico do repositório para informações sobre autoria e contribuições.
+
+## Licença
+
+Este repositório está disponível sob a [licença MIT](LICENSE).
