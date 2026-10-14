@@ -29,6 +29,7 @@ import {
 } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { formatFuel, formatPercent, formatTransmission, pluralize } from '../../lib/format';
+import { thumbUrl } from '../../services/storage.service';
 
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -302,8 +303,9 @@ export function VehicleDetails() {
                   className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border-2 border-border transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-24 sm:w-36"
                 >
                   <img
-                    src={image}
+                    src={thumbUrl(image)}
                     alt={`${vehicle.brand} ${vehicle.model} - Foto ${index + 1}`}
+                    loading="lazy"
                     className="h-full w-full object-cover transition-transform hover:scale-105"
                   />
                   <span className="absolute bottom-1 right-1 rounded-full bg-background/90 px-2 py-0.5 text-xs font-semibold text-foreground">
@@ -451,7 +453,7 @@ export function VehicleDetails() {
                     aria-current={index === activePhotoIndex ? 'true' : undefined}
                     className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-20 sm:w-32 ${index === activePhotoIndex ? 'border-primary' : 'border-border hover:border-primary/60'}`}
                   >
-                    <img src={image} alt="" className="h-full w-full object-cover" />
+                    <img src={thumbUrl(image)} alt="" loading="lazy" className="h-full w-full object-cover" />
                     <span className="absolute bottom-1 right-1 rounded-full bg-background/90 px-2 py-0.5 text-xs font-semibold text-foreground">
                       {index + 1}
                     </span>

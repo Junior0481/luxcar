@@ -5,6 +5,7 @@ import { AlertCircle, Calendar, Car, Gauge, MapPin, RefreshCw, Search, SlidersHo
 import { CAR_BRANDS } from '../../constants/carBrands';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { pluralize } from '../../lib/format';
+import { thumbUrl } from '../../services/storage.service';
 import { useCompany } from '../../contexts/CompanyContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -329,8 +330,9 @@ export function PublicHome() {
                   <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                     {vehicle.images && vehicle.images.length > 0 ? (
                       <img
-                        src={vehicle.images[0]}
+                        src={thumbUrl(vehicle.images[0])}
                         alt={`${vehicle.brand} ${vehicle.model}`}
+                        loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (

@@ -23,6 +23,7 @@ import {
 } from "../components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatFuel, formatPercent, pluralize } from "../../lib/format";
+import { thumbUrl } from "../../services/storage.service";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -233,7 +234,7 @@ export function Vehicles() {
               const daysInStock = Math.max(0, Math.floor((Date.now() - new Date(vehicle.created_at).getTime()) / 86400000));
               return <TableRow key={vehicle.id}>
                 <TableCell><Link to={`/dashboard/vehicles/${vehicle.id}`} className="flex items-center gap-3 text-foreground hover:text-primary">
-                  {vehicle.images?.[0] ? <img src={vehicle.images[0]} alt="" className="size-[72px] h-12 shrink-0 rounded-md object-cover" /> : <span className="flex h-12 w-[72px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"><ImageIcon className="size-5" /></span>}
+                  {vehicle.images?.[0] ? <img src={thumbUrl(vehicle.images[0])} alt="" loading="lazy" className="size-[72px] h-12 shrink-0 rounded-md object-cover" /> : <span className="flex h-12 w-[72px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"><ImageIcon className="size-5" /></span>}
                   <span className="flex min-w-0 flex-col"><span className="truncate text-sm font-semibold">{vehicle.brand} {vehicle.model}</span><span className="truncate text-muted-foreground">{[vehicle.version, vehicle.year, vehicle.fuel_type ? formatFuel(vehicle.fuel_type) : null].filter(Boolean).join(" · ")}</span></span>
                 </Link></TableCell>
                 <TableCell>{vehicle.plate ? <span className="rounded-sm bg-[#F2F3F0] px-1.5 py-0.5 font-license-plate text-sm font-bold tracking-wider text-[#111317]">{vehicle.plate}</span> : <span className="text-muted-foreground">—</span>}</TableCell>

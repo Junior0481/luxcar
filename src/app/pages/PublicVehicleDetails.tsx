@@ -7,6 +7,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { formatFuel, formatPhone, formatTransmission } from '../../lib/format';
+import { thumbUrl } from '../../services/storage.service';
 
 type PublicVehicle = Vehicle & {
   company_name?: string;
@@ -192,7 +193,7 @@ export function PublicVehicleDetails() {
                             selectedImage === index ? 'border-primary ring-2 ring-primary/40' : 'border-border'
                           }`}
                         >
-                          <img src={img} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
+                          <img src={thumbUrl(img)} alt={`Foto ${index + 1}`} loading="lazy" className="w-full h-full object-cover" />
                         </button>
                       ))}
                     </div>
