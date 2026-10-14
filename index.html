@@ -5,7 +5,40 @@
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>LuxCar</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
       <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
+      <script>
+        (() => {
+          try {
+            const sessionKey = Object.keys(localStorage).find((key) => key.startsWith('sb-') && key.endsWith('-auth-token'));
+            const session = sessionKey ? JSON.parse(localStorage.getItem(sessionKey) || 'null') : null;
+            const userId = session?.user?.id || session?.currentSession?.user?.id;
+            const cacheKey = userId ? `luxcar:branding:user:${userId}` : `luxcar:branding:host:${location.hostname}`;
+            const branding = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+            if (!branding) return;
+            const root = document.documentElement;
+            const applyColor = (name, value, foreground) => {
+              if (!/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value || '')) return;
+              root.style.setProperty(name, value);
+              const hex = value.length === 4 ? value.slice(1).split('').map((part) => part + part).join('') : value.slice(1);
+              const channels = [0, 2, 4].map((index) => parseInt(hex.slice(index, index + 2), 16));
+              const brightness = (channels[0] * 299 + channels[1] * 587 + channels[2] * 114) / 1000;
+              root.style.setProperty(foreground, brightness >= 128 ? '#0a0a0b' : '#ffffff');
+            };
+            applyColor('--primary', branding.primaryColor, '--primary-foreground');
+            applyColor('--secondary', branding.secondaryColor, '--secondary-foreground');
+            if (branding.name) document.title = branding.name;
+            if (branding.faviconUrl && /^https?:/i.test(branding.faviconUrl)) {
+              const icon = document.createElement('link');
+              icon.rel = 'icon';
+              icon.href = branding.faviconUrl;
+              document.head.appendChild(icon);
+            }
+          } catch { }
+        })();
+      </script>
     </head>
 
     <body>
