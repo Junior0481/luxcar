@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, TradeInVehicle } from '../../lib/supabase';
-import { AlertCircle, Upload, Trash2 } from 'lucide-react';
+import { AlertCircle, LoaderCircle, Upload, Trash2 } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
+import { toast } from 'sonner';
+import { deleteVehicleImage, thumbUrl, uploadVehicleImage } from '../../services/storage.service';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -43,17 +45,26 @@ const initialFormData = {
   needs_evaluation: true
 };
 
+type TradeInPhoto = { id: string; url: string; uploading: boolean; newUpload: boolean };
+const createTradeInPhoto = (url: string): TradeInPhoto => ({ id: crypto.randomUUID(), url, uploading: false, newUpload: false });
+
 export function TradeInVehicleForm({ open = true, negotiationId, companyId, existingTradeIn, onClose }: TradeInVehicleFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const errorRef = useRef<HTMLDivElement>(null);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imagePhotos, setImagePhotos] = useState<TradeInPhoto[]>([]);
+  const [pendingImageUploads, setPendingImageUploads] = useState(0);
+  const cancelledImageUploads = useRef(new Set<string>());
+  const imagesToDeleteAfterSave = useRef(new Set<string>());
   const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
     if (open) {
       setError('');
       setLoading(false);
+      setPendingImageUploads(0);
+      cancelledImageUploads.current.clear();
+      imagesToDeleteAfterSave.current.clear();
       if (existingTradeIn) {
         setFormData({
           brand: existingTradeIn.brand,
@@ -72,10 +83,10 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
           evaluation_date: existingTradeIn.evaluation_date || '',
           needs_evaluation: existingTradeIn.needs_evaluation
         });
-        setImageUrls(existingTradeIn.images || []);
+        setImagePhotos((existingTradeIn.images || []).map(createTradeInPhoto));
       } else {
         setFormData({ ...initialFormData, year: new Date().getFullYear() });
-        setImageUrls([]);
+        setImagePhotos([]);
       }
     }
   }, [open, existingTradeIn]);
@@ -103,21 +114,69 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
     setFormData({ ...formData, plate: formatted });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const files = Array.from(input.files || []);
+    input.value = '';
+    if (files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrls((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    const pending = files.map((file) => ({ id: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) }));
+    setPendingImageUploads((current) => current + pending.length);
+    setImagePhotos((current) => [...current, ...pending.map(({ id, previewUrl }) => ({ id, url: previewUrl, uploading: true, newUpload: false }))]);
+
+    await Promise.all(pending.map(async ({ id, file, previewUrl }) => {
+      try {
+        const url = await uploadVehicleImage(file, { companyId, kind: 'trade-in' });
+        if (cancelledImageUploads.current.delete(id)) {
+          await deleteVehicleImage(url);
+          return;
+        }
+        setImagePhotos((current) => current.map((photo) => photo.id === id ? { ...photo, url, uploading: false, newUpload: true } : photo));
+      } catch (uploadError) {
+        if (!cancelledImageUploads.current.has(id)) {
+          const detail = uploadError instanceof Error ? uploadError.message : 'Falha ao enviar a foto.';
+          toast.error(`${file.name}: ${detail}`);
+          setImagePhotos((current) => current.filter((photo) => photo.id !== id));
+        }
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+        setPendingImageUploads((current) => Math.max(0, current - 1));
+      }
+    }));
   };
 
-  const removeImage = (index: number) => {
-    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = (photoId: string) => {
+    const photo = imagePhotos.find((current) => current.id === photoId);
+    if (!photo) return;
+    if (photo.uploading) {
+      cancelledImageUploads.current.add(photoId);
+      URL.revokeObjectURL(photo.url);
+    } else if (photo.newUpload) {
+      void deleteVehicleImage(photo.url).catch((deleteError) => {
+        toast.error(deleteError instanceof Error ? deleteError.message : 'Não foi possível remover a foto do Storage.');
+      });
+    } else if (!photo.url.startsWith('data:')) {
+      imagesToDeleteAfterSave.current.add(photo.url);
+    }
+    setImagePhotos((current) => current.filter((currentPhoto) => currentPhoto.id !== photoId));
+  };
+
+  const discardUnsavedPhotos = () => {
+    const uploadsToDiscard = imagePhotos.filter((photo) => photo.newUpload).map((photo) => photo.url);
+    imagesToDeleteAfterSave.current.clear();
+    setImagePhotos((current) => current.filter((photo) => !photo.newUpload));
+    onClose();
+    void Promise.all(uploadsToDiscard.map((url) => deleteVehicleImage(url).catch((deleteError) => {
+      toast.error(deleteError instanceof Error ? deleteError.message : 'Não foi possível remover uma foto não salva.');
+    })));
+  };
+
+  const deleteRemovedPhotos = async () => {
+    const removed = Array.from(imagesToDeleteAfterSave.current);
+    imagesToDeleteAfterSave.current.clear();
+    await Promise.all(removed.map((url) => deleteVehicleImage(url).catch((deleteError) => {
+      toast.error(deleteError instanceof Error ? deleteError.message : 'Não foi possível remover uma foto antiga do Storage.');
+    })));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,7 +203,7 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
         evaluator_name: formData.evaluator_name || null,
         evaluation_date: formData.evaluation_date || null,
         needs_evaluation: formData.needs_evaluation,
-        images: imageUrls
+        images: imagePhotos.map((photo) => photo.url)
       };
 
       if (existingTradeIn) {
@@ -160,6 +219,8 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
         if (error) throw error;
       }
 
+      await deleteRemovedPhotos();
+      setImagePhotos((current) => current.map((photo) => ({ ...photo, newUpload: false })));
       onClose();
     } catch (err: any) {
       if (err.code === '42P01') {
@@ -183,10 +244,10 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading) onClose(); }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !loading && pendingImageUploads === 0) discardUnsavedPhotos(); }}>
       <DialogContent
         className="sm:max-w-4xl max-h-[90vh] overflow-y-auto"
-        onEscapeKeyDown={(e) => { if (loading) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (loading || pendingImageUploads > 0) e.preventDefault(); }}
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="pr-6">
@@ -325,24 +386,25 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
 
             <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-card hover:border-primary transition-colors">
               <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <input type="file" id="image-upload-trade" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+              <input type="file" id="image-upload-trade" accept="image/*" multiple disabled={loading} onChange={handleImageUpload} className="hidden" />
               <label
                 htmlFor="image-upload-trade"
                 className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
               >
                 Selecionar Fotos
               </label>
-              <p className="text-sm text-muted-foreground mt-3">PNG, JPG ou WEBP</p>
+              <p className="text-sm text-muted-foreground mt-3">PNG, JPG ou WEBP (máx. 15 MB cada). As fotos são otimizadas ao enviar.</p>
             </div>
 
-            {imageUrls.length > 0 && (
+            {imagePhotos.length > 0 && (
               <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                {imageUrls.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <img src={url} alt={`Foto ${index + 1}`} className="w-full h-32 object-cover rounded-lg border-2 border-border" />
+                {imagePhotos.map((photo, index) => (
+                  <div key={photo.id} className="relative group">
+                    <img src={thumbUrl(photo.url)} alt={`Foto ${index + 1}`} className="w-full h-32 object-cover rounded-lg border-2 border-border" />
+                    {photo.uploading && <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg bg-black/65 text-xs font-medium text-white"><LoaderCircle className="size-6 animate-spin" aria-hidden="true" />Enviando foto…</div>}
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
+                      onClick={() => removeImage(photo.id)}
                       className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                       aria-label={`Excluir foto ${index + 1}`}
                     >
@@ -355,11 +417,11 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>
+            <Button type="button" variant="secondary" className="flex-1" onClick={discardUnsavedPhotos} disabled={loading || pendingImageUploads > 0}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Salvando...' : existingTradeIn ? 'Atualizar' : 'Adicionar'}
+            <Button type="submit" disabled={loading || pendingImageUploads > 0} className="flex-1">
+              {loading ? 'Salvando...' : pendingImageUploads > 0 ? 'Enviando fotos...' : existingTradeIn ? 'Atualizar' : 'Adicionar'}
             </Button>
           </div>
         </form>
