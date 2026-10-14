@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
-import { AlertCircle, ArrowLeft, Car, Calendar, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Car, Calendar, ChevronLeft, ChevronRight, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle, RefreshCw } from 'lucide-react';
 import { LeadForm } from '../components/LeadForm';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { formatFuel, formatPhone, formatTransmission } from '../../lib/format';
 
 type PublicVehicle = Vehicle & {
   company_name?: string;
@@ -40,16 +41,21 @@ export function PublicVehicleDetails() {
         .from('public_vehicles')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code === '42P01') {
         const result = await supabase
           .from('vehicles')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (result.error) throw result.error;
+
+        if (!result.data) {
+          setVehicle(null);
+          return;
+        }
 
         data = {
           ...result.data,
@@ -63,10 +69,14 @@ export function PublicVehicleDetails() {
         throw error;
       }
 
+      if (!data) {
+        setVehicle(null);
+        return;
+      }
       setVehicle(data);
     } catch (err: any) {
       console.error('Error loading vehicle:', err);
-      setError(err?.message || 'Erro ao carregar detalhes do veículo.');
+      setError('Não foi possível carregar este anúncio. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -107,10 +117,8 @@ export function PublicVehicleDetails() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Car className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Veículo não encontrado</h2>
-          <Link to="/" className="text-primary hover:underline">
-            Voltar para a página inicial
-          </Link>
+          <h2 className="mb-2 text-2xl font-bold text-foreground">Este anúncio não está mais disponível</h2>
+          <Button asChild><Link to="/estoque">Ver outros carros</Link></Button>
         </div>
       </div>
     );
@@ -121,8 +129,8 @@ export function PublicVehicleDetails() {
   const specs = [
     vehicle.year && { icon: Calendar, label: 'Ano', value: String(vehicle.year) },
     vehicle.mileage && { icon: Gauge, label: 'KM', value: vehicle.mileage.toLocaleString('pt-BR') },
-    vehicle.fuel_type && { icon: Fuel, label: 'Combustível', value: vehicle.fuel_type, capitalize: true },
-    vehicle.transmission && { icon: SettingsIcon, label: 'Câmbio', value: vehicle.transmission, capitalize: true }
+    vehicle.fuel_type && { icon: Fuel, label: 'Combustível', value: formatFuel(vehicle.fuel_type) },
+    vehicle.transmission && { icon: SettingsIcon, label: 'Câmbio', value: formatTransmission(vehicle.transmission) }
   ].filter(Boolean) as { icon: any; label: string; value: string; capitalize?: boolean }[];
 
   return (
@@ -157,15 +165,20 @@ export function PublicVehicleDetails() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Image Gallery */}
-            <Card className="overflow-hidden py-0">
+            <Card className="overflow-hidden rounded-xl py-0">
               {images.length > 0 ? (
                 <>
-                  <div className="relative h-96 bg-muted">
+                  <div className="relative aspect-[3/2] max-h-[620px] bg-muted">
                     <img
                       src={images[selectedImage]}
                       alt={`${vehicle.brand} ${vehicle.model}`}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                     />
+                    {images.length > 1 && <>
+                      <Button type="button" variant="secondary" size="icon" aria-label="Foto anterior" onClick={() => setSelectedImage((selectedImage - 1 + images.length) % images.length)} className="absolute left-3 top-1/2 size-10 -translate-y-1/2 rounded-full bg-white/90 text-[#15171A] hover:bg-white"><ChevronLeft className="size-5" /></Button>
+                      <Button type="button" variant="secondary" size="icon" aria-label="Próxima foto" onClick={() => setSelectedImage((selectedImage + 1) % images.length)} className="absolute right-3 top-1/2 size-10 -translate-y-1/2 rounded-full bg-white/90 text-[#15171A] hover:bg-white"><ChevronRight className="size-5" /></Button>
+                      <span className="absolute bottom-3 right-3 rounded-md bg-black/75 px-2.5 py-1 text-xs font-semibold tabular-nums text-white">{selectedImage + 1} / {images.length}</span>
+                    </>}
                   </div>
                   {images.length > 1 && (
                     <div className="p-4 grid grid-cols-4 sm:grid-cols-6 gap-2">
@@ -175,7 +188,7 @@ export function PublicVehicleDetails() {
                           type="button"
                           onClick={() => setSelectedImage(index)}
                           aria-label={`Selecionar foto ${index + 1}`}
-                          className={`aspect-video rounded-lg overflow-hidden border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          className={`aspect-[3/2] overflow-hidden rounded-lg border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                             selectedImage === index ? 'border-primary ring-2 ring-primary/40' : 'border-border'
                           }`}
                         >
@@ -194,15 +207,15 @@ export function PublicVehicleDetails() {
 
             {/* Vehicle Info */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
                 <div className="mb-4">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">
+                  <h1 className="mb-2 text-[30px] font-bold text-foreground [font-family:var(--font-display)]">
                     {vehicle.brand} {vehicle.model}
                   </h1>
                   <p className="text-xl text-muted-foreground">{vehicle.version}</p>
                 </div>
 
-                <p className="text-4xl font-bold text-primary mb-6">{brl(vehicle.sale_price)}</p>
+                <p className="mb-6 text-4xl font-bold tabular-nums text-foreground [font-family:var(--font-display)]">{brl(vehicle.sale_price)}</p>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   {specs.map((spec) => (
@@ -230,27 +243,26 @@ export function PublicVehicleDetails() {
 
           {/* Sidebar - Contact */}
           <div className="space-y-6">
-            <Card className="sticky top-24">
+            <Card className="sticky top-24 rounded-xl">
               <CardContent className="p-6">
-                <h3 className="font-bold text-foreground mb-4">Interessado?</h3>
-
-                <Button className="w-full mb-3" size="lg" onClick={() => setShowLeadForm(true)}>
-                  <MessageCircle className="w-5 h-5" />
-                  Enviar Mensagem
-                </Button>
+                <h3 className="mb-4 text-lg font-bold text-foreground [font-family:var(--font-display)]">Interessado?</h3>
 
                 {vehicle.company_phone && (
-                  <Button asChild variant="secondary" size="lg" className="w-full mb-4">
+                  <Button asChild size="lg" className="mb-3 h-[52px] w-full bg-[#128C4A] text-white hover:bg-[#0F7A40]">
                     <a
                       href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Phone className="w-5 h-5" />
-                      WhatsApp
+                      <MessageCircle className="w-5 h-5" />
+                      Chamar no WhatsApp
                     </a>
                   </Button>
                 )}
+
+                <Button variant="outline" className="mb-4 h-[46px] w-full" onClick={() => setShowLeadForm(true)}>
+                  <MessageCircle className="size-4" />Enviar mensagem para a loja
+                </Button>
 
                 <div className="pt-4 border-t border-border">
                   <h4 className="font-semibold text-foreground mb-3">Anunciante</h4>
@@ -269,7 +281,7 @@ export function PublicVehicleDetails() {
                   {vehicle.company_phone && (
                     <div className="flex items-start gap-2 text-muted-foreground">
                       <Phone className="w-5 h-5 shrink-0 mt-0.5" />
-                      <p>{vehicle.company_phone}</p>
+                      <p>{formatPhone(vehicle.company_phone)}</p>
                     </div>
                   )}
                 </div>
@@ -278,6 +290,11 @@ export function PublicVehicleDetails() {
           </div>
         </div>
       </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden">
+        {vehicle.company_phone ? <Button asChild className="h-12 w-full bg-[#128C4A] text-white hover:bg-[#0F7A40]"><a href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="size-5" />Chamar no WhatsApp</a></Button> : <Button className="h-12 w-full" onClick={() => setShowLeadForm(true)}><MessageCircle className="size-5" />Enviar mensagem</Button>}
+      </div>
+      <div className="h-16 md:hidden" aria-hidden="true" />
 
       {vehicle && (
         <LeadForm

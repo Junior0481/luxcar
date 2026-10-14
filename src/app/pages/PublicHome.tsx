@@ -4,6 +4,7 @@ import { supabase, Vehicle } from '../../lib/supabase';
 import { AlertCircle, Calendar, Car, Gauge, MapPin, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { pluralize } from '../../lib/format';
 import { useCompany } from '../../contexts/CompanyContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -18,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue
 } from '../components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '../components/ui/sheet';
 
 type PublicVehicle = Vehicle & {
   company_name?: string;
@@ -49,6 +57,7 @@ export function PublicHome() {
   const [fuelType, setFuelType] = useState(ANY);
   const [transmission, setTransmission] = useState(ANY);
   const [showFilters, setShowFilters] = useState(false);
+  const [sortOrder, setSortOrder] = useState('newest');
 
   useEffect(() => {
     loadVehicles();
@@ -56,7 +65,7 @@ export function PublicHome() {
 
   useEffect(() => {
     filterVehicles();
-  }, [searchTerm, selectedBrand, selectedCompany, minYear, maxYear, minPrice, maxPrice, fuelType, transmission, vehicles]);
+  }, [searchTerm, selectedBrand, selectedCompany, minYear, maxYear, minPrice, maxPrice, fuelType, transmission, sortOrder, vehicles]);
 
   const loadVehicles = async () => {
     try {
@@ -107,7 +116,7 @@ export function PublicHome() {
         v.model.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    if (selectedBrand !== ANY) filtered = filtered.filter(v => v.brand === selectedBrand);
+    if (selectedBrand !== ANY) filtered = filtered.filter(v => v.brand.toLocaleLowerCase() === selectedBrand.toLocaleLowerCase());
     if (selectedCompany !== ANY) filtered = filtered.filter(v => v.company_slug === selectedCompany);
     if (minYear !== ANY) filtered = filtered.filter(v => v.year >= parseInt(minYear));
     if (maxYear !== ANY) filtered = filtered.filter(v => v.year <= parseInt(maxYear));
@@ -116,7 +125,11 @@ export function PublicHome() {
     if (fuelType !== ANY) filtered = filtered.filter(v => v.fuel_type === fuelType);
     if (transmission !== ANY) filtered = filtered.filter(v => v.transmission === transmission);
 
-    setFilteredVehicles(filtered);
+    const sorted = [...filtered];
+    if (sortOrder === 'price-asc') sorted.sort((a, b) => Number(a.sale_price) - Number(b.sale_price));
+    if (sortOrder === 'price-desc') sorted.sort((a, b) => Number(b.sale_price) - Number(a.sale_price));
+    if (sortOrder === 'year-desc') sorted.sort((a, b) => Number(b.year) - Number(a.year));
+    setFilteredVehicles(sorted);
   };
 
   const clearFilters = () => {
@@ -129,6 +142,7 @@ export function PublicHome() {
     setMaxPrice('');
     setFuelType(ANY);
     setTransmission(ANY);
+    setSortOrder('newest');
   };
 
   const currentYear = new Date().getFullYear();
@@ -139,6 +153,48 @@ export function PublicHome() {
         .filter((vehicle) => vehicle.company_slug && vehicle.company_name)
         .map((vehicle) => [vehicle.company_slug!, vehicle.company_name!])
     ).entries()
+  );
+
+  const renderFilterFields = (prefix: string) => (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <Label htmlFor={`${prefix}-brand`}>Marca</Label>
+        <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+          <SelectTrigger id={`${prefix}-brand`}><SelectValue placeholder="Todas as marcas" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ANY}>Todas as marcas</SelectItem>
+            {CAR_BRANDS.map((brand) => <SelectItem key={brand} value={brand}>{brand}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {companies.length > 0 && <div className="space-y-2">
+        <Label htmlFor={`${prefix}-company`}>Loja</Label>
+        <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+          <SelectTrigger id={`${prefix}-company`}><SelectValue placeholder="Todas as lojas" /></SelectTrigger>
+          <SelectContent><SelectItem value={ANY}>Todas as lojas</SelectItem>{companies.map(([slug, name]) => <SelectItem key={slug} value={slug}>{name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>}
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Preço</legend>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1"><Label htmlFor={`${prefix}-min-price`} className="text-xs text-muted-foreground">Mínimo</Label><Input id={`${prefix}-min-price`} type="number" min="0" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} placeholder="R$ 0" /></div>
+          <div className="space-y-1"><Label htmlFor={`${prefix}-max-price`} className="text-xs text-muted-foreground">Máximo</Label><Input id={`${prefix}-max-price`} type="number" min="0" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Sem limite" /></div>
+        </div>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {[{ label: 'Até R$ 80 mil', min: '', max: '80000' }, { label: 'R$ 80–150 mil', min: '80000', max: '150000' }, { label: 'Acima de R$ 150 mil', min: '150000', max: '' }].map((range) => <Button key={range.label} type="button" variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={() => { setMinPrice(range.min); setMaxPrice(range.max); }}>{range.label}</Button>)}
+        </div>
+      </fieldset>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Ano</legend>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1"><Label htmlFor={`${prefix}-min-year`} className="text-xs text-muted-foreground">De</Label><Select value={minYear} onValueChange={setMinYear}><SelectTrigger id={`${prefix}-min-year`} aria-label="Ano mínimo"><SelectValue placeholder="De" /></SelectTrigger><SelectContent><SelectItem value={ANY}>Todos</SelectItem>{years.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-1"><Label htmlFor={`${prefix}-max-year`} className="text-xs text-muted-foreground">Até</Label><Select value={maxYear} onValueChange={setMaxYear}><SelectTrigger id={`${prefix}-max-year`} aria-label="Ano máximo"><SelectValue placeholder="Até" /></SelectTrigger><SelectContent><SelectItem value={ANY}>Todos</SelectItem>{years.map((year) => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent></Select></div>
+        </div>
+      </fieldset>
+      <div className="space-y-2"><Label htmlFor={`${prefix}-transmission`}>Câmbio</Label><Select value={transmission} onValueChange={setTransmission}><SelectTrigger id={`${prefix}-transmission`}><SelectValue placeholder="Todos" /></SelectTrigger><SelectContent><SelectItem value={ANY}>Todos</SelectItem><SelectItem value="automatica">Automático</SelectItem><SelectItem value="manual">Manual</SelectItem><SelectItem value="automatizada">Automatizado</SelectItem><SelectItem value="cvt">CVT</SelectItem></SelectContent></Select></div>
+      <div className="space-y-2"><Label htmlFor={`${prefix}-fuel`}>Combustível</Label><Select value={fuelType} onValueChange={setFuelType}><SelectTrigger id={`${prefix}-fuel`}><SelectValue placeholder="Todos" /></SelectTrigger><SelectContent><SelectItem value={ANY}>Todos</SelectItem><SelectItem value="gasolina">Gasolina</SelectItem><SelectItem value="etanol">Etanol</SelectItem><SelectItem value="flex">Flex</SelectItem><SelectItem value="diesel">Diesel</SelectItem><SelectItem value="eletrico">Elétrico</SelectItem><SelectItem value="hibrido">Híbrido</SelectItem></SelectContent></Select></div>
+      <Button type="button" variant="outline" className="w-full" onClick={clearFilters}>Limpar filtros</Button>
+    </div>
   );
 
   return (
@@ -173,10 +229,10 @@ export function PublicHome() {
       </header>
 
       <section className="lux-gradient border-b border-border">
-        <div className="mx-auto max-w-7xl px-4 py-14">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:py-14">
           <div className="max-w-3xl">
             <p className="text-sm font-medium uppercase text-muted-foreground">Estoque disponível</p>
-            <h2 className="mt-3 text-4xl font-medium tracking-normal text-foreground md:text-5xl">
+            <h2 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-foreground [font-family:var(--font-display)] md:text-5xl">
               Encontre o carro certo em uma vitrine organizada.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -200,101 +256,44 @@ export function PublicHome() {
                   className="pl-10"
                 />
               </div>
-              <Button variant="secondary" onClick={() => setShowFilters(!showFilters)}>
-                <SlidersHorizontal className="size-4" />
-                {showFilters ? 'Ocultar filtros' : 'Filtros'}
-              </Button>
-            </div>
-
-            {showFilters && (
-              <div className="mt-6 grid grid-cols-1 gap-4 border-t border-border pt-6 md:grid-cols-2 lg:grid-cols-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-filter">Loja</Label>
-                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                    <SelectTrigger id="company-filter"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ANY}>Todas as lojas</SelectItem>
-                      {companies.map(([slug, name]) => <SelectItem key={slug} value={slug}>{name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brand-filter">Marca</Label>
-                  <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                    <SelectTrigger id="brand-filter"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ANY}>Todas</SelectItem>
-                      {CAR_BRANDS.map(brand => <SelectItem key={brand} value={brand}>{brand}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="min-year-filter">Ano mínimo</Label>
-                  <Select value={minYear} onValueChange={setMinYear}>
-                    <SelectTrigger id="min-year-filter" aria-label="Ano mínimo"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ANY}>Todos</SelectItem>
-                      {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="max-year-filter">Ano máximo</Label>
-                  <Select value={maxYear} onValueChange={setMaxYear}>
-                    <SelectTrigger id="max-year-filter" aria-label="Ano máximo"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ANY}>Todos</SelectItem>
-                      {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fuel-filter">Combustível</Label>
-                  <Select value={fuelType} onValueChange={setFuelType}>
-                    <SelectTrigger id="fuel-filter" aria-label="Combustível"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ANY}>Todos</SelectItem>
-                      <SelectItem value="gasolina">Gasolina</SelectItem>
-                      <SelectItem value="etanol">Etanol</SelectItem>
-                      <SelectItem value="flex">Flex</SelectItem>
-                      <SelectItem value="diesel">Diesel</SelectItem>
-                      <SelectItem value="eletrico">Elétrico</SelectItem>
-                      <SelectItem value="hibrido">Híbrido</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="minPrice">Preço mínimo</Label>
-                  <Input id="minPrice" type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="R$ 0" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="maxPrice">Preço máximo</Label>
-                  <Input id="maxPrice" type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="R$ 200000" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="transmission-filter">Câmbio</Label>
-                  <Select value={transmission} onValueChange={setTransmission}>
-                    <SelectTrigger id="transmission-filter" aria-label="Câmbio"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ANY}>Todos</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="automatica">Automática</SelectItem>
-                      <SelectItem value="automatizada">Automatizada</SelectItem>
-                      <SelectItem value="cvt">CVT</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button variant="outline" className="w-full" onClick={clearFilters}>Limpar filtros</Button>
-                </div>
+              <div className="flex gap-2">
+                <Sheet open={showFilters} onOpenChange={setShowFilters}>
+                  <Button type="button" variant="secondary" className="lg:hidden" onClick={() => setShowFilters(true)}>
+                    <SlidersHorizontal className="size-4" />Filtros
+                  </Button>
+                  <SheetContent side="left" className="w-[min(88vw,360px)] overflow-y-auto p-0 lg:hidden">
+                    <SheetHeader className="border-b border-border pr-12">
+                      <SheetTitle>Filtros</SheetTitle>
+                      <SheetDescription>Refine os veículos pelo que você procura.</SheetDescription>
+                    </SheetHeader>
+                    <div className="p-4">{renderFilterFields('mobile')}</div>
+                  </SheetContent>
+                </Sheet>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
 
-        <p className="mb-4 text-muted-foreground">
-          <span className="font-medium text-foreground">{filteredVehicles.length}</span> veículos encontrados
-        </p>
+        <div className="grid items-start gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
+          <aside className="hidden lg:block" aria-label="Filtros de veículos">
+            <Card><CardContent><h2 className="mb-5 text-lg font-semibold text-foreground">Filtros</h2>{renderFilterFields('desktop')}</CardContent></Card>
+          </aside>
+          <section className="min-w-0">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground"><span className="font-semibold tabular-nums text-foreground">{pluralize(filteredVehicles.length, 'veículo encontrado', 'veículos encontrados')}</span></p>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="vehicle-sort" className="whitespace-nowrap text-sm text-muted-foreground">Ordenar</Label>
+                <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <SelectTrigger id="vehicle-sort" className="w-[190px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Mais recentes</SelectItem>
+                    <SelectItem value="price-asc">Menor preço</SelectItem>
+                    <SelectItem value="price-desc">Maior preço</SelectItem>
+                    <SelectItem value="year-desc">Ano mais recente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
         {loading ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -323,11 +322,11 @@ export function PublicHome() {
             action={<Button onClick={clearFilters}>Limpar filtros</Button>}
           />
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {filteredVehicles.map((vehicle) => (
               <Link key={vehicle.id} to={`/vehicles/${vehicle.id}`} className="group">
                 <Card className="h-full gap-0 overflow-hidden pt-0 lux-card-hover">
-                  <div className="relative h-56 overflow-hidden bg-muted">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                     {vehicle.images && vehicle.images.length > 0 ? (
                       <img
                         src={vehicle.images[0]}
@@ -342,7 +341,7 @@ export function PublicHome() {
                   </div>
                   <CardContent className="space-y-4 p-5">
                     <div>
-                      <h3 className="text-xl font-medium text-foreground">
+                      <h3 className="text-[19px] font-semibold text-foreground [font-family:var(--font-display)]">
                         {vehicle.brand} {vehicle.model}
                       </h3>
                       <p className="text-sm text-muted-foreground">{vehicle.version}</p>
@@ -356,7 +355,7 @@ export function PublicHome() {
                       ) : null}
                     </div>
                     <div className="border-t border-border pt-4">
-                      <p className="text-3xl font-medium text-primary">{brl(vehicle.sale_price)}</p>
+                      <p className="text-[28px] font-bold tabular-nums text-foreground [font-family:var(--font-display)]">{brl(vehicle.sale_price)}</p>
                       {vehicle.company_name ? (
                         <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
                           <MapPin className="mt-0.5 size-4 shrink-0" />
@@ -375,6 +374,8 @@ export function PublicHome() {
             ))}
           </div>
         )}
+          </section>
+        </div>
       </div>
     </div>
   );
