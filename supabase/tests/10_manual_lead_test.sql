@@ -45,7 +45,7 @@ select is(rls_test.visible('select 1 from public.leads where customer_name = ''M
   1, 'vendedor A2 vê o lead que o admin atribuiu a ele');
 :as_seller_a
 select is(rls_test.visible('select 1 from public.leads where customer_name = ''Manual admin→A2'''),
-  0, 'vendedor A não vê o lead atribuído ao colega');
+  1, 'vendedor A vê o lead da loja atribuído ao colega A2');
 
 select * from finish();
 rollback;

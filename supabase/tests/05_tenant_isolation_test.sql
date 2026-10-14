@@ -1,5 +1,5 @@
 -- Isolamento entre lojas + decisão de produto:
---   vendedor vê SÓ os próprios leads e negociações; admin vê toda a loja.
+--   vendedor vê as negociações atribuídas a si e todos os leads da loja; admin vê toda a loja.
 begin;
 \ir _fixtures.psql
 select plan(22);
@@ -8,7 +8,7 @@ select plan(22);
 :as_seller_a
 select is(rls_test.visible('select 1 from public.negotiations'), 1, 'vendedor A vê só a própria negociação');
 select is(rls_test.visible('select 1 from public.negotiations where seller_id <> ''a0000000-0000-0000-0000-0000000000a1'''), 0, 'vendedor A não vê negociação do colega A2');
-select is(rls_test.visible('select 1 from public.leads'), 1, 'vendedor A vê só o próprio lead');
+select is(rls_test.visible('select 1 from public.leads'), 2, 'vendedor A vê todos os leads da loja A');
 select is(rls_test.visible('select 1 from public.interaction_history'), 1, 'vendedor A vê só o histórico das próprias negociações');
 select is(rls_test.visible('select 1 from public.trade_in_vehicles where company_id = ''b0000000-0000-0000-0000-000000000001'''), 0, 'vendedor A não vê trocas da loja B');
 select is(rls_test.visible('select 1 from public.vehicles'), 1, 'vendedor A vê o estoque da loja A (não o da B)');

@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS public.convert_lead_to_negotiation(uuid, uuid, text, numeric, text, text);
 
-CREATE FUNCTION public.convert_lead_to_negotiation(
+CREATE OR REPLACE FUNCTION public.convert_lead_to_negotiation(
   p_lead_id uuid,
   p_vehicle_id uuid,
   p_client_cpf text DEFAULT NULL,
