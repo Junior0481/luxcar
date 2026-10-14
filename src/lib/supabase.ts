@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!SUPABASE_URL || !supabaseAnonKey) {
   throw new Error(
     'Supabase não configurado: defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env (veja .env.example).'
   );
@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const FIPE_API_URL = 'https://parallelum.com.br/fipe/api/v1';
 
 export const supabase = createClient(
-  supabaseUrl,
+  SUPABASE_URL,
   supabaseAnonKey
 );
 
