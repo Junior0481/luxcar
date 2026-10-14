@@ -9,6 +9,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 
 export function Team() {
   const { profile } = useAuth();
@@ -127,17 +128,7 @@ export function Team() {
               className="min-h-40 border-0 shadow-none"
             />
           ) : (
-            <div className="divide-y divide-border">
-              {members.map((member) => (
-                <div key={member.id} className="flex justify-between py-3">
-                  <span>
-                    {member.full_name}
-                    <small className="block text-muted-foreground">{member.email}</small>
-                  </span>
-                  <span className="capitalize">{member.role}</span>
-                </div>
-              ))}
-            </div>
+            <Table className="min-w-[520px]"><TableHeader><TableRow><TableHead>Colaborador</TableHead><TableHead>Email</TableHead><TableHead>Perfil</TableHead><TableHead>Desde</TableHead></TableRow></TableHeader><TableBody>{members.map((member) => <TableRow key={member.id}><TableCell className="font-medium">{member.full_name}</TableCell><TableCell className="text-muted-foreground">{member.email}</TableCell><TableCell><span className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold capitalize">{member.role.replaceAll('_', ' ')}</span></TableCell><TableCell className="text-muted-foreground">{new Date(member.created_at).toLocaleDateString('pt-BR')}</TableCell></TableRow>)}</TableBody></Table>
           )}
         </CardContent>
       </Card>

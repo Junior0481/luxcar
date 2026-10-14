@@ -18,10 +18,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { EmptyState } from '../components/ui/empty-state';
-import { MetricCard } from '../components/ui/metric-card';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
 import { toast } from 'sonner';
+import { formatPriority, formatStage, pluralize } from '../../lib/format';
 import {
   Table,
   TableBody,
@@ -47,19 +47,6 @@ const statusBadge: Record<string, { label: string; variant: 'default' | 'seconda
   disponivel: { label: 'Disponível', variant: 'default' },
   em_negociacao: { label: 'Em negociação', variant: 'outline' },
   vendido: { label: 'Vendido', variant: 'outline' }
-};
-
-const stageBadge: Record<string, string> = {
-  primeiro_contato: 'Primeiro contato',
-  avaliacao: 'Avaliação',
-  test_drive_agendado: 'Test drive agendado',
-  test_drive_realizado: 'Test drive realizado',
-  proposta_enviada: 'Proposta enviada',
-  negociacao_preco: 'Negociação de preço',
-  aprovacao_credito: 'Aprovação de crédito',
-  documentacao: 'Documentação',
-  finalizado: 'Finalizado',
-  perdido: 'Perdido'
 };
 
 export function Dashboard() {
@@ -150,21 +137,21 @@ export function Dashboard() {
       value: metrics?.vehicles_available ?? 0,
       icon: Car,
       accent: true,
-      description: 'Estoque disponível agora'
+      description: pluralize(metrics?.vehicles_available ?? 0, 'veículo disponível', 'veículos disponíveis')
     },
     {
       title: 'Em negociação',
       value: metrics?.vehicles_in_negotiation ?? 0,
       icon: Clock,
       accent: false,
-      description: 'Veículos com conversa ativa'
+      description: pluralize(metrics?.vehicles_in_negotiation ?? 0, 'veículo em negociação', 'veículos em negociação')
     },
     {
       title: 'Pipeline ativo',
       value: metrics?.active_negotiations ?? 0,
       icon: Handshake,
       accent: false,
-      description: 'Oportunidades abertas'
+      description: pluralize(metrics?.active_negotiations ?? 0, 'negociação ativa', 'negociações ativas')
     },
     {
       title: 'Lucro potencial',
@@ -208,18 +195,15 @@ export function Dashboard() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Indicadores da loja" className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-4">
         {statCards.map((stat) => (
-          <MetricCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            description={stat.description}
-            icon={stat.icon}
-            accent={stat.accent}
-          />
+          <div key={stat.title} className="border-b border-r border-border px-4 py-4 last:border-r-0 sm:border-b-0 sm:px-5">
+            <div className="flex items-center gap-2 text-[13px] text-muted-foreground"><stat.icon className="size-4" aria-hidden="true" />{stat.title}</div>
+            <p className={`mt-2 truncate text-[28px] font-bold leading-none tabular-nums [font-family:var(--font-display)] ${stat.title === 'Lucro potencial' && (metrics?.potential_profit || 0) < 0 ? 'text-[#FF8C82]' : 'text-foreground'}`}>{stat.value}</p>
+            <p className="mt-2 truncate text-xs text-muted-foreground">{stat.description}</p>
+          </div>
         ))}
-      </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
@@ -234,8 +218,6 @@ export function Dashboard() {
                     data={statusData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
                     innerRadius={52}
                     outerRadius={86}
                     paddingAngle={2}
@@ -256,14 +238,15 @@ export function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
+            <ul aria-label="Legenda da saúde do estoque" className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
               {statusData.map((item) => (
-                <div key={item.name} className="rounded-xl bg-muted/50 p-3">
-                  <p className="text-lg font-medium text-foreground">{item.value}</p>
-                  <p>{item.name}</p>
-                </div>
+                <li key={item.name} className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-muted-foreground">
+                  <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                  <span className="font-semibold tabular-nums text-foreground">{item.value}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </CardContent>
         </Card>
 
@@ -342,7 +325,7 @@ export function Dashboard() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{stageBadge[negotiation.stage] ?? negotiation.stage}</Badge>
+                      <Badge variant="outline">{formatStage(negotiation.stage)}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -355,7 +338,7 @@ export function Dashboard() {
                         }
                         className="capitalize"
                       >
-                        {negotiation.priority}
+                        {formatPriority(negotiation.priority)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">

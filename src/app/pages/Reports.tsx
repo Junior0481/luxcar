@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { EmptyState } from '../components/ui/empty-state';
-import { MetricCard } from '../components/ui/metric-card';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
+import { formatPercent } from '../../lib/format';
 
 type MonthSale = { id: string; month: string; vendas: number };
 type SellerSale = { id: string; name: string; count: number; revenue: number };
@@ -151,7 +151,7 @@ export function Reports() {
     { title: 'Vendas no período', value: metrics.totalSales, icon: Handshake, accent: true, description: 'Negócios fechados' },
     { title: 'Receita', value: brl(metrics.totalRevenue), icon: DollarSign, accent: false, description: 'Valor vendido' },
     { title: 'Lucro estimado', value: brl(metrics.totalProfit), icon: TrendingUp, accent: false, description: 'Venda menos compra' },
-    { title: 'Conversão', value: `${Number.isFinite(metrics.conversionRate) ? metrics.conversionRate.toFixed(1) : '0.0'}%`, icon: Car, accent: false, description: 'Vendas sobre negociações' }
+    { title: 'Conversão', value: formatPercent(Number.isFinite(metrics.conversionRate) ? metrics.conversionRate : 0), icon: Car, accent: false, description: 'Vendas sobre negociações' }
   ];
 
   const emptyState = (
@@ -168,7 +168,7 @@ export function Reports() {
       <div className="space-y-6">
         <PageHeader
           icon={BarChart3}
-          eyebrow="Inteligencia comercial"
+          eyebrow="Inteligência comercial"
           title="Relatórios"
           description="Entenda receita, lucro, conversão e desempenho da equipe por período."
         />
@@ -188,7 +188,7 @@ export function Reports() {
     <div className="space-y-6">
       <PageHeader
         icon={BarChart3}
-        eyebrow="Inteligencia comercial"
+        eyebrow="Inteligência comercial"
         title="Relatórios"
         description="Entenda receita, lucro, conversão e desempenho da equipe por período."
       />
@@ -232,15 +232,13 @@ export function Reports() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {statCards.map((stat) => (
-              <MetricCard key={stat.title} {...stat} />
-            ))}
-          </div>
+          <section aria-label="Indicadores do período" className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-4">
+            {statCards.map((stat) => <div key={stat.title} className="border-b border-r border-border px-4 py-4 last:border-r-0 sm:border-b-0 sm:px-5"><div className="flex items-center gap-2 text-[13px] text-muted-foreground"><stat.icon className="size-4" aria-hidden="true" />{stat.title}</div><p className="mt-2 truncate text-[26px] font-bold leading-none tabular-nums text-foreground [font-family:var(--font-display)]">{stat.value}</p><p className="mt-2 text-xs text-muted-foreground">{stat.description}</p></div>)}
+          </section>
 
           <Card>
             <CardHeader>
-              <CardTitle>Tendencia de vendas</CardTitle>
+              <CardTitle>Tendência de vendas</CardTitle>
             </CardHeader>
             <CardContent>
               {salesByMonth.length === 0 ? emptyState : (
