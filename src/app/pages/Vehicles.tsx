@@ -2,22 +2,15 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
-import { AlertCircle, Car, Edit, Filter, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Car, Edit, Image as ImageIcon, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { VehicleForm } from "../components/VehicleForm";
-import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { EmptyState } from "../components/ui/empty-state";
 import { PageHeader } from "../components/ui/page-header";
 import { Skeleton } from "../components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,14 +22,15 @@ import {
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
 import { toast } from "sonner";
+import { formatFuel, formatPercent, pluralize } from "../../lib/format";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-const statusBadge: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-  disponivel: { label: "Disponível", variant: "default" },
-  em_negociacao: { label: "Em negociação", variant: "outline" },
-  vendido: { label: "Vendido", variant: "outline" },
+const statusBadge: Record<string, { label: string; className: string; dot: string }> = {
+  disponivel: { label: "Disponível", className: "border-[#1E4D36] bg-[#10261C] text-[#5BE3A0]", dot: "bg-[#3DD68C]" },
+  em_negociacao: { label: "Em negociação", className: "border-[#4D3A16] bg-[#2A2110] text-[#F5B54A]", dot: "bg-[#F5B54A]" },
+  vendido: { label: "Vendido", className: "border-[#1E3558] bg-[#0F1B2E] text-[#8DB8FF]", dot: "bg-[#5B8DEF]" },
 };
 
 export function Vehicles() {
@@ -97,7 +91,8 @@ export function Vehicles() {
         (v) =>
           v.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
           v.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v.year.toString().includes(searchTerm),
+          v.year.toString().includes(searchTerm) ||
+          (v.plate || "").toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -166,9 +161,8 @@ export function Vehicles() {
     <div className="space-y-6">
       <PageHeader
         icon={Car}
-        eyebrow="Vitrine operacional"
-        title="Estoque da loja"
-        description="Veja o que está pronto para vender, o que está em negociação e onde está o capital da loja."
+        title="Estoque"
+        description={`${pluralize(vehicles.length, 'veículo', 'veículos')} · ${brl(vehicles.reduce((sum, vehicle) => sum + Number(vehicle.sale_price || 0), 0))} em estoque a preço de venda`}
         action={isAdmin ? (
           <Button size="lg" onClick={() => setShowForm(true)}>
             <Plus className="size-4" />
@@ -177,34 +171,25 @@ export function Vehicles() {
         ) : null}
       />
 
-      <Card>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div role="tablist" aria-label="Filtrar veículos por status" className="flex flex-wrap gap-1 rounded-xl border border-border bg-card p-1">
+          {[{ value: "all", label: "Todos" }, { value: "disponivel", label: "Disponível" }, { value: "em_negociacao", label: "Em negociação" }, { value: "vendido", label: "Vendido" }].map((tab) => {
+            const count = tab.value === "all" ? vehicles.length : vehicles.filter((vehicle) => vehicle.status === tab.value).length;
+            const active = statusFilter === tab.value;
+            return <button key={tab.value} type="button" role="tab" aria-selected={active} onClick={() => setStatusFilter(tab.value)} className={`h-[34px] rounded-lg px-3 text-[13px] transition-colors ${active ? "bg-sidebar-accent font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"}`}>{tab.label} <span className="tabular-nums opacity-70">{count}</span></button>;
+          })}
+        </div>
+        <div className="relative w-full sm:w-[300px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              aria-label="Buscar por marca, modelo ou ano"
-              placeholder="Buscar por marca, modelo ou ano"
+              aria-label="Buscar por marca, modelo, ano ou placa"
+              placeholder="Buscar por marca, modelo, ano ou placa"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
-          </div>
-          <div className="relative sm:w-64">
-            <Filter className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="pl-10" aria-label="Filtrar por status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="disponivel">Disponível</SelectItem>
-                <SelectItem value="em_negociacao">Em negociação</SelectItem>
-                <SelectItem value="vendido">Vendido</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {error ? (
         <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
@@ -238,83 +223,30 @@ export function Vehicles() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredVehicles.map((vehicle) => {
-            const b = statusBadge[vehicle.status] ?? statusBadge.disponivel;
-            const margin = Number(vehicle.sale_price || 0) - Number(vehicle.purchase_price || 0);
-
-            return (
-              <Card key={vehicle.id} className="group gap-0 overflow-hidden pt-0 lux-card-hover">
-                <div className="relative h-56 overflow-hidden">
-                  {vehicle.images && vehicle.images.length > 0 ? (
-                    <img
-                      src={vehicle.images[0]}
-                      alt={`${vehicle.brand} ${vehicle.model}`}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-muted">
-                      <div className="flex size-20 items-center justify-center rounded-3xl bg-accent text-primary">
-                        <Car className="size-10" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/10" />
-                  <div className="absolute right-3 top-3">
-                    <Badge variant={b.variant} className="shadow-lux-sm backdrop-blur-md">{b.label}</Badge>
-                  </div>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="truncate text-lg font-medium text-white">
-                      {vehicle.brand} {vehicle.model}
-                    </h3>
-                    <p className="truncate text-sm text-white/75">
-                      {vehicle.year}
-                      {vehicle.version ? ` - ${vehicle.version}` : ""}
-                    </p>
-                  </div>
-                </div>
-                <CardContent className="space-y-4 p-4">
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Preço de venda</p>
-                      <p className="text-2xl font-medium leading-tight text-foreground">{brl(vehicle.sale_price)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Margem estimada</p>
-                      <p className={margin >= 0 ? "text-sm font-medium text-primary" : "text-sm font-medium text-destructive"}>
-                        {brl(margin)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-                    Compra: <span className="font-medium text-foreground">{brl(vehicle.purchase_price)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button asChild variant="secondary" size="sm" className="flex-1 min-w-0">
-                      <Link to={`/dashboard/vehicles/${vehicle.id}`} className="truncate">Ver ficha</Link>
-                    </Button>
-                    {isAdmin && (
-                      <Button variant="outline" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo" className="shrink-0">
-                        <Edit className="size-4" />
-                      </Button>
-                    )}
-                    {isAdmin && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setVehicleToDelete(vehicle)}
-                        aria-label="Excluir veículo"
-                        className="text-destructive hover:text-destructive shrink-0"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <Table className="min-w-[900px] text-[13px]">
+          <TableHeader><TableRow><TableHead>Veículo</TableHead><TableHead>Placa</TableHead><TableHead className="text-right">Km</TableHead><TableHead className="text-right">Preço de venda</TableHead><TableHead className="text-right">Margem</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Em estoque</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {filteredVehicles.map((vehicle) => {
+              const badge = statusBadge[vehicle.status] ?? statusBadge.disponivel;
+              const margin = Number(vehicle.sale_price || 0) - Number(vehicle.purchase_price || 0);
+              const marginPct = Number(vehicle.purchase_price) ? (margin / Number(vehicle.purchase_price)) * 100 : 0;
+              const daysInStock = Math.max(0, Math.floor((Date.now() - new Date(vehicle.created_at).getTime()) / 86400000));
+              return <TableRow key={vehicle.id}>
+                <TableCell><Link to={`/dashboard/vehicles/${vehicle.id}`} className="flex items-center gap-3 text-foreground hover:text-primary">
+                  {vehicle.images?.[0] ? <img src={vehicle.images[0]} alt="" className="size-[72px] h-12 shrink-0 rounded-md object-cover" /> : <span className="flex h-12 w-[72px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"><ImageIcon className="size-5" /></span>}
+                  <span className="flex min-w-0 flex-col"><span className="truncate text-sm font-semibold">{vehicle.brand} {vehicle.model}</span><span className="truncate text-muted-foreground">{[vehicle.version, vehicle.year, vehicle.fuel_type ? formatFuel(vehicle.fuel_type) : null].filter(Boolean).join(" · ")}</span></span>
+                </Link></TableCell>
+                <TableCell>{vehicle.plate ? <span className="rounded-sm bg-[#F2F3F0] px-1.5 py-0.5 font-license-plate text-sm font-bold tracking-wider text-[#111317]">{vehicle.plate}</span> : <span className="text-muted-foreground">—</span>}</TableCell>
+                <TableCell className="text-right tabular-nums text-secondary-foreground">{Number(vehicle.mileage || 0).toLocaleString("pt-BR")}</TableCell>
+                <TableCell className="text-right font-semibold tabular-nums">{brl(Number(vehicle.sale_price))}</TableCell>
+                <TableCell className={`text-right font-semibold tabular-nums ${margin < 0 ? "text-[#FF8C82]" : "text-[#5BE3A0]"}`}>{formatPercent(marginPct)}</TableCell>
+                <TableCell><Badge variant="outline" className={`gap-1.5 rounded-full px-[9px] py-[3px] text-xs font-semibold ${badge.className}`}><span className={`size-1.5 rounded-full ${badge.dot}`} />{badge.label}</Badge></TableCell>
+                <TableCell className={`text-right tabular-nums ${daysInStock > 60 ? "font-semibold text-[#F5B54A]" : "text-secondary-foreground"}`}>{daysInStock} dias</TableCell>
+                <TableCell><div className="flex items-center justify-end gap-1"><Button asChild variant="ghost" size="sm"><Link to={`/dashboard/vehicles/${vehicle.id}`}>Ver ficha</Link></Button>{isAdmin && <Button variant="ghost" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo"><Edit className="size-4" /></Button>}{isAdmin && <Button variant="ghost" size="icon" onClick={() => setVehicleToDelete(vehicle)} aria-label="Excluir veículo" className="text-destructive"><Trash2 className="size-4" /></Button>}</div></TableCell>
+              </TableRow>;
+            })}
+          </TableBody>
+        </Table>
       )}
 
       <VehicleForm open={showForm} vehicle={editingVehicle} onClose={handleFormClose} />
