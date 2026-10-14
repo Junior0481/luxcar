@@ -24,24 +24,19 @@ function PageHeader({
     <div
       data-slot="page-header"
       className={cn(
-        "flex flex-col gap-4 rounded-2xl border border-border bg-surface-elevated p-5 shadow-lux-sm backdrop-blur-md sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
         className,
       )}
       {...props}
     >
-      <div className="flex min-w-0 items-start gap-4">
-        {Icon ? (
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-primary">
-            <Icon className="size-6" aria-hidden="true" />
-          </div>
-        ) : null}
+      <div className="flex min-w-0 items-start gap-2">
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               {eyebrow}
             </p>
           ) : null}
-          <h1 className="text-2xl font-medium tracking-normal text-foreground md:text-3xl">
+          <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-foreground md:text-[32px]">
             {title}
           </h1>
           {description ? (
@@ -51,7 +46,8 @@ function PageHeader({
           ) : null}
         </div>
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div> : null}
+      {Icon ? <Icon className="sr-only" aria-hidden="true" /> : null}
     </div>
   );
 }
