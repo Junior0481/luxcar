@@ -18,6 +18,7 @@ import {
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { useAuth } from '../../contexts/AuthContext';
 
 const features = [
   {
@@ -52,23 +53,13 @@ const features = [
   }
 ];
 
-const plans = [
-  {
-    name: 'Essencial',
-    desc: 'Para organizar a loja e tirar a operação da planilha.',
-    features: ['Estoque organizado', 'Pipeline comercial', 'Dashboard da loja']
-  },
-  {
-    name: 'Profissional',
-    desc: 'Para equipes que precisam acompanhar vendas com mais disciplina.',
-    features: ['Relatórios', 'Equipe e preferências', 'Vitrine pública'],
-    highlight: true
-  },
-  {
-    name: 'White label',
-    desc: 'Para lojas que querem experiência com a própria marca.',
-    features: ['Identidade da loja', 'Base multi-tenant', 'Preparado para domínio próprio']
-  }
+const subscriptionFeatures = [
+  'Estoque, veículos e custos',
+  'Pipeline de vendas, leads e negociações',
+  'Equipe com acessos de administrador e vendedor',
+  'Dashboard, relatórios e pagamentos',
+  'Vitrine pública da concessionária',
+  'Identidade visual white label da loja'
 ];
 
 const faqs = [
@@ -105,43 +96,50 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, profile, loading } = useAuth();
+  const dashboardPath = profile?.role === 'platform_admin' ? '/dashboard/platform' : '/dashboard';
 
   const navLinks = [
     { href: '#recursos', label: 'Recursos' },
     { href: '#whitelabel', label: 'White label' },
-    { href: '#planos', label: 'Planos' },
+    { href: '#assinatura', label: 'Assinatura' },
     { href: '#faq', label: 'FAQ' }
   ];
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
-      <header className="sticky top-0 z-header border-b border-border bg-background/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-header border-b border-[#292D33] bg-[#111316] text-white backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-sm">
               <Car className="size-5" />
             </div>
-            <span className="text-xl font-medium">LuxCar</span>
+            <span className="text-xl font-semibold text-white [font-family:var(--font-display)]">LuxCar</span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
             {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <a key={link.href} href={link.href} className="text-sm text-[#C9CFD8] transition-colors hover:text-white">
                 {link.label}
               </a>
             ))}
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <Button asChild variant="ghost">
-              <Link to="/auth/login">Entrar</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/auth/register">Começar agora</Link>
-            </Button>
+            {!loading && user && profile ? (
+              <>
+                <span className="text-sm text-muted-foreground">{profile.full_name} · {profile.role}</span>
+                <Button asChild><Link to={dashboardPath}>Ir para o painel</Link></Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white"><Link to="/auth/login">Entrar</Link></Button>
+                <Button asChild><Link to="/auth/register">Falar com vendas</Link></Button>
+              </>
+            )}
           </div>
 
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
             {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </Button>
         </div>
@@ -156,25 +154,31 @@ export function Landing() {
               ))}
             </div>
             <div className="mt-4 grid grid-cols-1 min-[340px]:grid-cols-2 gap-3">
-              <Button asChild variant="secondary"><Link to="/auth/login">Entrar</Link></Button>
-              <Button asChild><Link to="/auth/register">Começar</Link></Button>
+              {!loading && user && profile ? (
+                <Button asChild className="min-[340px]:col-span-2"><Link to={dashboardPath}>Painel · {profile.full_name}</Link></Button>
+              ) : (
+                <>
+                  <Button asChild variant="secondary"><Link to="/auth/login">Entrar</Link></Button>
+                  <Button asChild><Link to="/auth/register">Falar com vendas</Link></Button>
+                </>
+              )}
             </div>
           </div>
         ) : null}
       </header>
 
       <main>
-        <section className="lux-gradient border-b border-border">
+        <section className="border-b border-[#292D33] bg-[#111316] text-white">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 lg:grid-cols-[1fr_0.9fr] lg:py-24">
             <div className="flex flex-col justify-center">
-              <Badge variant="outline" className="mb-6 w-fit">
+              <Badge variant="outline" className="mb-6 w-fit border-[#3A414B] text-[#FF9A63]">
                 <Sparkles className="size-3" />
                 SaaS B2B white label para lojas automotivas
               </Badge>
-              <h1 className="max-w-3xl text-4xl font-medium leading-tight tracking-normal text-foreground md:text-6xl">
+              <h1 className="max-w-3xl text-4xl font-bold leading-[1.02] tracking-tight text-white [font-family:var(--font-display)] md:text-6xl">
                 Venda mais carros e gerencie sua loja em uma única plataforma white label.
               </h1>
-              <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
+              <p className="mt-6 max-w-2xl text-lg text-[#C9CFD8]">
                 A LuxCar organiza estoque, negociações, relatórios e equipe para transformar dados em decisão comercial.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -184,38 +188,38 @@ export function Landing() {
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline">
+                <Button asChild size="lg" variant="outline" className="border-[#3A414B] bg-transparent text-white hover:bg-white/10 hover:text-white">
                   <Link to="/estoque">Ver vitrine pública</Link>
                 </Button>
               </div>
             </div>
 
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-[#292D33] bg-[#171B21] text-white shadow-none">
               <CardContent className="space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Centro de comando</p>
-                    <p className="text-xl font-medium">Visão da loja</p>
+                    <p className="text-sm text-[#8A93A1]">Centro de comando</p>
+                    <p className="text-xl font-semibold [font-family:var(--font-display)]">Visão da loja</p>
                   </div>
-                  <Badge variant="outline">Exemplo ilustrativo</Badge>
+                    <Badge variant="outline" className="border-[#343B45] text-[#A3ABB8]">Prévia do produto</Badge>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {['Estoque', 'Pipeline', 'Lucro'].map((label, index) => (
-                    <div key={label} className={index === 0 ? 'rounded-2xl bg-accent p-4' : 'rounded-2xl bg-muted/50 p-4'}>
-                      <p className="text-xs text-muted-foreground">{label}</p>
-                      <p className="mt-2 text-2xl font-medium">{index === 0 ? '18 (ex.)' : index === 1 ? '7 (ex.)' : 'R$ 45.000'}</p>
+                    <div key={label} className="rounded-lg border border-[#292D33] bg-[#121519] p-4">
+                      <p className="text-xs text-[#8A93A1]">{label}</p>
+                      <p className="mt-2 text-2xl font-semibold tabular-nums text-[#E9ECF1]">—</p>
                     </div>
                   ))}
                 </div>
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <p className="mb-4 text-sm text-muted-foreground">Pipeline comercial</p>
+                <div className="rounded-lg border border-[#292D33] bg-[#121519] p-4">
+                  <p className="mb-4 text-sm text-[#8A93A1]">Pipeline comercial</p>
                   <div className="space-y-3">
                     {['Primeiro contato', 'Proposta enviada', 'Documentação'].map((stage, index) => (
-                      <div key={stage} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
-                        <div className="flex size-8 items-center justify-center rounded-full bg-primary/15 text-primary">{index + 1}</div>
+                      <div key={stage} className="flex items-center gap-3 rounded-lg border border-[#242930] bg-[#171B21] p-3">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-[#292D33] text-sm font-semibold text-[#FF9A63]">{index + 1}</div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{stage}</p>
-                          <p className="text-xs text-muted-foreground">Próxima ação clara para a equipe</p>
+                          <p className="text-sm font-medium text-[#E9ECF1]">{stage}</p>
+                          <p className="text-xs text-[#8A93A1]">Próxima ação clara para a equipe</p>
                         </div>
                       </div>
                     ))}
@@ -271,33 +275,28 @@ export function Landing() {
           </div>
         </section>
 
-        <section id="planos" className="mx-auto max-w-7xl px-4 py-20">
-          <div className="mx-auto mb-12 max-w-2xl text-center">
-            <h2 className="text-3xl font-medium tracking-normal md:text-4xl">Planos para cada fase da operação</h2>
-            <p className="mt-4 text-muted-foreground">Sem prometer número artificial: escolha pelo nível de organização que sua loja precisa.</p>
+        <section id="assinatura" className="mx-auto max-w-5xl px-4 py-20">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <h2 className="text-3xl font-medium tracking-normal md:text-4xl">Uma assinatura. A LuxCar completa.</h2>
+            <p className="mt-4 text-muted-foreground">Tudo liberado em um único produto: do essencial da operação à experiência white label.</p>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            {plans.map((plan) => (
-              <Card key={plan.name} className={plan.highlight ? 'border-primary/30 bg-accent/60' : ''}>
-                <CardContent className="flex h-full flex-col">
-                  {plan.highlight ? <Badge className="mb-4 w-fit">Mais completo</Badge> : null}
-                  <h3 className="text-xl font-medium">{plan.name}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{plan.desc}</p>
-                  <ul className="mt-6 flex-1 space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Check className="size-4 shrink-0 text-primary" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button asChild className="mt-8" variant={plan.highlight ? 'default' : 'outline'}>
-                    <Link to="/auth/register">Começar</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card className="border-primary/30 bg-accent/40">
+            <CardContent className="grid gap-8 p-8 md:grid-cols-[1fr_auto] md:items-center md:p-10">
+              <div>
+                <Badge className="mb-4">Produto completo</Badge>
+                <h3 className="text-2xl font-medium">Assinatura LuxCar</h3>
+                <p className="mt-2 text-sm text-muted-foreground">Após a confirmação do pagamento, nossa equipe configura sua concessionária e entrega o acesso de administrador.</p>
+                <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {subscriptionFeatures.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Check className="size-4 shrink-0 text-primary" />{feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Button asChild size="lg"><Link to="/auth/register">Solicitar assinatura<ArrowRight className="size-4" /></Link></Button>
+            </CardContent>
+          </Card>
         </section>
 
         <section id="faq" className="mx-auto max-w-3xl px-4 py-20">
