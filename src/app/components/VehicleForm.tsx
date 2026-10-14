@@ -3,6 +3,8 @@ import { supabase, Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import { AlertCircle, Upload, Trash2 } from "lucide-react";
 import { FipeSearch } from "./FipeSearch";
+import { FipeVehicle } from "../../hooks/useFipe";
+import { motion } from "motion/react";
 import { CAR_BRANDS } from "../../constants/carBrands";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -21,6 +23,9 @@ type VehicleFormProps = {
   vehicle?: Vehicle | null;
   onClose: () => void;
 };
+
+type VehiclePhoto = { id: string; url: string };
+const createPhoto = (url: string): VehiclePhoto => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, url });
 
 const selectClass =
   "w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
@@ -43,13 +48,48 @@ const initialFormData = {
   description: "",
 };
 
+const formatBRLInput = (value: number) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatMileage = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+const parseMileage = (value: string) => value.replace(/\D/g, '');
+
+const parseBRLInput = (value: string) => {
+  const clean = value.trim().replace(/[^\d,.-]/g, '');
+  if (!clean) return Number.NaN;
+  const normalized = clean.includes(',')
+    ? clean.replace(/\./g, '').replace(',', '.')
+    : /^\d{1,3}(\.\d{3})+$/.test(clean) ? clean.replace(/\./g, '') : clean;
+  return Number(normalized);
+};
+
+const normalizeFuel = (value: string) => {
+  const fuel = value.toLocaleLowerCase('pt-BR');
+  if (fuel.includes('híbr') || fuel.includes('hibr') || fuel.includes('/ elétr') || fuel.includes('/ eletric')) return 'hibrido';
+  if (fuel.includes('elétr') || fuel.includes('eletric')) return 'eletrico';
+  if (fuel.includes('flex')) return 'flex';
+  if (fuel.includes('diesel')) return 'diesel';
+  if (fuel.includes('álcool') || fuel.includes('alcool') || fuel.includes('etanol')) return 'etanol';
+  if (fuel.includes('gasolina')) return 'gasolina';
+  return '';
+};
+
+const inferTransmission = (model: string) => {
+  const value = model.toLocaleLowerCase('pt-BR');
+  if (/\bcvt\b|multitronic/.test(value)) return 'cvt';
+  if (/powershift|\bi-motion\b|easytronic|automatizad|\bdct\b/.test(value)) return 'automatizada';
+  if (/\baut\.?\b|autom[aá]tic|\bat\b|tiptronic|steptronic|\bdsg\b/.test(value)) return 'automatica';
+  if (/\bmanual\b/.test(value)) return 'manual';
+  return '';
+};
+
 export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps) {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const errorRef = useRef<HTMLDivElement>(null);
 
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<VehiclePhoto[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
   const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
@@ -62,22 +102,24 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
           model: vehicle.model,
           year: vehicle.year,
           version: vehicle.version || "",
-          purchase_price: vehicle.purchase_price.toString(),
-          sale_price: vehicle.sale_price.toString(),
+          purchase_price: formatBRLInput(vehicle.purchase_price),
+          sale_price: formatBRLInput(vehicle.sale_price),
           fipe_code: vehicle.fipe_code || "",
           images: vehicle.images || [],
           status: vehicle.status,
           color: vehicle.color || "",
           plate: vehicle.plate || "",
-          mileage: vehicle.mileage?.toString() || "",
+          mileage: vehicle.mileage != null ? formatMileage(vehicle.mileage) : "",
           fuel_type: vehicle.fuel_type || "",
           transmission: vehicle.transmission || "",
           description: vehicle.description || "",
         });
-        setImageUrls(vehicle.images || []);
+        setPhotos((vehicle.images || []).map(createPhoto));
+        setSelectedImageId(null);
       } else {
         setFormData({ ...initialFormData, year: new Date().getFullYear() });
-        setImageUrls([]);
+        setPhotos([]);
+        setSelectedImageId(null);
       }
     }
   }, [open, vehicle]);
@@ -88,6 +130,15 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
       errorRef.current.focus();
     }
   }, [error]);
+
+  useEffect(() => {
+    const clearPhotoSelectionOutside = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest('[data-vehicle-photo]')) return;
+      setSelectedImageId(null);
+    };
+    document.addEventListener('pointerdown', clearPhotoSelectionOutside);
+    return () => document.removeEventListener('pointerdown', clearPhotoSelectionOutside);
+  }, []);
 
   const formatPlate = (value: string): string => {
     let cleaned = value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
@@ -105,29 +156,55 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
     setFormData({ ...formData, plate: formatted });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    Array.from(files).forEach((file) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const files = Array.from(input.files || []);
+    if (files.length === 0) return;
+    input.value = '';
+    const readFile = (file: File) => new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrls((prev) => [...prev, reader.result as string]);
-      };
+      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Não foi possível ler uma das imagens.'));
+      reader.onerror = () => reject(new Error('Não foi possível ler uma das imagens.'));
       reader.readAsDataURL(file);
     });
+    try {
+      const uploadedImages = await Promise.all(files.map(readFile));
+      setPhotos((current) => [...current, ...uploadedImages.map(createPhoto)]);
+    } catch (uploadError: any) {
+      setError(uploadError.message || 'Não foi possível ler as imagens selecionadas.');
+    }
   };
 
-  const removeImage = (index: number) => {
-    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = (photoId: string) => {
+    setPhotos((current) => current.filter((photo) => photo.id !== photoId));
+    setSelectedImageId((current) => current === photoId ? null : current);
   };
 
-  const handleFipeValue = (value: number, fipeCode: string) => {
-    setFormData({
-      ...formData,
-      sale_price: value.toString(),
-      fipe_code: fipeCode,
+  const moveImageTo = (targetId: string) => {
+    if (!draggedImageId || draggedImageId === targetId) return;
+    setPhotos((current) => {
+      const next = [...current];
+      const fromIndex = next.findIndex((photo) => photo.id === draggedImageId);
+      const targetIndex = next.findIndex((photo) => photo.id === targetId);
+      if (fromIndex < 0 || targetIndex < 0) return current;
+      const [movedImage] = next.splice(fromIndex, 1);
+      next.splice(targetIndex, 0, movedImage);
+      return next;
     });
+    setSelectedImageId(draggedImageId);
+  };
+
+  const handleFipeValue = (vehicleData: FipeVehicle, value: number) => {
+    setFormData((current) => ({
+      ...current,
+      brand: vehicleData.Marca || current.brand,
+      model: vehicleData.Modelo || current.model,
+      year: vehicleData.AnoModelo || current.year,
+      sale_price: formatBRLInput(value),
+      fipe_code: vehicleData.CodigoFipe || current.fipe_code,
+      fuel_type: normalizeFuel(vehicleData.Combustivel || vehicleData.SiglaCombustivel || '') || current.fuel_type,
+      transmission: inferTransmission(vehicleData.Modelo || '') || current.transmission,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,20 +213,23 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
     setLoading(true);
 
     try {
+      const purchasePrice = parseBRLInput(formData.purchase_price);
+      const salePrice = parseBRLInput(formData.sale_price);
+      if (!Number.isFinite(purchasePrice) || !Number.isFinite(salePrice) || purchasePrice < 0 || salePrice < 0) throw new Error('Informe valores válidos para compra e venda.');
       const vehicleData = {
         company_id: profile?.company_id || null,
         brand: formData.brand,
         model: formData.model,
         year: formData.year,
         version: formData.version || null,
-        purchase_price: parseFloat(formData.purchase_price),
-        sale_price: parseFloat(formData.sale_price),
-        images: imageUrls,
+        purchase_price: purchasePrice,
+        sale_price: salePrice,
+        images: photos.map((photo) => photo.url),
         fipe_code: formData.fipe_code || null,
         status: formData.status,
         color: formData.color || null,
         plate: formData.plate || null,
-        mileage: formData.mileage ? parseInt(formData.mileage) : null,
+        mileage: formData.mileage ? parseInt(parseMileage(formData.mileage), 10) : null,
         fuel_type: formData.fuel_type || null,
         transmission: formData.transmission || null,
         description: formData.description || null,
@@ -219,12 +299,15 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
           </div>
         )}
 
+        <FipeSearch onValueFound={handleFipeValue} />
+
         <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label htmlFor="brand">Marca *</Label>
               <select id="brand" name="brand" value={formData.brand} onChange={handleChange} required className={selectClass}>
                 <option value="">Selecione a marca...</option>
+                {formData.brand && !CAR_BRANDS.some((brand) => brand.toLocaleLowerCase('pt-BR') === formData.brand.toLocaleLowerCase('pt-BR')) && <option value={formData.brand}>{formData.brand}</option>}
                 {CAR_BRANDS.map((brand) => <option key={brand} value={brand}>{brand}</option>)}
               </select>
             </div>
@@ -246,12 +329,12 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
 
             <div className="space-y-2">
               <Label htmlFor="purchase_price">Valor de Compra (R$) *</Label>
-              <Input type="number" id="purchase_price" name="purchase_price" value={formData.purchase_price} onChange={handleChange} required step="0.01" min="0" placeholder="50000.00" />
+              <Input type="text" inputMode="decimal" id="purchase_price" name="purchase_price" value={formData.purchase_price} onChange={handleChange} onBlur={() => { const value = parseBRLInput(formData.purchase_price); if (Number.isFinite(value)) setFormData((current) => ({ ...current, purchase_price: formatBRLInput(value) })); }} required placeholder="200.000,00" />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="sale_price">Valor de Venda (R$) *</Label>
-              <Input type="number" id="sale_price" name="sale_price" value={formData.sale_price} onChange={handleChange} required step="0.01" min="0" placeholder="60000.00" />
+              <Input type="text" inputMode="decimal" id="sale_price" name="sale_price" value={formData.sale_price} onChange={handleChange} onBlur={() => { const value = parseBRLInput(formData.sale_price); if (Number.isFinite(value)) setFormData((current) => ({ ...current, sale_price: formatBRLInput(value) })); }} required placeholder="200.000,00" />
             </div>
 
             <div className="space-y-2">
@@ -276,7 +359,7 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
 
             <div className="space-y-2">
               <Label htmlFor="mileage">Quilometragem (km)</Label>
-              <Input type="number" id="mileage" name="mileage" value={formData.mileage} onChange={handleChange} min="0" placeholder="50000" />
+              <Input type="text" inputMode="numeric" id="mileage" name="mileage" value={formData.mileage} onChange={(event) => setFormData((current) => ({ ...current, mileage: event.target.value.replace(/[^\d.]/g, '') }))} onBlur={() => { const digits = parseMileage(formData.mileage); if (digits) setFormData((current) => ({ ...current, mileage: formatMileage(Number(digits)) })); }} placeholder="50.000" />
             </div>
 
             <div className="space-y-2">
@@ -304,10 +387,9 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
             </div>
           </div>
 
-          <FipeSearch onValueFound={handleFipeValue} />
-
           <div className="border border-border rounded-2xl bg-muted p-5">
-            <p className="text-sm font-semibold text-foreground mb-3">Fotos do Veículo</p>
+              <p className="text-sm font-semibold text-foreground mb-1">Fotos do Veículo</p>
+              <p className="mb-3 text-xs text-muted-foreground">Arraste as fotos para ordenar. A foto 1 será a capa exibida primeiro na vitrine.</p>
 
             <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-card hover:border-primary transition-colors">
               <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
@@ -318,23 +400,42 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
               >
                 Selecionar Fotos
               </label>
-              <p className="text-sm text-muted-foreground mt-3">PNG, JPG ou WEBP (máx. 5MB cada)</p>
+              <p className="text-sm text-muted-foreground mt-3">PNG, JPG ou WEBP (máx. 5 MB cada)</p>
             </div>
 
-            {imageUrls.length > 0 && (
+            {photos.length > 0 && (
               <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                {imageUrls.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <img src={url} alt={`Foto ${index + 1}`} className="w-full h-32 object-cover rounded-lg border-2 border-border" />
+                {photos.map((photo, index) => (
+                  <motion.div
+                    key={photo.id}
+                    layout="position"
+                    transition={{ layout: { type: 'spring', stiffness: 480, damping: 38 } }}
+                    draggable
+                    onClick={() => setSelectedImageId(photo.id)}
+                    onDragStart={(event) => { event.dataTransfer.effectAllowed = 'move'; setDraggedImageId(photo.id); setSelectedImageId(photo.id); }}
+                    onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }}
+                    onDragEnter={() => moveImageTo(photo.id)}
+                    onDrop={(event) => { event.preventDefault(); moveImageTo(photo.id); }}
+                    onDragEnd={() => setDraggedImageId(null)}
+                    className={`group relative cursor-grab overflow-hidden rounded-lg border-2 transition-shadow hover:shadow-lg hover:shadow-primary/25 active:cursor-grabbing ${selectedImageId === photo.id ? 'border-primary/55 shadow-md' : 'border-border'} ${draggedImageId === photo.id ? 'z-10 opacity-75' : ''}`}
+                    style={{ boxShadow: selectedImageId === photo.id ? '0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent), 0 8px 22px -12px color-mix(in srgb, var(--primary) 48%, transparent)' : undefined }}
+                    data-vehicle-photo
+                    aria-label={`Foto ${index + 1}. Arraste para alterar a ordem.`}
+                  >
+                    <img src={photo.url} alt={`Foto ${index + 1}`} className="h-32 w-full object-cover" draggable={false} />
+                    <div className={`absolute inset-0 transition-colors ${selectedImageId === photo.id ? 'bg-black/45' : 'bg-transparent group-hover:bg-black/25'}`} />
+                    <span className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full border-2 border-primary/65 bg-primary/90 text-sm font-bold text-primary-foreground shadow" aria-label={`Posição ${index + 1}`}>
+                      {index + 1}
+                    </span>
                     <button
                       type="button"
-                       onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                      onClick={(event) => { event.stopPropagation(); removeImage(photo.id); }}
+                      className="absolute left-2 top-2 rounded-full border border-white/70 bg-black/60 p-1.5 text-white opacity-0 transition-opacity hover:bg-destructive focus-visible:opacity-100 group-hover:opacity-100"
                       aria-label={`Excluir foto ${index + 1}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="size-4" />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}

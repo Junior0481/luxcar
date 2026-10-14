@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useFipe, FipeBrand, FipeModel, FipeYear } from '../../hooks/useFipe';
+import { useFipe, FipeBrand, FipeModel, FipeYear, FipeVehicle } from '../../hooks/useFipe';
 import { Search, AlertCircle, CheckCircle } from 'lucide-react';
 import { Label } from './ui/label';
 
@@ -10,7 +10,7 @@ const selectClass =
   'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50';
 
 type FipeSearchProps = {
-  onValueFound?: (value: number, fipeCode: string) => void;
+  onValueFound?: (vehicle: FipeVehicle, value: number) => void;
 };
 
 export function FipeSearch({ onValueFound }: FipeSearchProps) {
@@ -24,6 +24,7 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [fipeResult, setFipeResult] = useState<{ value: number; code: string } | null>(null);
+  const [valueError, setValueError] = useState('');
 
   useEffect(() => {
     loadBrands();
@@ -41,6 +42,7 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
     setModels([]);
     setYears([]);
     setFipeResult(null);
+    setValueError('');
 
     if (brandCode) {
       const data = await fetchModels(brandCode);
@@ -53,6 +55,7 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
     setSelectedYear('');
     setYears([]);
     setFipeResult(null);
+    setValueError('');
 
     if (modelCode && selectedBrand) {
       const data = await fetchYears(selectedBrand, parseInt(modelCode));
@@ -63,13 +66,18 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
   const handleYearChange = async (yearCode: string) => {
     setSelectedYear(yearCode);
     setFipeResult(null);
+    setValueError('');
 
     if (yearCode && selectedBrand && selectedModel) {
       const data = await fetchVehicleValue(selectedBrand, parseInt(selectedModel), yearCode);
       if (data) {
         const value = parseValue(data.Valor);
+        if (!Number.isFinite(value)) {
+          setValueError('A FIPE retornou um valor em formato inválido. Você pode preencher o valor de venda manualmente.');
+          return;
+        }
         setFipeResult({ value, code: data.CodigoFipe });
-        onValueFound?.(value, data.CodigoFipe);
+        onValueFound?.(data, value);
       }
     }
   };
@@ -81,10 +89,14 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
         <h3 className="font-semibold text-foreground">Consultar Tabela FIPE</h3>
       </div>
 
-      {error && (
+      <p className="mb-4 text-sm text-muted-foreground">
+        Opcional: para preencher os dados sem digitar tudo, consulte a FIPE aqui antes de completar o formulário. Ao escolher ano e versão, aplicaremos os dados encontrados; você também pode preencher tudo manualmente.
+      </p>
+
+      {(error || valueError) && (
         <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
           <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">{valueError || error}</p>
         </div>
       )}
 
@@ -134,7 +146,7 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
             <div className="flex items-start gap-2">
               <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground">Valor FIPE encontrado</p>
+                <p className="text-sm font-medium text-foreground">Referência FIPE encontrada</p>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{brl(fipeResult.value)}</p>
                 <p className="text-xs text-muted-foreground mt-1">Código FIPE: {fipeResult.code}</p>
               </div>
@@ -144,7 +156,7 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
       </div>
 
       <p className="text-xs text-muted-foreground mt-4">
-        💡 Os valores são consultados em tempo real da Tabela FIPE oficial
+        💡 A consulta fornece valor de referência, não o preço de compra ou uma avaliação do estado do veículo.
       </p>
     </div>
   );

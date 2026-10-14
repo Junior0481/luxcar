@@ -114,7 +114,11 @@ export function useFipe() {
   };
 
   const parseValue = (fipeValue: string): number => {
-    return parseFloat(fipeValue.replace('R$ ', '').replace(/\./g, '').replace(',', '.'));
+    const clean = fipeValue.trim().replace(/[^\d,.-]/g, '');
+    const normalized = clean.includes(',')
+      ? clean.replace(/\./g, '').replace(',', '.')
+      : /^\d{1,3}(\.\d{3})+$/.test(clean) ? clean.replace(/\./g, '') : clean;
+    return Number(normalized);
   };
 
   return {
