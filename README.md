@@ -136,7 +136,7 @@ VITE_SUPABASE_ANON_KEY=sua-chave-anonima
 VITE_DEFAULT_COMPANY_SLUG=luxcar
 ```
 
-5. No SQL Editor do Supabase, execute `MODELO_FISICO_COMPLETO.sql` em uma instalação nova. Em um banco existente, aplique as migrações versionadas em ordem. A migração `supabase-white-label-migration.sql` adiciona isolamento multitenant, identidade visual, pagamentos, relacionamento cliente-loja e as políticas RLS correspondentes.
+5. No SQL Editor do Supabase, execute `MODELO_FISICO_COMPLETO.sql` em uma instalação nova. Em um banco existente, aplique as migrações versionadas em ordem. As migrações incluem isolamento multitenant, identidade visual, pagamentos, relacionamento cliente-loja, políticas RLS e solicitações de assinatura.
 
 6. Inicie o servidor de desenvolvimento:
 
@@ -194,6 +194,8 @@ configuradas.
 | `/estoque` | Vitrine pública de veículos |
 | `/vehicles/:id` | Detalhes públicos de um veículo |
 | `/auth/login` | Acesso de usuários internos |
+| `/auth/forgot-password` | Solicitação de link de recuperação de senha |
+| `/auth/update-password` | Definição de nova senha após confirmar o link enviado por email |
 | `/client/login` | Acesso de clientes |
 | `/dashboard` | Painel administrativo |
 | `/dashboard/vehicles` | Gestão do estoque |
@@ -204,6 +206,8 @@ configuradas.
 | `/dashboard/reports` | Relatórios gerenciais |
 
 ## Fluxo de desenvolvimento
+
+O cadastro público recebe uma solicitação da assinatura completa. O administrador da plataforma confere o pagamento em `/dashboard/platform`, escolhe uma senha temporária e provisiona a concessionária e o admin inicial. As credenciais são exibidas ao operador para entrega manual ao proprietário; configure um canal seguro antes de automatizar esse envio.
 
 1. Crie uma branch a partir da `main`.
 2. Implemente a alteração mantendo todas as consultas internas escopadas por `company_id`.

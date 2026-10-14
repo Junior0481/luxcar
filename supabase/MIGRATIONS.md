@@ -19,6 +19,14 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 15. `20261007001700_manual_lead_insert.sql` — libera criação autenticada de leads dentro da loja, valida atribuição de vendedor e permite lead manual sem veículo.
 16. `20261007001800_composite_fk_relationships.sql` — remove as FKs simples duplicadas: `negotiations_vehicle_id_fkey`, `sales_negotiation_id_fkey`, `sales_vehicle_id_fkey`, `payments_negotiation_id_fkey`, `payments_sale_id_fkey`, `trade_in_vehicles_negotiation_id_fkey`, `interaction_history_negotiation_id_fkey` e `interaction_history_vehicle_id_fkey`. Mantém as FKs compostas correspondentes; exige `company_id NOT NULL` em veículos, negociações, vendas, pagamentos e trocas.
 17. `20261007001900_platform_companies.sql` — restaura leitura e atualização de empresas por `platform_admin`, mantendo o acesso tenant dos demais usuários.
+18. `20261013002000_subscription_requests.sql` — fila pública de solicitações da assinatura completa, consultável apenas por administradores da plataforma.
+19. `20261014002100_platform_operations.sql` — ciclo de assinatura, pagamentos de renovação, checklist de implantação e trilha de auditoria administrativa.
+20. `20261014002200_company_branding_assets.sql` — bucket público de identidade visual, PNG até 2 MB e operações restritas ao administrador da própria concessionária.
+21. `20261014002300_company_leads_visibility.sql` — permite que usuários autenticados da loja vejam todos os leads; `assigned_to` continua indicando o vendedor responsável.
+22. `20261014002400_lead_negotiation_conversion.sql` — adiciona a ação transacional para escalar um lead a uma negociação, atualizando o veículo e preservando o vínculo entre os registros.
+23. `20261014002500_lead_conversion_cpf.sql` — preserva o CPF validado no formulário ao converter o lead em negociação.
+
+Após aplicar a migration 19, publique a Edge Function `admin-provision` atualizada. Ela fornece o resumo administrativo, o ciclo de renovação, suporte por link de recuperação e auditoria.
 
 ## Formulário público de leads (Turnstile)
 
@@ -30,7 +38,7 @@ As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ..
 
 ## Regras e ambiguidades
 
-- Vendedores veem apenas os próprios leads e negociações; administradores veem todos os registros da própria loja.
+- Usuários da loja veem todos os leads da própria empresa, com o vendedor responsável indicado pela atribuição; vendedores veem apenas as próprias negociações e registros relacionados.
 - O formulário público insere leads sem sessão; a empresa precisa estar ativa e, quando informado, o veículo precisa pertencer à empresa indicada. Não há rate limit nem verificação anti-spam no SQL.
 - Clientes autenticados só podem ler/editar o próprio registro. O fluxo de cliente público não tem regra de ownership verificável; permanece fechado até o modelo de vínculo ser decidido.
 - Uploads de Storage preservam as regras antigas por autenticação e papel; associação do caminho do objeto ao tenant ainda não está modelada.

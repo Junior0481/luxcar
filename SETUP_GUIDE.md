@@ -86,16 +86,17 @@ pnpm dev
 
 O sistema estará disponível em: http://localhost:5173
 
-### 5️⃣ Criar Primeiro Usuário
+### 5️⃣ Solicitar assinatura e provisionar a primeira concessionária
 
-1. Acesse http://localhost:5173/auth/register
-2. Preencha:
-   - Nome completo
-   - Email
-   - Senha (mínimo 6 caracteres)
-   - Tipo de conta: **Administrador**
-3. Clique em "Criar conta"
-4. Faça login com as credenciais criadas
+1. Acesse http://localhost:5173/auth/register e envie os dados da concessionária e do proprietário.
+2. Um usuário com role `platform_admin` deve abrir `/dashboard/platform`, conferir o recebimento do pagamento e informar uma senha temporária para o admin inicial.
+3. Clique em **Confirmar pagamento e provisionar**. A plataforma cria a empresa e o perfil de administrador vinculado.
+4. Copie e entregue as credenciais temporárias ao proprietário por um canal seguro. Não há envio automático de email configurado.
+5. Para desenvolvimento, crie ou promova o primeiro `platform_admin` pelo Supabase em ambiente seguro; não habilite auto cadastro de administradores.
+
+### Recuperação de senha
+
+O login interno e o login de cliente usam a mesma autenticação do Supabase. Em **Authentication → URL Configuration → Redirect URLs**, permita `http://localhost:5173/auth/update-password` para desenvolvimento e a URL equivalente de cada domínio publicado (por exemplo, `https://luxcar-six.vercel.app/auth/update-password`). O email de recuperação usa o domínio atual da aplicação; domínios white label também precisam estar nessa allowlist.
 
 ### 6️⃣ Testar o Sistema
 
