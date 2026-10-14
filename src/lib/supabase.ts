@@ -183,6 +183,7 @@ export type Lead = {
   source: string;
   status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
   assigned_to?: string;
+  converted_negotiation_id?: string;
   created_at: string;
   updated_at: string;
 };

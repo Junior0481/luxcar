@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase, Vehicle } from '../../lib/supabase';
+import { supabase, Lead, Vehicle } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+import { toast } from 'sonner';
+import { formatStage, stageLabels } from '../../lib/format';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +19,11 @@ import {
 type NegotiationFormProps = {
   open?: boolean;
   onClose: () => void;
+  initialVehicle?: Pick<Vehicle, 'id' | 'brand' | 'model' | 'year' | 'status' | 'sale_price'> | null;
+  lead?: (Pick<Lead, 'id' | 'customer_name' | 'customer_phone' | 'customer_email' | 'message' | 'vehicle_id'> & {
+    vehicle?: Pick<Vehicle, 'status' | 'brand' | 'model' | 'year'> | null;
+  }) | null;
+  onCreated?: (negotiationId: string) => void;
 };
 
 const brl = (v: number) =>
@@ -24,6 +31,51 @@ const brl = (v: number) =>
 
 const selectClass =
   'w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
+
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2');
+};
+
+const isValidCpf = (value: string) => {
+  const cpf = value.replace(/\D/g, '');
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+
+  const digit = (length: number) => {
+    const sum = cpf
+      .slice(0, length)
+      .split('')
+      .reduce((total, number, index) => total + Number(number) * (length + 1 - index), 0);
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+
+  return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
+};
+
+const parseMoney = (value: string) => {
+  const clean = value.trim().replace(/[^\d,.-]/g, '');
+  if (!clean) return Number.NaN;
+
+  const comma = clean.lastIndexOf(',');
+  const dot = clean.lastIndexOf('.');
+  if (comma >= 0 && dot >= 0) {
+    const decimalSeparator = comma > dot ? ',' : '.';
+    const thousandsSeparator = decimalSeparator === ',' ? /\./g : /,/g;
+    return Number(clean.replace(thousandsSeparator, '').replace(decimalSeparator, '.'));
+  }
+  if (comma >= 0) return Number(clean.replace(/\./g, '').replace(',', '.'));
+  if (/^-?\d{1,3}(\.\d{3})+$/.test(clean)) return Number(clean.replace(/\./g, ''));
+  return Number(clean);
+};
+
+const formatMoney = (value: number) => value.toLocaleString('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 const initialFormData = {
   vehicle_id: '',
@@ -37,7 +89,7 @@ const initialFormData = {
   priority: 'media' as 'baixa' | 'media' | 'alta'
 };
 
-export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) {
+export function NegotiationForm({ open = true, onClose, lead, initialVehicle, onCreated }: NegotiationFormProps) {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -47,12 +99,19 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
 
   useEffect(() => {
     if (open) {
-      setFormData(initialFormData);
+      setFormData({
+        ...initialFormData,
+        client_name: lead?.customer_name || '',
+        client_phone: lead?.customer_phone || '',
+        client_email: lead?.customer_email || '',
+        notes: lead?.message || '',
+        vehicle_id: lead?.vehicle_id || initialVehicle?.id || '',
+      });
       setError('');
       setLoading(false);
       if (profile?.company_id) loadVehicles();
     }
-  }, [open, profile?.company_id]);
+  }, [open, profile?.company_id, lead, initialVehicle]);
 
   useEffect(() => {
     if (error && errorRef.current) {
@@ -78,11 +137,37 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (formData.client_cpf && !isValidCpf(formData.client_cpf)) {
+      setError('CPF inválido. Confira os números digitados.');
+      return;
+    }
+
+    const offeredPrice = formData.offered_price.trim() ? parseMoney(formData.offered_price) : null;
+    if (offeredPrice !== null && (!Number.isFinite(offeredPrice) || offeredPrice < 0)) {
+      setError('Informe um valor proposto válido. Exemplo: 180.000,00.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error: negError } = await supabase.from('negotiations').insert([
-        {
+      let negotiationId: string;
+      if (lead) {
+        const { data, error: conversionError } = await supabase.rpc('convert_lead_to_negotiation', {
+          p_lead_id: lead.id,
+          p_vehicle_id: formData.vehicle_id,
+          p_client_cpf: formData.client_cpf || null,
+          p_stage: formData.stage,
+          p_offered_price: offeredPrice,
+          p_notes: formData.notes || null,
+          p_priority: formData.priority,
+        });
+        if (conversionError) throw conversionError;
+        negotiationId = data as string;
+      } else {
+        const { data, error: negError } = await supabase.from('negotiations').insert([
+          {
           company_id: profile?.company_id || null,
           vehicle_id: formData.vehicle_id,
           seller_id: user?.id,
@@ -91,20 +176,24 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
           client_email: formData.client_email || null,
           client_cpf: formData.client_cpf || null,
           stage: formData.stage,
-          offered_price: formData.offered_price ? parseFloat(formData.offered_price) : null,
+          offered_price: offeredPrice,
           notes: formData.notes || null,
           priority: formData.priority
-        }
-      ]).select('id').single();
+          }
+        ]).select('id').single();
 
-      if (negError) throw negError;
+        if (negError) throw negError;
+        negotiationId = data.id;
 
-      await supabase
-        .from('vehicles')
-        .update({ status: 'em_negociacao' })
-        .eq('id', formData.vehicle_id)
-        .eq('company_id', profile!.company_id!);
+        await supabase
+          .from('vehicles')
+          .update({ status: 'em_negociacao' })
+          .eq('id', formData.vehicle_id)
+          .eq('company_id', profile!.company_id!);
+      }
 
+      if (lead) toast.success('Lead escalado para negociação.');
+      onCreated?.(negotiationId);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Erro ao criar negociação');
@@ -122,10 +211,12 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
       >
         <DialogHeader className="pr-6">
           <DialogTitle className="text-2xl font-bold text-foreground">
-            Nova Negociação
+            {lead ? 'Escalar lead para negociação' : 'Nova Negociação'}
           </DialogTitle>
-          <DialogDescription className="sr-only">
-            Selecione o veículo e informe os dados do cliente e da proposta.
+          <DialogDescription>
+            {lead
+              ? 'Revise os dados do cliente, escolha um veículo disponível e inicie o atendimento comercial.'
+              : 'Selecione o veículo e informe os dados do cliente e da proposta.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -158,7 +249,24 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
                     {vehicle.brand} {vehicle.model} {vehicle.year} - {brl(vehicle.sale_price)}
                   </option>
                 ))}
+                {initialVehicle && !vehicles.some((vehicle) => vehicle.id === initialVehicle.id) && (
+                  <option value={initialVehicle.id}>
+                    {initialVehicle.brand} {initialVehicle.model} {initialVehicle.year} - {brl(initialVehicle.sale_price)}
+                  </option>
+                )}
+                {lead?.vehicle_id && !vehicles.some((vehicle) => vehicle.id === lead.vehicle_id) && (
+                  <option value={lead.vehicle_id}>
+                    {lead.vehicle
+                      ? `${lead.vehicle.brand} ${lead.vehicle.model} ${lead.vehicle.year} - indisponível`
+                      : 'Veículo de interesse do lead - indisponível'}
+                  </option>
+                )}
               </select>
+              {lead?.vehicle_id && lead.vehicle?.status !== 'disponivel' && (
+                <p className="text-xs text-destructive">
+                  O veículo relacionado ao lead não está disponível. Selecione outro veículo para continuar.
+                </p>
+              )}
               {vehicles.length === 0 && (
                 <p className="text-xs text-primary">Nenhum veículo disponível para negociação</p>
               )}
@@ -202,7 +310,9 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
               <Input
                 id="client_cpf"
                 value={formData.client_cpf}
-                onChange={(e) => setFormData({ ...formData, client_cpf: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, client_cpf: formatCpf(e.target.value) })}
+                inputMode="numeric"
+                maxLength={14}
                 placeholder="000.000.000-00"
               />
             </div>
@@ -215,14 +325,9 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
                 onChange={(e) => setFormData({ ...formData, stage: e.target.value as any })}
                 className={selectClass}
               >
-                <option value="primeiro_contato">Primeiro Contato</option>
-                <option value="avaliacao">Avaliação</option>
-                <option value="test_drive_agendado">Test Drive Agendado</option>
-                <option value="test_drive_realizado">Test Drive Realizado</option>
-                <option value="proposta_enviada">Proposta Enviada</option>
-                <option value="negociacao_preco">Negociação Preço</option>
-                <option value="aprovacao_credito">Aprovação Crédito</option>
-                <option value="documentacao">Documentação</option>
+                {Object.entries(stageLabels).filter(([stage]) => !['finalizado', 'perdido'].includes(stage)).map(([value]) => (
+                  <option key={value} value={value}>{formatStage(value)}</option>
+                ))}
               </select>
             </div>
 
@@ -243,13 +348,18 @@ export function NegotiationForm({ open = true, onClose }: NegotiationFormProps) 
             <div className="space-y-2">
               <Label htmlFor="offered_price">Valor Proposto (R$)</Label>
               <Input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="offered_price"
                 value={formData.offered_price}
                 onChange={(e) => setFormData({ ...formData, offered_price: e.target.value })}
-                step="0.01"
-                min="0"
-                placeholder="55000.00"
+                onBlur={() => {
+                  const parsed = parseMoney(formData.offered_price);
+                  if (Number.isFinite(parsed)) {
+                    setFormData((current) => ({ ...current, offered_price: formatMoney(parsed) }));
+                  }
+                }}
+                placeholder="200.000,00"
               />
             </div>
 

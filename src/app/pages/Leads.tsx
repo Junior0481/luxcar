@@ -1,26 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase, Lead, Vehicle, Profile } from '../../lib/supabase';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   AlertCircle,
-  CalendarDays,
   Filter,
+  Handshake,
   Mail,
+  MessageCircle,
   Phone,
   Plus,
   RefreshCw,
   Search,
-  UserCheck,
   UserPlus,
-  Users,
 } from 'lucide-react';
 import { ManualLeadForm } from '../components/ManualLeadForm';
+import { NegotiationForm } from '../components/NegotiationForm';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { EmptyState } from '../components/ui/empty-state';
-import { MetricCard } from '../components/ui/metric-card';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
 import {
@@ -31,6 +31,14 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
+import { formatPhone } from '../../lib/format';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 
 type LeadWithDetails = Lead & {
   vehicle?: Vehicle | null;
@@ -63,6 +71,7 @@ const getSourceLabel = (source?: string | null): string => {
 
 export function Leads() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [leads, setLeads] = useState<LeadWithDetails[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<LeadWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +80,8 @@ export function Leads() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<LeadWithDetails | null>(null);
+  const [convertingLead, setConvertingLead] = useState<LeadWithDetails | null>(null);
 
   useEffect(() => {
     if (profile?.company_id) {
@@ -182,33 +193,14 @@ export function Leads() {
         )}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <MetricCard
-          title="Total de leads"
-          value={summary.total}
-          description="Contatos registrados"
-          icon={Users}
-          accent
-        />
-        <MetricCard
-          title="Novos contatos"
-          value={summary.novos}
-          description="Aguardando primeiro contato"
-          icon={UserPlus}
-        />
-        <MetricCard
-          title="Em atendimento"
-          value={summary.emAtendimento}
-          description="Em contato ou qualificados"
-          icon={UserCheck}
-        />
-        <MetricCard
-          title="Convertidos"
-          value={summary.convertidos}
-          description="Viraram negociações/vendas"
-          icon={CalendarDays}
-        />
-      </div>
+      <section aria-label="Resumo dos leads" className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-4">
+        {[
+          { title: 'Total de leads', value: summary.total, note: 'Contatos registrados' },
+          { title: 'Novos contatos', value: summary.novos, note: 'Aguardando primeiro contato' },
+          { title: 'Em atendimento', value: summary.emAtendimento, note: 'Em contato ou qualificados' },
+          { title: 'Convertidos', value: summary.convertidos, note: 'Viraram negociações/vendas' },
+        ].map((item) => <div key={item.title} className="border-b border-r border-border px-4 py-3 last:border-r-0 sm:border-b-0 sm:px-5"><p className="text-xs text-muted-foreground">{item.title}</p><p className="mt-1 text-2xl font-bold tabular-nums text-foreground [font-family:var(--font-display)]">{item.value}</p><p className="mt-0.5 text-xs text-muted-foreground">{item.note}</p></div>)}
+      </section>
 
       <Card>
         <CardContent className="flex flex-col gap-3 sm:flex-row">
@@ -301,7 +293,13 @@ export function Leads() {
             const srcLabel = getSourceLabel(lead.source);
 
             return (
-              <Card key={lead.id} className="lux-card-hover">
+              <button
+                type="button"
+                key={lead.id}
+                onClick={() => setSelectedLead(lead)}
+                aria-label={`Ver detalhes do lead de ${lead.customer_name}`}
+                className="lux-card-hover w-full rounded-xl border border-border bg-card p-0 text-left transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <CardContent className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
@@ -313,7 +311,7 @@ export function Leads() {
                         {lead.customer_phone && (
                           <span className="flex items-center gap-1.5">
                             <Phone className="size-3.5" />
-                            {lead.customer_phone}
+                            {formatPhone(lead.customer_phone)}
                           </span>
                         )}
                         {lead.customer_email && (
@@ -364,7 +362,7 @@ export function Leads() {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+              </button>
             );
           })}
         </div>
@@ -375,6 +373,106 @@ export function Leads() {
         onClose={() => setShowForm(false)}
         onSuccess={() => loadLeads({ silent: true })}
       />
+
+      <NegotiationForm
+        open={convertingLead !== null}
+        lead={convertingLead}
+        onClose={() => {
+          setConvertingLead(null);
+          loadLeads({ silent: true });
+        }}
+        onCreated={(negotiationId) => navigate(`/dashboard/negotiations/${negotiationId}`)}
+      />
+
+      <Dialog open={selectedLead !== null} onOpenChange={(open) => { if (!open) setSelectedLead(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          {selectedLead && (
+            <>
+              <DialogHeader className="pr-8">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={statusVariant[selectedLead.status] || 'outline'}>
+                    {statusLabels[selectedLead.status] || selectedLead.status}
+                  </Badge>
+                  <Badge variant="outline">{getSourceLabel(selectedLead.source)}</Badge>
+                </div>
+                <DialogTitle className="text-2xl">{selectedLead.customer_name}</DialogTitle>
+                <DialogDescription>
+                  Lead cadastrado em {new Date(selectedLead.created_at).toLocaleString('pt-BR')}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-border p-4">
+                  <h3 className="mb-3 font-semibold text-foreground">Contato</h3>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Telefone</p>
+                      <p className="mt-1 font-medium text-foreground">{selectedLead.customer_phone ? formatPhone(selectedLead.customer_phone) : 'Não informado'}</p>
+                      {selectedLead.customer_phone && <a href={`https://wa.me/55${selectedLead.customer_phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 rounded-md bg-[#0F3B23] px-3 py-2 text-sm font-semibold text-[#8BF0BA] hover:bg-[#14512F]"><MessageCircle className="size-4" aria-hidden="true" />WhatsApp</a>}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">E-mail</p>
+                      <p className="mt-1 break-all font-medium text-foreground">{selectedLead.customer_email || 'Não informado'}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border p-4">
+                  <h3 className="mb-3 font-semibold text-foreground">Atendimento</h3>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Vendedor responsável</p>
+                      <p className="mt-1 font-medium text-foreground">{selectedLead.assigned?.full_name || 'Não atribuído'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Última atualização</p>
+                      <p className="mt-1 font-medium text-foreground">{new Date(selectedLead.updated_at).toLocaleString('pt-BR')}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border p-4 sm:col-span-2">
+                  <h3 className="mb-2 font-semibold text-foreground">Veículo de interesse</h3>
+                  {selectedLead.vehicle ? (
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium text-foreground">
+                        {selectedLead.vehicle.brand} {selectedLead.vehicle.model}
+                        {selectedLead.vehicle.version ? ` ${selectedLead.vehicle.version}` : ''}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {selectedLead.vehicle.year}
+                        {selectedLead.vehicle.sale_price ? ` · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(selectedLead.vehicle.sale_price))}` : ''}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Interesse geral, sem veículo específico.</p>
+                  )}
+                </div>
+                <div className="rounded-xl border border-border p-4 sm:col-span-2">
+                  <h3 className="mb-2 font-semibold text-foreground">Mensagem / observações</h3>
+                  <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                    {selectedLead.message || 'Nenhuma mensagem ou observação cadastrada.'}
+                  </p>
+                </div>
+              </div>
+              {selectedLead.status !== 'converted' && selectedLead.status !== 'lost' && (
+                <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Ao escalar, os dados do cliente serão levados para uma nova negociação.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setConvertingLead(selectedLead);
+                      setSelectedLead(null);
+                    }}
+                  >
+                    <Handshake className="size-4" />
+                    Escalar para negociação
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
