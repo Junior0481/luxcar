@@ -3,12 +3,28 @@
 # Nunca toca o banco real: cria um projeto temporário isolado e o derruba no fim.
 #
 # Uso: scripts/test-db.sh [diretório-de-migrations]
-#   padrão: ../backend/supabase/migrations (worktree orch/backend)
+#   padrão: supabase/migrations deste repositório
 # Requer: Docker rodando, Node (usa `npx supabase`).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-MIGRATIONS="${1:-$ROOT/../backend/supabase/migrations}"
+CALLER_DIR="$PWD"
+if [ "$#" -gt 1 ]; then
+  echo "Uso: scripts/test-db.sh [diretório-de-migrations]" >&2
+  exit 2
+fi
+if [ -n "${1:-}" ]; then
+  case "$1" in
+    /*) MIGRATIONS="$1" ;;
+    *) MIGRATIONS="$CALLER_DIR/$1" ;;
+  esac
+else
+  MIGRATIONS="$ROOT/supabase/migrations"
+fi
+if [ ! -d "$MIGRATIONS" ]; then
+  echo "Diretório de migrations não encontrado: $MIGRATIONS" >&2
+  exit 2
+fi
 PROJECT_ID="luxcar_rlstest"
 WORK="$(mktemp -d)"
 SB="npx --yes supabase@2"
