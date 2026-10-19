@@ -33,7 +33,7 @@ export function AuthLayout() {
       <aside className="relative hidden overflow-hidden lg:block">
         <img src={loginImg} alt="Showroom automotivo LuxCar" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/55" />
-        <div className="absolute inset-0 lux-gradient opacity-25" />
+        <div className="absolute inset-0 hidden lux-gradient opacity-25 dark:block" />
 
         <Link to="/" className="absolute left-8 top-8 z-10 flex items-center gap-3">
           <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
@@ -44,7 +44,7 @@ export function AuthLayout() {
 
         <div className="absolute bottom-10 left-8 right-8 z-10 max-w-xl rounded-xl border border-white/10 bg-black/80 p-6 text-white backdrop-blur-sm xl:bottom-12 xl:left-10 xl:p-7">
           <p className="text-sm font-semibold uppercase tracking-wide text-white/60">SaaS white label para lojas automotivas</p>
-          <h1 className="mt-3 text-3xl font-bold leading-tight [font-family:var(--font-display)] xl:text-4xl">
+          <h1 className="mt-3 text-3xl font-bold leading-tight text-white [font-family:var(--font-display)] xl:text-4xl">
             Estoque, leads e vendas da sua loja em um só lugar.
           </h1>
           <p className="mt-3 max-w-md text-sm text-white/75">
