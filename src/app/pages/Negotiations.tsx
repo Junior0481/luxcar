@@ -232,7 +232,7 @@ export function Negotiations() {
           {Object.entries(stageLabels).filter(([stage]) => stage !== 'finalizado' && stage !== 'perdido').map(([stage, label]) => {
             const cards = filteredNegotiations.filter((item) => item.stage === stage);
             return <section key={stage} aria-label={label} className="flex w-[264px] shrink-0 flex-col gap-2 rounded-xl border border-border bg-muted/35 p-3">
-              <div className="flex items-center justify-between px-0.5"><h2 className="text-[13px] font-semibold text-secondary-foreground">{label}</h2><span className="text-xs tabular-nums text-muted-foreground">{cards.length}</span></div>
+              <div className="flex items-center justify-between px-0.5"><h2 className="text-[13px] font-semibold text-foreground">{label}</h2><span className="text-xs tabular-nums text-muted-foreground">{cards.length}</span></div>
               {cards.length ? cards.map((item) => <Link key={item.id} to={`/dashboard/negotiations/${item.id}`} className="rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/50">
                 <div className="flex items-start justify-between gap-2"><span className="truncate text-sm font-semibold text-foreground">{item.client_name}</span><Badge variant={priorityMeta[item.priority]?.variant ?? 'outline'} className="shrink-0">{formatPriority(item.priority) || 'Média'}</Badge></div>
                 <p className="mt-2 truncate text-xs text-muted-foreground">{item.vehicle ? `${item.vehicle.brand} ${item.vehicle.model}` : 'Veículo não informado'}</p>

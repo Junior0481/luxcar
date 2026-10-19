@@ -311,7 +311,7 @@ export function NegotiationDetails() {
         {activeStages.map(([stage, label], index) => {
           const complete = activeStageIndex >= 0 && index < activeStageIndex;
           const current = stage === negotiation.stage;
-          return <li key={stage} aria-current={current ? 'step' : undefined} className="flex min-w-0 flex-col gap-1.5"><span className={`h-1 rounded-sm ${complete || current ? 'bg-primary' : 'bg-border-strong'}`} /><span className={`truncate text-xs ${current ? 'font-bold text-foreground' : complete ? 'text-secondary-foreground' : 'text-muted-foreground'}`}>{label}</span></li>;
+          return <li key={stage} aria-current={current ? 'step' : undefined} className="flex min-w-0 flex-col gap-1.5"><span className={`h-1 rounded-sm ${complete || current ? 'bg-primary' : 'bg-border-strong'}`} /><span className={`truncate text-xs ${current ? 'font-bold text-foreground' : complete ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span></li>;
         })}
       </ol>
 
@@ -411,7 +411,7 @@ export function NegotiationDetails() {
 
         <div className="space-y-6">
           <Card>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
                 <h3 className="font-semibold text-foreground">Atualizar Estágio</h3>
                 <select
