@@ -199,7 +199,7 @@ export function Dashboard() {
         {statCards.map((stat) => (
           <div key={stat.title} className="border-b border-r border-border px-4 py-4 last:border-r-0 sm:border-b-0 sm:px-5">
             <div className="flex items-center gap-2 text-[13px] text-muted-foreground"><stat.icon className="size-4" aria-hidden="true" />{stat.title}</div>
-            <p className={`mt-2 truncate text-[28px] font-bold leading-none tabular-nums [font-family:var(--font-display)] ${stat.title === 'Lucro potencial' && (metrics?.potential_profit || 0) < 0 ? 'text-[#FF8C82]' : 'text-foreground'}`}>{stat.value}</p>
+            <p className={`mt-2 truncate text-[28px] font-bold leading-none tabular-nums [font-family:var(--font-display)] ${stat.title === 'Lucro potencial' && (metrics?.potential_profit || 0) < 0 ? 'text-status-danger' : 'text-foreground'}`}>{stat.value}</p>
             <p className="mt-2 truncate text-xs text-muted-foreground">{stat.description}</p>
           </div>
         ))}

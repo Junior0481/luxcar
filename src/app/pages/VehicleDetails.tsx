@@ -372,14 +372,14 @@ export function VehicleDetails() {
             { label: 'Custos e preparação', value: brl(totalCosts) },
             { label: 'Custo total · preço para empatar', value: brl(breakEvenPrice) },
             { label: potentialProfit < 0 ? 'Prejuízo estimado' : 'Lucro estimado', value: brl(potentialProfit), accent: true },
-          ].map((item) => <div key={item.label} className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-0"><p className="text-sm text-muted-foreground">{item.label}</p><p className={`text-right text-sm font-semibold tabular-nums ${item.accent ? (potentialProfit < 0 ? 'text-[#FF8C82]' : 'text-[#5BE3A0]') : 'text-foreground'}`}>{item.value}</p></div>)}
+          ].map((item) => <div key={item.label} className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-0"><p className="text-sm text-muted-foreground">{item.label}</p><p className={`text-right text-sm font-semibold tabular-nums ${item.accent ? (potentialProfit < 0 ? 'text-status-danger' : 'text-status-success') : 'text-foreground'}`}>{item.value}</p></div>)}
         </CardContent>
-        <div className={`mx-3 mb-3 rounded-lg border p-3 text-sm ${potentialProfit < 0 ? 'border-[#4A221A] bg-[#24130F] text-[#FF8C82]' : 'border-[#1E4D36] bg-[#10261C] text-[#5BE3A0]'}`}>
+        <div className={`mx-3 mb-3 rounded-lg border p-3 text-sm ${potentialProfit < 0 ? 'border-[var(--status-danger-border)] bg-[var(--status-danger-bg)] text-status-danger' : 'border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-status-success'}`}>
           <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-2 font-semibold"><TrendingUp className="size-4" />Margem estimada</span>
           <span className="font-semibold tabular-nums">{formatPercent(marginPercent)} · {potentialProfit < 0 ? 'Abaixo do custo total' : 'Acima do custo total'}</span>
           </div>
-          {potentialProfit < 0 && <p className="mt-2 text-xs text-[#E4C9C4]">Para empatar, venda por no mínimo <strong className="text-white">{brl(breakEvenPrice)}</strong>.</p>}
+          {potentialProfit < 0 && <p className="mt-2 text-xs text-foreground/80">Para empatar, venda por no mínimo <strong className="text-foreground">{brl(breakEvenPrice)}</strong>.</p>}
         </div>
       </Card>
       </aside>
