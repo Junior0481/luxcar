@@ -108,18 +108,18 @@ export function Landing() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
-      <header className="sticky top-0 z-header border-b border-[#292D33] bg-[#111316] text-white backdrop-blur-xl">
+      <header className="sticky top-0 z-header border-b border-border bg-card/90 text-foreground backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-sm">
               <Car className="size-5" />
             </div>
-            <span className="text-xl font-semibold text-white [font-family:var(--font-display)]">LuxCar</span>
+            <span className="text-xl font-semibold text-heading [font-family:var(--font-display)]">LuxCar</span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
             {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="text-sm text-[#C9CFD8] transition-colors hover:text-white">
+              <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                 {link.label}
               </a>
             ))}
@@ -133,13 +133,13 @@ export function Landing() {
               </>
             ) : (
               <>
-                <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white"><Link to="/auth/login">Entrar</Link></Button>
+                <Button asChild variant="ghost"><Link to="/auth/login">Entrar</Link></Button>
                 <Button asChild><Link to="/auth/register">Falar com vendas</Link></Button>
               </>
             )}
           </div>
 
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
             {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </Button>
         </div>
@@ -168,17 +168,17 @@ export function Landing() {
       </header>
 
       <main>
-        <section className="border-b border-[#292D33] bg-[#111316] text-white">
+        <section className="border-b border-border bg-card text-foreground">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 lg:grid-cols-[1fr_0.9fr] lg:py-24">
             <div className="flex flex-col justify-center">
-              <Badge variant="outline" className="mb-6 w-fit border-[#3A414B] text-[#FF9A63]">
+              <Badge variant="outline" className="mb-6 w-fit border-border-strong text-primary">
                 <Sparkles className="size-3" />
                 SaaS B2B white label para lojas automotivas
               </Badge>
-              <h1 className="max-w-3xl text-4xl font-bold leading-[1.02] tracking-tight text-white [font-family:var(--font-display)] md:text-6xl">
+              <h1 className="max-w-3xl text-4xl font-bold leading-[1.02] tracking-tight text-heading [font-family:var(--font-display)] md:text-6xl">
                 Venda mais carros e gerencie sua loja em uma única plataforma white label.
               </h1>
-              <p className="mt-6 max-w-2xl text-lg text-[#C9CFD8]">
+              <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
                 A LuxCar organiza estoque, negociações, relatórios e equipe para transformar dados em decisão comercial.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -188,38 +188,38 @@ export function Landing() {
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-[#3A414B] bg-transparent text-white hover:bg-white/10 hover:text-white">
+                <Button asChild size="lg" variant="outline" className="border-border-strong bg-transparent text-foreground hover:bg-accent">
                   <Link to="/estoque">Ver vitrine pública</Link>
                 </Button>
               </div>
             </div>
 
-            <Card className="overflow-hidden border-[#292D33] bg-[#171B21] text-white shadow-none">
-              <CardContent className="space-y-5">
+            <Card className="overflow-hidden border-border bg-surface-subtle text-foreground shadow-none">
+              <CardContent className="space-y-5 pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-[#8A93A1]">Centro de comando</p>
-                    <p className="text-xl font-semibold [font-family:var(--font-display)]">Visão da loja</p>
+                    <p className="text-sm text-subtle-foreground">Centro de comando</p>
+                    <p className="text-xl font-semibold text-heading [font-family:var(--font-display)]">Visão da loja</p>
                   </div>
-                    <Badge variant="outline" className="border-[#343B45] text-[#A3ABB8]">Prévia do produto</Badge>
+                    <Badge variant="outline" className="border-border-strong text-muted-foreground">Prévia do produto</Badge>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   {['Estoque', 'Pipeline', 'Lucro'].map((label, index) => (
-                    <div key={label} className="rounded-lg border border-[#292D33] bg-[#121519] p-4">
-                      <p className="text-xs text-[#8A93A1]">{label}</p>
-                      <p className="mt-2 text-2xl font-semibold tabular-nums text-[#E9ECF1]">—</p>
+                    <div key={label} className="rounded-lg border border-border-strong bg-card p-4">
+                      <p className="text-xs text-subtle-foreground">{label}</p>
+                      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">—</p>
                     </div>
                   ))}
                 </div>
-                <div className="rounded-lg border border-[#292D33] bg-[#121519] p-4">
-                  <p className="mb-4 text-sm text-[#8A93A1]">Pipeline comercial</p>
+                <div className="rounded-lg border border-border-strong bg-card p-4">
+                  <p className="mb-4 text-sm text-subtle-foreground">Pipeline comercial</p>
                   <div className="space-y-3">
                     {['Primeiro contato', 'Proposta enviada', 'Documentação'].map((stage, index) => (
-                      <div key={stage} className="flex items-center gap-3 rounded-lg border border-[#242930] bg-[#171B21] p-3">
-                        <div className="flex size-8 items-center justify-center rounded-full bg-[#292D33] text-sm font-semibold text-[#FF9A63]">{index + 1}</div>
+                      <div key={stage} className="flex items-center gap-3 rounded-lg border border-border bg-surface-subtle p-3">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-border-strong text-sm font-semibold text-primary">{index + 1}</div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-[#E9ECF1]">{stage}</p>
-                          <p className="text-xs text-[#8A93A1]">Próxima ação clara para a equipe</p>
+                          <p className="text-sm font-medium text-foreground">{stage}</p>
+                          <p className="text-xs text-subtle-foreground">Próxima ação clara para a equipe</p>
                         </div>
                       </div>
                     ))}
@@ -238,7 +238,7 @@ export function Landing() {
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
               <Card key={feature.title} className="lux-card-hover">
-                <CardContent>
+                <CardContent className="pt-6">
                   <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
                     <feature.icon className="size-5" />
                   </div>
@@ -263,7 +263,7 @@ export function Landing() {
               </p>
             </div>
             <Card>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-6">
                 {['Marca da loja', 'Vitrine pública', 'Equipe comercial', 'Relatórios de gestão'].map((item) => (
                   <div key={item} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
                     <Check className="size-4 text-primary" />
