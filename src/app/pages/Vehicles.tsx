@@ -29,9 +29,9 @@ const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 const statusBadge: Record<string, { label: string; className: string; dot: string }> = {
-  disponivel: { label: "Disponível", className: "border-[#1E4D36] bg-[#10261C] text-[#5BE3A0]", dot: "bg-[#3DD68C]" },
-  em_negociacao: { label: "Em negociação", className: "border-[#4D3A16] bg-[#2A2110] text-[#F5B54A]", dot: "bg-[#F5B54A]" },
-  vendido: { label: "Vendido", className: "border-[#1E3558] bg-[#0F1B2E] text-[#8DB8FF]", dot: "bg-[#5B8DEF]" },
+  disponivel: { label: "Disponível", className: "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-status-success", dot: "bg-[var(--status-success-dot)]" },
+  em_negociacao: { label: "Em negociação", className: "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-status-warning", dot: "bg-status-warning" },
+  vendido: { label: "Vendido", className: "border-[var(--status-info-border)] bg-[var(--status-info-bg)] text-status-info", dot: "bg-status-info" },
 };
 
 export function Vehicles() {
@@ -238,11 +238,11 @@ export function Vehicles() {
                   <span className="flex min-w-0 flex-col"><span className="truncate text-sm font-semibold">{vehicle.brand} {vehicle.model}</span><span className="truncate text-muted-foreground">{[vehicle.version, vehicle.year, vehicle.fuel_type ? formatFuel(vehicle.fuel_type) : null].filter(Boolean).join(" · ")}</span></span>
                 </Link></TableCell>
                 <TableCell>{vehicle.plate ? <span className="rounded-sm bg-[#F2F3F0] px-1.5 py-0.5 font-license-plate text-sm font-bold tracking-wider text-[#111317]">{vehicle.plate}</span> : <span className="text-muted-foreground">—</span>}</TableCell>
-                <TableCell className="text-right tabular-nums text-secondary-foreground">{Number(vehicle.mileage || 0).toLocaleString("pt-BR")}</TableCell>
+                <TableCell className="text-right tabular-nums text-foreground">{Number(vehicle.mileage || 0).toLocaleString("pt-BR")}</TableCell>
                 <TableCell className="text-right font-semibold tabular-nums">{brl(Number(vehicle.sale_price))}</TableCell>
-                <TableCell className={`text-right font-semibold tabular-nums ${margin < 0 ? "text-[#FF8C82]" : "text-[#5BE3A0]"}`}>{formatPercent(marginPct)}</TableCell>
+                <TableCell className={`text-right font-semibold tabular-nums ${margin < 0 ? "text-status-danger" : "text-status-success"}`}>{formatPercent(marginPct)}</TableCell>
                 <TableCell><Badge variant="outline" className={`gap-1.5 rounded-full px-[9px] py-[3px] text-xs font-semibold ${badge.className}`}><span className={`size-1.5 rounded-full ${badge.dot}`} />{badge.label}</Badge></TableCell>
-                <TableCell className={`text-right tabular-nums ${daysInStock > 60 ? "font-semibold text-[#F5B54A]" : "text-secondary-foreground"}`}>{daysInStock} dias</TableCell>
+                <TableCell className={`text-right tabular-nums ${daysInStock > 60 ? "font-semibold text-status-warning" : "text-foreground"}`}>{daysInStock} dias</TableCell>
                 <TableCell><div className="flex items-center justify-end gap-1"><Button asChild variant="ghost" size="sm"><Link to={`/dashboard/vehicles/${vehicle.id}`}>Ver ficha</Link></Button>{isAdmin && <Button variant="ghost" size="icon" onClick={() => handleEdit(vehicle)} aria-label="Editar veículo"><Edit className="size-4" /></Button>}{isAdmin && <Button variant="ghost" size="icon" onClick={() => setVehicleToDelete(vehicle)} aria-label="Excluir veículo" className="text-destructive"><Trash2 className="size-4" /></Button>}</div></TableCell>
               </TableRow>;
             })}
