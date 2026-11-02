@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase, Vehicle } from "../../lib/supabase";
+import type { Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import { AlertCircle, LoaderCircle, Upload, Trash2 } from "lucide-react";
 import { FipeSearch } from "./FipeSearch";
@@ -8,6 +8,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import { CAR_BRANDS } from "../../constants/carBrands";
 import { deleteVehicleImage, thumbUrl, uploadVehicleImage } from "../../services/storage.service";
+import { createVehicle, tenantContextFromProfile, updateVehicle } from "../../services";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -272,7 +273,6 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
       const salePrice = parseBRLInput(formData.sale_price);
       if (!Number.isFinite(purchasePrice) || !Number.isFinite(salePrice) || purchasePrice < 0 || salePrice < 0) throw new Error('Informe valores válidos para compra e venda.');
       const vehicleData = {
-        company_id: profile?.company_id || null,
         brand: formData.brand,
         model: formData.model,
         year: formData.year,
@@ -288,25 +288,13 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
         fuel_type: formData.fuel_type || null,
         transmission: formData.transmission || null,
         description: formData.description || null,
-        created_by: user?.id,
       };
 
+      const ctx = tenantContextFromProfile(user?.id, profile);
       if (vehicle) {
-        const { error } = await supabase
-          .from("vehicles")
-          .update(vehicleData)
-          .eq("id", vehicle.id)
-          .eq("company_id", profile!.company_id!)
-          .select('id')
-          .single();
-        if (error) throw error;
+        await updateVehicle(ctx, vehicle.id, vehicleData);
       } else {
-        const { error } = await supabase
-          .from("vehicles")
-          .insert([vehicleData])
-          .select('id')
-          .single();
-        if (error) throw error;
+        await createVehicle(ctx, vehicleData);
       }
 
       await deleteRemovedPhotos();

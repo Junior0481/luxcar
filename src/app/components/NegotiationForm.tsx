@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase, Lead, Vehicle } from '../../lib/supabase';
+import { supabase, type Lead, type Vehicle } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { convertLeadToNegotiation, createNegotiation, tenantContextFromProfile } from '../../services';
 import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -154,23 +155,18 @@ export function NegotiationForm({ open = true, onClose, lead, initialVehicle, on
     try {
       let negotiationId: string;
       if (lead) {
-        const { data, error: conversionError } = await supabase.rpc('convert_lead_to_negotiation', {
-          p_lead_id: lead.id,
-          p_vehicle_id: formData.vehicle_id,
-          p_client_cpf: formData.client_cpf || null,
-          p_stage: formData.stage,
-          p_offered_price: offeredPrice,
-          p_notes: formData.notes || null,
-          p_priority: formData.priority,
+        negotiationId = await convertLeadToNegotiation({
+          leadId: lead.id,
+          vehicleId: formData.vehicle_id,
+          clientCpf: formData.client_cpf || null,
+          stage: formData.stage,
+          offeredPrice,
+          notes: formData.notes || null,
+          priority: formData.priority,
         });
-        if (conversionError) throw conversionError;
-        negotiationId = data as string;
       } else {
-        const { data, error: negError } = await supabase.from('negotiations').insert([
-          {
-          company_id: profile?.company_id || null,
+        const negotiation = await createNegotiation(tenantContextFromProfile(user?.id, profile), {
           vehicle_id: formData.vehicle_id,
-          seller_id: user?.id,
           client_name: formData.client_name,
           client_phone: formData.client_phone || null,
           client_email: formData.client_email || null,
@@ -179,17 +175,8 @@ export function NegotiationForm({ open = true, onClose, lead, initialVehicle, on
           offered_price: offeredPrice,
           notes: formData.notes || null,
           priority: formData.priority
-          }
-        ]).select('id').single();
-
-        if (negError) throw negError;
-        negotiationId = data.id;
-
-        await supabase
-          .from('vehicles')
-          .update({ status: 'em_negociacao' })
-          .eq('id', formData.vehicle_id)
-          .eq('company_id', profile!.company_id!);
+        });
+        negotiationId = negotiation.id;
       }
 
       if (lead) toast.success('Lead escalado para negociação.');

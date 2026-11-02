@@ -12,6 +12,7 @@ import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { cn } from '../components/ui/utils';
+import { getSettingsExportData, tenantContextFromProfile, updateCompanyBranding, updateUserProfile } from '../../services';
 
 type MessageState = {
   type: 'success' | 'error';
@@ -175,12 +176,7 @@ export function Settings() {
         if (nextEmail !== profile.email) updates.email = nextEmail;
 
         if (Object.keys(updates).length > 0) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update(updates)
-            .eq('id', profile.id);
-
-          if (profileError) throw profileError;
+          await updateUserProfile(profile.id, updates);
         }
 
         if (nextEmail !== user.email) {
@@ -212,15 +208,14 @@ export function Settings() {
       if (activeTab === 'branding') {
         if (profile.role !== 'administrador' || !profile.company_id) throw new Error('Apenas administradores podem alterar a marca.');
         const previousAssets = [company?.logo_url, company?.favicon_url].filter((value): value is string => Boolean(value));
-        const { error } = await supabase.from('companies').update({
+        await updateCompanyBranding(profile.company_id, {
           name: brandingForm.name.trim(),
           logo_url: brandingForm.logoUrl.trim() || null,
           favicon_url: brandingForm.faviconUrl.trim() || null,
           primary_color: brandingForm.primaryColor,
           secondary_color: brandingForm.secondaryColor,
           custom_domain: brandingForm.customDomain.trim() || null
-        }).eq('id', profile.company_id).select('id').single();
-        if (error) throw error;
+        });
         const nextAssets = [brandingForm.logoUrl, brandingForm.faviconUrl];
         const obsoletePaths = [...new Set(previousAssets.filter((value) => !nextAssets.includes(value)).map(storagePathFromPublicUrl).filter((value): value is string => Boolean(value)))];
         if (obsoletePaths.length) await supabase.storage.from('company-branding').remove(obsoletePaths);
@@ -259,18 +254,7 @@ export function Settings() {
     setMessage(null);
 
     try {
-      const [vehiclesRes, negotiationsRes, costsRes, interactionsRes, salesRes] = await Promise.all([
-        supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
-        supabase.from('negotiations').select('*').order('created_at', { ascending: false }),
-        supabase.from('vehicle_costs').select('*').order('created_at', { ascending: false }),
-        supabase.from('interaction_history').select('*').order('created_at', { ascending: false }),
-        supabase.from('sales').select('*').order('created_at', { ascending: false })
-      ]);
-
-      const failedResponse = [vehiclesRes, negotiationsRes, costsRes, interactionsRes, salesRes]
-        .find((response) => response.error);
-
-      if (failedResponse?.error) throw failedResponse.error;
+      const exportData = await getSettingsExportData(tenantContextFromProfile(user.id, profile));
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
@@ -281,11 +265,7 @@ export function Settings() {
           email: user.email,
           profile_name: profile?.full_name || null
         },
-        vehicles: vehiclesRes.data || [],
-        negotiations: negotiationsRes.data || [],
-        vehicle_costs: costsRes.data || [],
-        interaction_history: interactionsRes.data || [],
-        sales: salesRes.data || []
+        ...exportData
       });
 
       showMessage('success', mode === 'backup' ? 'Backup gerado.' : 'Exportação gerada.');

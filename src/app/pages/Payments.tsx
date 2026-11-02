@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { AlertCircle, CreditCard, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Negotiation, Payment, supabase } from '../../lib/supabase';
+import { setPaymentStatus } from '../../services/payments.service';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -121,7 +122,7 @@ export function Payments() {
   }
 
   async function updateStatus(id: string, status: Payment['status']) {
-    const { error } = await supabase.rpc('set_payment_status', { payment_id: id, next_status: status });
+    const { error } = await setPaymentStatus(id, status);
     setMessage(error ? error.message : 'Status do pagamento atualizado.');
     if (!error) await load();
   }

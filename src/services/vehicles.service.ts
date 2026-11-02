@@ -1,23 +1,18 @@
 /**
  * Serviço de Veículos — implementação-referência da camada de serviços da LuxCar.
  *
- * Consolida o acesso a `vehicles` (hoje feito direto em `Vehicles.tsx`,
- * `VehicleDetails.tsx`, `Dashboard.tsx`) com:
+ * Centraliza operações de escrita e oferece consultas paginadas para `vehicles`:
  *  - isolamento por tenant na aplicação (defense-in-depth sobre a RLS);
  *  - paginação real (`.range()` + count exato) — evita `select('*')` sem limite;
  *  - validação server-side-lite antes de escrever;
  *  - erros normalizados (sem vazar detalhe técnico para a UI).
  *
- * CONTRATO PRESERVADO: os métodos devolvem `Vehicle`/`Vehicle[]` — os mesmos
- * shapes já consumidos pelas páginas. Migrar as páginas para este serviço é
- * incremental e é tarefa conjunta com o Codex (ver shared-contracts.md).
- *
- * Este arquivo é ADITIVO: nada hoje o importa ainda, portanto não altera
- * comportamento existente.
+ * A migração das páginas é incremental; consultas completas seguem locais onde
+ * a paginação ou os filtros do serviço mudariam o comportamento atual.
  */
 
 import { supabase, type Vehicle } from '../lib/supabase';
-import { normalizeSupabaseError } from '../lib/errors';
+import { AppError, normalizeSupabaseError } from '../lib/errors';
 import { createLogger } from '../lib/logger';
 import {
   scopeToTenant,
@@ -118,6 +113,9 @@ export async function updateVehicle(
   ) {
     assertValid(validateVehicle({ ...patch }));
   }
+  if (patch.status !== undefined && !['disponivel', 'em_negociacao', 'vendido'].includes(patch.status)) {
+    throw new AppError('validation', { userMessage: 'Status inválido.' });
+  }
 
   let query = supabase.from('vehicles').update(patch).eq('id', id);
   query = scopeToTenant(query, ctx);
@@ -139,14 +137,12 @@ export async function updateVehicle(
  * banco (ver conflicts.md — sugerir ON DELETE RESTRICT / trigger).
  */
 export async function deleteVehicle(ctx: TenantContext, id: string): Promise<void> {
-  const { data: sales, error: salesError } = await supabase
-    .from('sales')
-    .select('id')
-    .eq('vehicle_id', id)
-    .limit(1);
+  let salesQuery = supabase.from('sales').select('id').eq('vehicle_id', id);
+  salesQuery = scopeToTenant(salesQuery, ctx);
+  const { data: sales, error: salesError } = await salesQuery.limit(1);
   if (salesError) throw normalizeSupabaseError(salesError);
   if (sales && sales.length > 0) {
-    throw new (await import('../lib/errors')).AppError('conflict', {
+    throw new AppError('conflict', {
       userMessage: 'Não é possível excluir: este veículo já possui vendas registradas.',
     });
   }

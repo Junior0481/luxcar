@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner';
 import { formatFuel, formatPercent, formatTransmission, pluralize } from '../../lib/format';
 import { thumbUrl } from '../../services/storage.service';
+import { tenantContextFromProfile, updateVehicle } from '../../services';
 
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -46,7 +47,7 @@ const costTypeLabels: Record<string, string> = {
 export function VehicleDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [costs, setCosts] = useState<VehicleCost[]>([]);
   const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
@@ -137,12 +138,7 @@ export function VehicleDetails() {
     if (!vehicle || status === vehicle.status || updatingStatus) return;
     setUpdatingStatus(true);
     try {
-      const { error: updateError } = await supabase
-        .from('vehicles')
-        .update({ status })
-        .eq('id', vehicle.id)
-        .eq('company_id', profile!.company_id!);
-      if (updateError) throw updateError;
+      await updateVehicle(tenantContextFromProfile(user?.id, profile), vehicle.id, { status });
       setVehicle({ ...vehicle, status });
       toast.success('Status do veículo atualizado.');
     } catch (err: any) {

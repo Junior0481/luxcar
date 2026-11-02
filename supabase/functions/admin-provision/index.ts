@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { authorizeAction } from './authorization.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,9 +40,8 @@ Deno.serve(async (request) => {
     if (!caller) return json({ error: 'Perfil não encontrado.' }, 403);
 
     const body = await request.json();
-    const requirePlatformAdmin = () => caller.role === 'platform_admin'
-      ? null
-      : json({ error: 'Apenas o administrador da plataforma pode executar esta ação.' }, 403);
+    const actionAuthorization = authorizeAction(body.action, caller);
+    if (!actionAuthorization.allowed) return json({ error: actionAuthorization.error }, actionAuthorization.status);
     const addBillingPeriod = (from: Date, cycle: 'monthly' | 'annual') => {
       const result = new Date(from);
       if (cycle === 'annual') result.setUTCFullYear(result.getUTCFullYear() + 1);
@@ -57,8 +57,6 @@ Deno.serve(async (request) => {
     };
 
     if (body.action === 'platform_overview') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const [companiesResult, requestsResult, paymentsResult, auditResult] = await Promise.all([
         service.from('companies').select('*').order('created_at', { ascending: false }).limit(200),
         service.from('subscription_requests').select('*').order('created_at', { ascending: false }).limit(200),
@@ -104,8 +102,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'set_company_status') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const { companyId, status } = body;
       if (!companyId || !['active', 'inactive', 'suspended'].includes(status)) return json({ error: 'Empresa ou status inválido.' }, 400);
       const { data: company, error } = await service.from('companies').update({ status }).eq('id', companyId).select('id, name, status').single();
@@ -116,8 +112,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'update_subscription') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const { companyId, subscriptionStatus, billingCycle, currentPeriodEnd, graceEndsAt } = body;
       if (!companyId || !['active', 'past_due', 'cancelled'].includes(subscriptionStatus) || !['monthly', 'annual'].includes(billingCycle)) {
         return json({ error: 'Dados da assinatura inválidos.' }, 400);
@@ -139,8 +133,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'confirm_renewal_payment') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const { companyId, paymentReference, amount, periodEnd } = body;
       const parsedAmount = amount === '' || amount === null || amount === undefined ? null : Number(amount);
       const parsedEnd = Date.parse(periodEnd);
@@ -175,8 +167,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'mark_owner_access_delivered') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const { companyId } = body;
       const deliveredAt = new Date().toISOString();
       const { data: company, error } = await service.from('companies').update({ owner_access_delivered_at: deliveredAt }).eq('id', companyId).select('id, name, owner_access_delivered_at').single();
@@ -187,7 +177,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'mark_owner_first_login') {
-      if (caller.role !== 'administrador' || !caller.company_id) return json({ error: 'Ação disponível apenas para um administrador de concessionária.' }, 403);
       const { data: company, error } = await service.from('companies').select('id, owner_user_id, owner_first_login_at').eq('id', caller.company_id).single();
       if (error || !company || company.owner_user_id !== user.id) return json({ success: true, recorded: false });
       if (company.owner_first_login_at) return json({ success: true, recorded: false });
@@ -200,8 +189,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'mark_onboarding_ready') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const { data: company, error: readError } = await service.from('companies').select('id, name, owner_access_delivered_at, owner_first_login_at').eq('id', body.companyId).single();
       if (readError || !company) return json({ error: 'Concessionária não encontrada.' }, 404);
       if (!company.owner_access_delivered_at || !company.owner_first_login_at) return json({ error: 'Entregue o acesso e aguarde o primeiro login do proprietário antes de concluir a implantação.' }, 409);
@@ -214,8 +201,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'create_owner_recovery_link') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const { data: company, error: companyError } = await service.from('companies').select('id, name, owner_user_id').eq('id', body.companyId).single();
       if (companyError || !company?.owner_user_id) return json({ error: 'Proprietário não encontrado para esta concessionária.' }, 404);
       const { data: owner, error: ownerError } = await service.from('profiles').select('id, email').eq('id', company.owner_user_id).single();
@@ -228,8 +213,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'confirm_payment_and_provision') {
-      const denied = requirePlatformAdmin();
-      if (denied) return denied;
       const { requestId, adminPassword } = body;
       if (!requestId || typeof adminPassword !== 'string' || adminPassword.length < 8) {
         return json({ error: 'Solicitação ou senha temporária inválida. A senha deve ter pelo menos 8 caracteres.' }, 400);
@@ -325,7 +308,6 @@ Deno.serve(async (request) => {
     }
 
     if (body.action === 'create_member') {
-      if (caller.role !== 'administrador' || !caller.company_id) return json({ error: 'Apenas administradores da empresa podem criar usuários.' }, 403);
       const { fullName, email, password, role } = body;
       if (!fullName || !email || !password || !['administrador', 'vendedor'].includes(role)) return json({ error: 'Dados de usuário inválidos.' }, 400);
       const { count } = await service.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', caller.company_id);

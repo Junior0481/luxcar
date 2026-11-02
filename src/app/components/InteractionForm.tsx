@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { createInteraction } from '../../services';
 import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -57,17 +57,13 @@ export function InteractionForm({ open = true, negotiationId, vehicleId, onClose
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('interaction_history').insert([
-        {
-          negotiation_id: negotiationId,
-          vehicle_id: vehicleId,
-          user_id: user?.id,
-          interaction_type: formData.interaction_type,
-          description: formData.description
-        }
-      ]);
-
-      if (error) throw error;
+      await createInteraction({
+        negotiation_id: negotiationId,
+        vehicle_id: vehicleId,
+        user_id: user?.id,
+        interaction_type: formData.interaction_type,
+        description: formData.description
+      });
       onClose();
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar interação');

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { createLead } from '../../services/leads.service';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -145,25 +145,22 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
     setLoading(true);
 
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('public-lead', {
-        body: {
-          company_id: companyId,
-          vehicle_id: vehicleId,
-          customer_name: formData.customer_name,
-          customer_email: formData.customer_email,
-          customer_phone: formData.customer_phone,
-          message: formData.message,
-          turnstile_token: turnstileToken,
-        },
+      await createLead({
+        company_id: companyId,
+        vehicle_id: vehicleId,
+        customer_name: formData.customer_name,
+        customer_email: formData.customer_email,
+        customer_phone: formData.customer_phone,
+        message: formData.message,
+        turnstile_token: turnstileToken,
       });
-      if (invokeError) throw invokeError;
-      if (!data?.success) throw new Error('Não foi possível enviar sua mensagem.');
 
       setSuccess(true);
     } catch (err: any) {
       let message = err.message || 'Erro ao enviar mensagem';
-      if (err.context instanceof Response) {
-        const body = await err.context.json().catch(() => null);
+      const functionError = err.cause ?? err;
+      if (functionError.context instanceof Response) {
+        const body = await functionError.context.json().catch(() => null);
         message = body?.error || message;
       }
       setError(message);

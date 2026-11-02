@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { AlertCircle, RefreshCw, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Profile, supabase } from '../../lib/supabase';
+import type { Profile } from '../../lib/supabase';
+import { createTeamMember, listTeamMembers, tenantContextFromProfile } from '../../services';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { EmptyState } from '../components/ui/empty-state';
@@ -12,13 +13,13 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 
 export function Team() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [members, setMembers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', role: 'vendedor' });
+  const [form, setForm] = useState<{ fullName: string; email: string; password: string; role: 'vendedor' | 'administrador' }>({ fullName: '', email: '', password: '', role: 'vendedor' });
 
   async function loadMembers() {
     if (!profile?.company_id) {
@@ -28,14 +29,7 @@ export function Team() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: err } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('company_id', profile.company_id)
-        .order('full_name');
-
-      if (err) throw err;
-      setMembers(data || []);
+      setMembers(await listTeamMembers(tenantContextFromProfile(user?.id, profile)));
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar colaboradores da empresa.');
     } finally {
@@ -43,20 +37,22 @@ export function Team() {
     }
   }
 
-  useEffect(() => { loadMembers(); }, [profile?.company_id]);
+  useEffect(() => { loadMembers(); }, [profile?.company_id, user?.id]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
     setMessage('');
-    const { data, error } = await supabase.functions.invoke('admin-provision', {
-      body: { action: 'create_member', ...form }
-    });
-    setSaving(false);
-    if (error || data?.error) return setMessage(data?.error || error?.message || 'Não foi possível criar o acesso.');
-    setForm({ fullName: '', email: '', password: '', role: 'vendedor' });
-    setMessage('Acesso criado com sucesso.');
-    await loadMembers();
+    try {
+      await createTeamMember(form);
+      setForm({ fullName: '', email: '', password: '', role: 'vendedor' });
+      setMessage('Acesso criado com sucesso.');
+      await loadMembers();
+    } catch (error: any) {
+      setMessage(error.message || 'Não foi possível criar o acesso.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (profile?.role !== 'administrador') {
@@ -111,7 +107,7 @@ export function Team() {
             <div className="space-y-2"><Label htmlFor="member-name">Nome completo</Label><Input id="member-name" required value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} /></div>
             <div className="space-y-2"><Label htmlFor="member-email">Email</Label><Input id="member-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div className="space-y-2"><Label htmlFor="member-password">Senha inicial</Label><Input id="member-password" type="password" minLength={8} required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
-            <div className="space-y-2"><Label htmlFor="member-role">Perfil</Label><select id="member-role" className="h-10 w-full rounded-lg border border-input bg-input-background px-3" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="vendedor">Vendedor</option><option value="administrador">Administrador</option></select></div>
+            <div className="space-y-2"><Label htmlFor="member-role">Perfil</Label><select id="member-role" className="h-10 w-full rounded-lg border border-input bg-input-background px-3" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as 'vendedor' | 'administrador' })}><option value="vendedor">Vendedor</option><option value="administrador">Administrador</option></select></div>
             <Button disabled={saving} type="submit" className="md:col-span-2">{saving ? 'Criando...' : 'Criar acesso'}</Button>
           </form>
         </CardContent>

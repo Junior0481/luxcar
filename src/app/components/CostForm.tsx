@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { createVehicleCost } from '../../services';
 import { AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -63,18 +63,14 @@ export function CostForm({ open = true, vehicleId, onClose }: CostFormProps) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('vehicle_costs').insert([
-        {
-          vehicle_id: vehicleId,
-          cost_type: formData.cost_type,
-          description: formData.description,
-          amount: parseFloat(formData.amount),
-          service_date: formData.service_date,
-          created_by: user?.id
-        }
-      ]);
-
-      if (error) throw error;
+      await createVehicleCost({
+        vehicle_id: vehicleId,
+        cost_type: formData.cost_type,
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        service_date: formData.service_date,
+        created_by: user?.id
+      });
       onClose();
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar custo');

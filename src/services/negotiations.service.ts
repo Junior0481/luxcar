@@ -9,7 +9,7 @@
  * Aqui ele fica no backend, num único lugar.
  *
  * CONTRATO PRESERVADO: mesmos shapes (`Negotiation` e a projeção com
- * `vehicle`/`seller` usada nas listagens). Aditivo — nada importa isto ainda.
+ * `vehicle`/`seller` usada nas listagens).
  */
 
 import { supabase, type Negotiation, type Vehicle, type Profile } from '../lib/supabase';
@@ -107,6 +107,36 @@ export type CreateNegotiationInput = {
   notes?: string | null;
   priority?: Negotiation['priority'];
 };
+
+export type ConvertLeadInput = {
+  leadId: string;
+  vehicleId: string;
+  clientCpf: string | null;
+  stage: Negotiation['stage'];
+  offeredPrice: number | null;
+  notes: string | null;
+  priority: Negotiation['priority'];
+};
+
+/** Converte um lead pela RPC, que mantém a operação transacional no banco. */
+export async function convertLeadToNegotiation(
+  input: ConvertLeadInput
+): Promise<string> {
+  const { data, error } = await supabase.rpc('convert_lead_to_negotiation', {
+    p_lead_id: input.leadId,
+    p_vehicle_id: input.vehicleId,
+    p_client_cpf: input.clientCpf,
+    p_stage: input.stage,
+    p_offered_price: input.offeredPrice,
+    p_notes: input.notes,
+    p_priority: input.priority,
+  });
+  if (error) {
+    log.error('convertLeadToNegotiation falhou', error);
+    throw normalizeSupabaseError(error);
+  }
+  return data as string;
+}
 
 /**
  * Cria a negociação e aplica a regra: veículo → `em_negociacao`.

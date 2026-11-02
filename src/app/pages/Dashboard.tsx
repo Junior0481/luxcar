@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { supabase, Vehicle, Negotiation } from '../../lib/supabase';
+import type { Vehicle, Negotiation } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { getDashboardData, tenantContextFromProfile, type DashboardMetrics } from '../../services';
 import {
   AlertCircle,
   ArrowUpRight,
@@ -31,15 +32,6 @@ import {
   TableRow
 } from '../components/ui/table';
 
-type DashboardMetrics = {
-  vehicles_available: number;
-  vehicles_in_negotiation: number;
-  vehicles_sold: number;
-  active_negotiations: number;
-  monthly_revenue: number;
-  potential_profit: number;
-};
-
 const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -50,7 +42,7 @@ const statusBadge: Record<string, { label: string; variant: 'default' | 'seconda
 };
 
 export function Dashboard() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [recentVehicles, setRecentVehicles] = useState<Vehicle[]>([]);
   const [recentNegotiations, setRecentNegotiations] = useState<Negotiation[]>([]);
@@ -67,31 +59,11 @@ export function Dashboard() {
         setLoading(true);
         setError(null);
       }
-      const companyId = profile?.company_id;
-      if (!companyId) throw new Error('Usuário sem empresa vinculada.');
-
-      const [vehiclesRes, negotiationsRes] = await Promise.all([
-        supabase.from('vehicles').select('*').eq('company_id', companyId).order('created_at', { ascending: false }),
-        supabase.from('negotiations').select('*').eq('company_id', companyId).order('created_at', { ascending: false })
-      ]);
-
-      if (vehiclesRes.error) throw vehiclesRes.error;
-      if (negotiationsRes.error) throw negotiationsRes.error;
-
-      const vehicles = vehiclesRes.data || [];
-      const negotiations = negotiationsRes.data || [];
-      setMetrics({
-        vehicles_available: vehicles.filter((vehicle) => vehicle.status === 'disponivel').length,
-        vehicles_in_negotiation: vehicles.filter((vehicle) => vehicle.status === 'em_negociacao').length,
-        vehicles_sold: vehicles.filter((vehicle) => vehicle.status === 'vendido').length,
-        active_negotiations: negotiations.filter((item) => !['finalizado', 'perdido'].includes(item.stage)).length,
-        monthly_revenue: 0,
-        potential_profit: vehicles
-          .filter((vehicle) => vehicle.status !== 'vendido')
-          .reduce((total, vehicle) => total + Number(vehicle.sale_price) - Number(vehicle.purchase_price), 0)
-      });
-      setRecentVehicles(vehicles.slice(0, 5));
-      setRecentNegotiations(negotiations.slice(0, 5));
+      if (!profile?.company_id) throw new Error('Usuário sem empresa vinculada.');
+      const data = await getDashboardData(tenantContextFromProfile(user?.id, profile));
+      setMetrics(data.metrics);
+      setRecentVehicles(data.recentVehicles);
+      setRecentNegotiations(data.recentNegotiations);
     } catch (err: any) {
       console.error('Error loading dashboard data:', err);
       const text = err?.message || 'Erro ao carregar dados do painel.';

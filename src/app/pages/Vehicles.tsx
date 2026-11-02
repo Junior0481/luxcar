@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { formatFuel, formatPercent, pluralize } from "../../lib/format";
 import { thumbUrl } from "../../services/storage.service";
+import { deleteVehicle, tenantContextFromProfile } from "../../services";
 
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -35,7 +36,7 @@ const statusBadge: Record<string, { label: string; className: string; dot: strin
 };
 
 export function Vehicles() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const isAdmin = profile?.role === "administrador";
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
@@ -109,20 +110,7 @@ export function Vehicles() {
     const id = vehicleToDelete.id;
 
     try {
-      const { data: sales } = await supabase
-        .from("sales")
-        .select("id")
-        .eq("vehicle_id", id)
-        .limit(1);
-
-      if (sales && sales.length > 0) {
-        toast.error("Não é possível excluir: este veículo já possui vendas registradas.");
-        setVehicleToDelete(null);
-        return;
-      }
-
-      const { error } = await supabase.from("vehicles").delete().eq("id", id);
-      if (error) throw error;
+      await deleteVehicle(tenantContextFromProfile(user?.id, profile), id);
 
       toast.success("Veículo excluído com sucesso.");
       loadVehicles({ silent: true });

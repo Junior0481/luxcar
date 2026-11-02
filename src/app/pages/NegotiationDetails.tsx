@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { supabase, Negotiation, Vehicle, Profile, InteractionHistory, TradeInVehicle } from '../../lib/supabase';
+import { finalizeSale as finalizeSaleRpc } from '../../services/payments.service';
 import {
   ArrowLeft,
   Phone,
@@ -22,6 +23,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatPercent, formatPhone, formatPriority, formatStage, stageLabels } from '../../lib/format';
+import { tenantContextFromProfile, updateNegotiation, updateVehicle } from '../../services';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
@@ -53,7 +55,7 @@ const interactionTypeLabels: Record<string, string> = {
 
 export function NegotiationDetails() {
   const { id } = useParams();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [negotiation, setNegotiation] = useState<NegotiationWithDetails | null>(null);
   const [interactions, setInteractions] = useState<InteractionWithUser[]>([]);
@@ -142,7 +144,7 @@ export function NegotiationDetails() {
   // Venda, estágio e status do veículo são gravados de forma atômica no banco
   // (RPC finalize_sale): exige administrador e pagamentos que cubram o preço acordado.
   const finalizeSale = async (current: NegotiationWithDetails) => {
-    const { error } = await supabase.rpc('finalize_sale', { target_negotiation: current.id });
+    const { error } = await finalizeSaleRpc(current.id);
     if (!error) return;
     if (error.code === '42501') {
       throw new Error('Apenas o administrador da loja pode finalizar a venda.');
@@ -155,14 +157,7 @@ export function NegotiationDetails() {
 
   const syncVehicleForStage = async (nextStage: string, current: NegotiationWithDetails) => {
     const nextVehicleStatus = nextStage === 'perdido' ? 'disponivel' : 'em_negociacao';
-
-    const { error: vehicleError } = await supabase
-      .from('vehicles')
-      .update({ status: nextVehicleStatus })
-      .eq('id', current.vehicle_id)
-      .eq('company_id', current.company_id!);
-
-    if (vehicleError) throw vehicleError;
+    await updateVehicle(tenantContextFromProfile(user?.id, profile), current.vehicle_id, { status: nextVehicleStatus });
   };
 
   const handleStageUpdate = async (newStage: string) => {
@@ -176,16 +171,7 @@ export function NegotiationDetails() {
         await finalizeSale(negotiation);
         setMessage({ type: 'success', text: 'Venda finalizada com sucesso.' });
       } else {
-        const { error } = await supabase
-          .from('negotiations')
-          .update({ stage: newStage })
-          .eq('id', negotiation.id)
-          .eq('company_id', profile!.company_id!)
-          .select('id')
-          .single();
-
-        if (error) throw error;
-
+        await updateNegotiation(tenantContextFromProfile(user?.id, profile), negotiation.id, { stage: newStage as Negotiation['stage'] });
         await syncVehicleForStage(newStage, negotiation);
         setMessage({ type: 'success', text: 'Estágio atualizado com sucesso.' });
       }
@@ -203,15 +189,7 @@ export function NegotiationDetails() {
     setMessage(null);
 
     try {
-      const { error } = await supabase
-        .from('negotiations')
-        .update({ priority: newPriority })
-        .eq('id', negotiation.id)
-        .eq('company_id', profile!.company_id!)
-        .select('id')
-        .single();
-
-      if (error) throw error;
+      await updateNegotiation(tenantContextFromProfile(user?.id, profile), negotiation.id, { priority: newPriority });
 
       setMessage({ type: 'success', text: 'Prioridade atualizada com sucesso.' });
       await loadNegotiationDetails({ silent: true });

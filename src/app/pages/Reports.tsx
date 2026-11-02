@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { AlertCircle, BarChart3, Car, DollarSign, Handshake, RefreshCw, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,6 +10,7 @@ import { EmptyState } from '../components/ui/empty-state';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
 import { formatPercent } from '../../lib/format';
+import { getReportData, tenantContextFromProfile } from '../../services';
 
 type MonthSale = { id: string; month: string; vendas: number };
 type SellerSale = { id: string; name: string; count: number; revenue: number };
@@ -28,7 +28,7 @@ const tooltipStyle = {
 };
 
 export function Reports() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState({
@@ -54,37 +54,11 @@ export function Reports() {
     setLoading(true);
     setError(null);
     try {
-      let salesQuery = supabase
-        .from('sales')
-        .select(`
-          *,
-          vehicle:vehicles(*),
-          seller:profiles(*)
-        `)
-        .gte('sale_date', dateRange.start)
-        .lte('sale_date', dateRange.end);
-
-      let negotiationsQuery = supabase
-        .from('negotiations')
-        .select('*')
-        .gte('created_at', dateRange.start)
-        .lte('created_at', dateRange.end);
-
-      if (profile?.company_id) {
-        salesQuery = salesQuery.eq('company_id', profile.company_id);
-        negotiationsQuery = negotiationsQuery.eq('company_id', profile.company_id);
-      }
-
-      const [salesRes, negotiationsRes] = await Promise.all([
-        salesQuery,
-        negotiationsQuery
-      ]);
-
-      if (salesRes.error) throw salesRes.error;
-      if (negotiationsRes.error) throw negotiationsRes.error;
-
-      const sales = salesRes.data || [];
-      const negotiations = negotiationsRes.data || [];
+      const { sales, negotiations } = await getReportData(
+        tenantContextFromProfile(user?.id, profile),
+        dateRange.start,
+        dateRange.end
+      );
 
       const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.final_price || 0), 0);
       const totalProfit = sales.reduce((sum, sale) => {
