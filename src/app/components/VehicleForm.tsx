@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import { CAR_BRANDS } from "../../constants/carBrands";
 import { deleteVehicleImage, thumbUrl, uploadVehicleImage } from "../../services/storage.service";
-import { createVehicle, tenantContextFromProfile, updateVehicle } from "../../services";
+import { countCompanyVehicles, createVehicle, getCompanyPlan, tenantContextFromProfile, updateVehicle } from "../../services";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -269,6 +269,12 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
     setLoading(true);
 
     try {
+      if (!vehicle && profile?.company_id) {
+        const ctx = tenantContextFromProfile(user?.id, profile);
+        const [plan, vehicleCount] = await Promise.all([getCompanyPlan(ctx), countCompanyVehicles(ctx)]);
+        if (plan && vehicleCount >= plan.max_vehicles) throw new Error(`Limite de ${plan.max_vehicles} veículos do plano ${plan.name} atingido.`);
+      }
+
       const purchasePrice = parseBRLInput(formData.purchase_price);
       const salePrice = parseBRLInput(formData.sale_price);
       if (!Number.isFinite(purchasePrice) || !Number.isFinite(salePrice) || purchasePrice < 0 || salePrice < 0) throw new Error('Informe valores válidos para compra e venda.');

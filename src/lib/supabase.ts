@@ -34,7 +34,7 @@ export type Company = {
   custom_domain?: string;
   branding?: Record<string, unknown>;
   status: 'active' | 'inactive' | 'suspended';
-  plan: 'basic' | 'pro' | 'enterprise';
+  plan: 'silver' | 'gold' | 'platinum';
   max_vehicles: number;
   max_users: number;
   created_at: string;

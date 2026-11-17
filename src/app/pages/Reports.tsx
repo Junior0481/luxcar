@@ -10,7 +10,7 @@ import { EmptyState } from '../components/ui/empty-state';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
 import { formatPercent } from '../../lib/format';
-import { getReportData, tenantContextFromProfile } from '../../services';
+import { getCompanyPlan, getReportData, tenantContextFromProfile } from '../../services';
 
 type MonthSale = { id: string; month: string; vendas: number };
 type SellerSale = { id: string; name: string; count: number; revenue: number };
@@ -30,6 +30,7 @@ const tooltipStyle = {
 export function Reports() {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [reportsEnabled, setReportsEnabled] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
@@ -54,11 +55,11 @@ export function Reports() {
     setLoading(true);
     setError(null);
     try {
-      const { sales, negotiations } = await getReportData(
-        tenantContextFromProfile(user?.id, profile),
-        dateRange.start,
-        dateRange.end
-      );
+      const ctx = tenantContextFromProfile(user?.id, profile);
+      const plan = await getCompanyPlan(ctx);
+      setReportsEnabled(Boolean(plan?.reports_enabled));
+      if (!plan?.reports_enabled) return;
+      const { sales, negotiations } = await getReportData(ctx, dateRange.start, dateRange.end);
 
       const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.final_price || 0), 0);
       const totalProfit = sales.reduce((sum, sale) => {
@@ -154,6 +155,15 @@ export function Reports() {
           <Skeleton className="h-32" />
         </div>
         <Skeleton className="h-80 w-full" />
+      </div>
+    );
+  }
+
+  if (reportsEnabled === false) {
+    return (
+      <div className="space-y-6">
+        <PageHeader icon={BarChart3} eyebrow="Inteligência comercial" title="Relatórios" description="Indicadores de vendas e desempenho da equipe." />
+        <EmptyState icon={BarChart3} title="Recurso disponível nos planos Gold e Platinum" description="Faça upgrade do plano da sua concessionária para acessar os relatórios." />
       </div>
     );
   }

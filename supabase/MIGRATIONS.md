@@ -25,6 +25,8 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 21. `20261014002300_company_leads_visibility.sql` — permite que usuários autenticados da loja vejam todos os leads; `assigned_to` continua indicando o vendedor responsável.
 22. `20261014002400_lead_negotiation_conversion.sql` — adiciona a ação transacional para escalar um lead a uma negociação, atualizando o veículo e preservando o vínculo entre os registros.
 23. `20261014002500_lead_conversion_cpf.sql` — preserva o CPF validado no formulário ao converter o lead em negociação.
+24. `20261109000100_subscription_plans.sql` — tabela `plans` (Silver, Gold, Platinum) com limites e preços; `companies.plan` vira FK; triggers bloqueiam veículos, administradores e vendedores acima do limite; só a plataforma altera o plano; campos do novo cadastro em `companies` e `subscription_requests`, cuja inserção passa a ser só pela Edge Function `subscription-register`.
+25. `20261117000100_plan_limits_fixes.sql` — restaura a leitura de vendas e negociações em todos os planos e move o bloqueio de relatórios para a RPC `report_data`; guard de plano passa a liberar `postgres`/`service_role`; empresas existentes vão para Platinum; limite de veículos também vale ao trocar a empresa do veículo.
 
 Após aplicar a migration 19, publique a Edge Function `admin-provision` atualizada. Ela fornece o resumo administrativo, o ciclo de renovação, suporte por link de recuperação e auditoria.
 
