@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { useAuth } from '../../contexts/AuthContext';
@@ -39,7 +40,7 @@ const features = [
   {
     icon: BarChart3,
     title: 'Relatórios acionáveis',
-    desc: 'Receita, lucro, conversão e desempenho da equipe sem depender de planilhas.'
+    desc: 'Receita, lucro, conversão e desempenho da equipe nos planos Gold e Platinum.'
   },
   {
     icon: Palette,
@@ -57,7 +58,7 @@ const subscriptionFeatures = [
   'Estoque, veículos e custos',
   'Pipeline de vendas, leads e negociações',
   'Equipe com acessos de administrador e vendedor',
-  'Dashboard, relatórios e pagamentos',
+  'Dashboard operacional e controle de pagamentos',
   'Vitrine pública da concessionária',
   'Identidade visual white label da loja'
 ];
@@ -134,14 +135,19 @@ export function Landing() {
             ) : (
               <>
                 <Button asChild variant="ghost"><Link to="/auth/login">Entrar</Link></Button>
+                <Button asChild variant="outline"><Link to="/estoque">Ver vitrine pública</Link></Button>
                 <Button asChild><Link to="/auth/register">Falar com vendas</Link></Button>
               </>
             )}
+            <ThemeToggle />
           </div>
 
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
-            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-          </Button>
+          <div className="flex items-center gap-1 md:hidden">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </Button>
+          </div>
         </div>
 
         {menuOpen ? (
@@ -158,7 +164,8 @@ export function Landing() {
                 <Button asChild className="min-[340px]:col-span-2"><Link to={dashboardPath}>Painel · {profile.full_name}</Link></Button>
               ) : (
                 <>
-                  <Button asChild variant="secondary"><Link to="/auth/login">Entrar</Link></Button>
+                  <Button asChild variant="secondary" className="min-[340px]:col-span-2"><Link to="/auth/login">Entrar</Link></Button>
+                  <Button asChild variant="outline"><Link to="/estoque" onClick={() => setMenuOpen(false)}>Ver vitrine pública</Link></Button>
                   <Button asChild><Link to="/auth/register">Falar com vendas</Link></Button>
                 </>
               )}
@@ -277,14 +284,14 @@ export function Landing() {
 
         <section id="assinatura" className="mx-auto max-w-5xl px-4 py-20">
           <div className="mx-auto mb-10 max-w-2xl text-center">
-            <h2 className="text-3xl font-medium tracking-normal md:text-4xl">Uma assinatura. A LuxCar completa.</h2>
-            <p className="mt-4 text-muted-foreground">Tudo liberado em um único produto: do essencial da operação à experiência white label.</p>
+            <h2 className="text-3xl font-medium tracking-normal md:text-4xl">Planos para cada etapa da sua loja.</h2>
+            <p className="mt-4 text-muted-foreground">Escolha os limites de equipe e estoque que fazem sentido para a sua operação. Os valores aparecem no cadastro.</p>
           </div>
           <Card className="border-primary/30 bg-accent/40">
             <CardContent className="grid gap-8 p-8 md:grid-cols-[1fr_auto] md:items-center md:p-10">
               <div>
-                <Badge className="mb-4">Produto completo</Badge>
-                <h3 className="text-2xl font-medium">Assinatura LuxCar</h3>
+                <Badge className="mb-4">Silver · Gold · Platinum</Badge>
+                <h3 className="text-2xl font-medium">Escolha seu plano LuxCar</h3>
                 <p className="mt-2 text-sm text-muted-foreground">Após a confirmação do pagamento, nossa equipe configura sua concessionária e entrega o acesso de administrador.</p>
                 <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                   {subscriptionFeatures.map((feature) => (
