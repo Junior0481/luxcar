@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { AlertCircle, CheckCircle2, LoaderCircle, Mail } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CreditCard, LoaderCircle, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -12,6 +12,7 @@ export function RegisterConfirmation() {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Estamos validando o link e registrando sua solicitação.');
   const [canRetry, setCanRetry] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const completeRegistration = useCallback(async () => {
@@ -51,8 +52,15 @@ export function RegisterConfirmation() {
     }
 
     localStorage.removeItem(registrationDraftKey);
+    // Online payment: once AbacatePay confirms, the store is created and this email becomes the administrator.
+    const { data: charge } = await supabase.functions.invoke('create-charge', { body: { kind: 'signup' } });
     setStatus('success');
-    setMessage('Email confirmado. A equipe LuxCar vai conferir a solicitação e confirmar o pagamento pelo painel. Depois, o acesso de administrador será preparado.');
+    if (charge?.url) {
+      setCheckoutUrl(charge.url);
+      setMessage(`Email confirmado. Pague ${Number(charge.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} para liberar sua loja. Assim que o pagamento for confirmado, o acesso de administrador é criado automaticamente para este email; entre pelo login com "Esqueci minha senha" para definir a senha.`);
+    } else {
+      setMessage('Email confirmado. A equipe LuxCar vai conferir a solicitação e confirmar o pagamento pelo painel. Depois, o acesso de administrador será preparado.');
+    }
     await supabase.auth.signOut();
   }, []);
 
@@ -75,7 +83,10 @@ export function RegisterConfirmation() {
           {canRetry && <Button type="button" onClick={() => void completeRegistration()}><Mail className="mr-2 size-4" /> Tentar novamente</Button>}
           <Button type="button" variant="outline" onClick={async () => { await supabase.auth.signOut(); navigate('/auth/register', { replace: true }); }}>Voltar ao cadastro</Button>
         </div>}
-        {status === 'success' && <Button type="button" variant="outline" asChild><Link to="/">Ir para o início</Link></Button>}
+        {status === 'success' && <div className="flex flex-wrap gap-3">
+          {checkoutUrl && <Button type="button" asChild><a href={checkoutUrl}><CreditCard className="mr-2 size-4" /> Ir para o pagamento</a></Button>}
+          <Button type="button" variant="outline" asChild><Link to="/">Ir para o início</Link></Button>
+        </div>}
       </CardContent>
     </Card>
   );

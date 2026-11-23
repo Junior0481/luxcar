@@ -28,6 +28,7 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 24. `20261109000100_subscription_plans.sql` — tabela `plans` (Silver, Gold, Platinum) com limites e preços; `companies.plan` vira FK; triggers bloqueiam veículos, administradores e vendedores acima do limite; só a plataforma altera o plano; campos do novo cadastro em `companies` e `subscription_requests`, cuja inserção passa a ser só pela Edge Function `subscription-register`.
 25. `20261117000100_plan_limits_fixes.sql` — restaura a leitura de vendas e negociações em todos os planos e move o bloqueio de relatórios para a RPC `report_data`; guard de plano passa a liberar `postgres`/`service_role`; empresas existentes vão para Platinum; limite de veículos também vale ao trocar a empresa do veículo.
 26. `20261123000100_subscription_status_automation.sql` — status da assinatura calculado pelas datas (`active` → `past_due` após o vencimento → `blocked` 7 dias depois); trigger recalcula ao mudar `current_period_end`; job `pg_cron` diário (`refresh_subscription_statuses`, 00:05 de Brasília) audita as mudanças em `platform_admin_audit`; empresa bloqueada perde o tenant em `current_company_id()`/`is_company_admin()`; RPC `current_company_subscription()` informa o status ao lojista. **Ao aplicar, empresas com `current_period_end` vencido há mais de 7 dias ficam bloqueadas na hora.**
+27. `20261123000200_abacatepay_payments.sql` — `payment_charges` (cobranças AbacatePay de cadastro e renovação), `abacatepay_products` (produto por plano/ciclo/preço) e `subscription_payments.provider_charge_id` único; `apply_paid_charge()` (só `service_role`) cria a empresa do cadastro ou renova o período no mesmo dia do vencimento, de forma idempotente; administradores da loja leem o próprio histórico de pagamentos.
 
 Após aplicar a migration 19, publique a Edge Function `admin-provision` atualizada. Ela fornece o resumo administrativo, o ciclo de renovação, suporte por link de recuperação e auditoria.
 
@@ -46,3 +47,9 @@ As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ..
 - Clientes autenticados só podem ler/editar o próprio registro. O fluxo de cliente público não tem regra de ownership verificável; permanece fechado até o modelo de vínculo ser decidido.
 - Uploads de Storage preservam as regras antigas por autenticação e papel; associação do caminho do objeto ao tenant ainda não está modelada.
 - `REFERENCE_MODELO_FISICO_COMPLETO.sql` foi movido para `supabase/reference/` e reduzido aqui a marcador para evitar execução acidental.
+
+## Pagamento AbacatePay (Edge Functions)
+
+- `create-charge`: gera o checkout do cadastro (`kind: 'signup'`, usuário com email confirmado) ou da renovação (administrador da loja, ou plataforma com `companyId`). Secrets: `ABACATEPAY_API_KEY` (chave dev para sandbox), `SITE_URL`, opcional `ABACATEPAY_METHODS` (`PIX` ou `PIX,CARD`).
+- `abacatepay-webhook`: publicar com `supabase functions deploy abacatepay-webhook --no-verify-jwt`. Secrets: `ABACATEPAY_WEBHOOK_SECRET` (o mesmo definido ao criar o webhook no painel AbacatePay) e `ABACATEPAY_PUBLIC_KEY` (chave HMAC pública da documentação AbacatePay). URL do webhook: `https://<projeto>.supabase.co/functions/v1/abacatepay-webhook?webhookSecret=<secret>`, evento `checkout.completed`.
+- As chaves ficam só nos secrets das Edge Functions, nunca em variáveis `VITE_*`.
