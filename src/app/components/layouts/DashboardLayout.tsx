@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCompany } from '../../../contexts/CompanyContext';
 import { getCompanySubscription, subscriptionNotice, type SubscriptionNotice } from '../../../services/subscription.service';
+import { getCompanyPlan } from '../../../services/plans.service';
 import { ThemeToggle } from '../ThemeToggle';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -52,6 +53,7 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [notice, setNotice] = useState<SubscriptionNotice>(null);
+  const [reportsEnabled, setReportsEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!profile?.company_id || profile.role === 'platform_admin') { setNotice(null); return; }
@@ -61,6 +63,15 @@ export function DashboardLayout() {
       .catch((error) => console.error('Error loading subscription:', error));
     return () => { active = false; };
   }, [profile?.company_id, profile?.role, location.pathname]);
+
+  useEffect(() => {
+    if (!user || !profile?.company_id) { setReportsEnabled(null); return; }
+    let active = true;
+    getCompanyPlan({ userId: user.id, companyId: profile.company_id, role: profile.role })
+      .then((plan) => { if (active) setReportsEnabled(plan ? plan.reports_enabled : null); })
+      .catch(() => { if (active) setReportsEnabled(null); });
+    return () => { active = false; };
+  }, [user?.id, profile?.company_id, profile?.role]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -135,8 +146,9 @@ export function DashboardLayout() {
     ? [{ label: 'Plataforma', items: [{ to: '/dashboard/platform', icon: Building2, label: 'Empresas' }] }]
     : [
         { label: 'Operação', items: operationItems },
-        { label: 'Gestão', items: profile.role === 'administrador' ? managementItems : [managementItems[0]] },
-      ];
+        { label: 'Gestão', items: (profile.role === 'administrador' ? managementItems : [managementItems[0]])
+          .filter((item) => item.to !== '/dashboard/reports' || reportsEnabled !== false) },
+      ].filter((section) => section.items.length > 0);
 
   const handleSignOut = async () => {
     await signOut();

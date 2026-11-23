@@ -24,11 +24,12 @@ type Usage = { vehicles: number; administrators: number; sellers: number };
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
   const percent = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100;
+  const color = used > limit ? 'bg-destructive' : used === limit ? 'bg-amber-500' : 'bg-primary';
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-sm"><span>{label}</span><span className="tabular-nums text-muted-foreground">{used}/{limit}</span></div>
       <div className="h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={label} aria-valuenow={used} aria-valuemin={0} aria-valuemax={limit}>
-        <div className={`h-full rounded-full ${percent >= 100 ? 'bg-destructive' : 'bg-primary'}`} style={{ width: `${percent}%` }} />
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
       </div>
     </div>
   );
