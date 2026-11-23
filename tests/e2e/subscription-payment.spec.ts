@@ -116,6 +116,13 @@ test('assinatura paga pela AbacatePay cria a loja e a renovação adia o vencime
     await page.getByRole('status').getByRole('link', { name: 'Esqueceu sua senha?' }).click();
     await page.getByLabel('Email').fill(inbox.address);
     await page.getByRole('button', { name: 'Enviar link de recuperação' }).click();
+    // O Supabase aceita 1 email por minuto por endereço; o link mágico pode ter saído há menos que isso.
+    const waitNotice = page.getByRole('alert').filter({ hasText: 'aguarde 1 minuto' });
+    await expect(page.getByRole('status').or(waitNotice)).toBeVisible({ timeout: 15_000 });
+    if (await waitNotice.isVisible()) {
+      await page.waitForTimeout(61_000);
+      await page.getByRole('button', { name: 'Enviar link de recuperação' }).click();
+    }
     await expect(page.getByRole('status')).toContainText('enviaremos um link');
     await page.goto(await waitForAuthLink(inbox.token, 1));
     await page.getByLabel('Nova senha').fill(password);
@@ -146,7 +153,8 @@ test('assinatura paga pela AbacatePay cria a loja e a renovação adia o vencime
     await expect(page).not.toHaveURL(/pagamento=confirmado/);
   });
 
-  const ownFailures = failures.filter((failure) => failure.includes(site) || failure.includes('supabase.co'));
+  // O 429 do /recover é o limite de 1 email por minuto, tratado acima.
+  const ownFailures = failures.filter((failure) => (failure.includes(site) || failure.includes('supabase.co')) && !failure.startsWith('429 POST'));
   testInfo.annotations.push({ type: 'respostas 4xx/5xx', description: failures.join('\n') || 'nenhuma' });
   expect(ownFailures, ownFailures.join('\n')).toEqual([]);
 });

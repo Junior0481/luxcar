@@ -21,9 +21,12 @@ export function ForgotPassword() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     setLoading(false);
     if (resetError) {
+      const rateLimited = resetError.status === 429 || /rate limit|security purposes|after \d+ seconds/i.test(resetError.message);
       setError(/redirect.*not allowed|not allowed.*redirect/i.test(resetError.message)
         ? 'O endereço de recuperação ainda não está liberado no Supabase. Adicione este endereço às URLs de redirecionamento permitidas: ' + redirectTo
-        : 'Não foi possível enviar o email de recuperação. Confira o endereço e tente novamente.');
+        : rateLimited
+          ? 'Acabamos de enviar um email para este endereço. Por segurança, aguarde 1 minuto e tente novamente.'
+          : 'Não foi possível enviar o email de recuperação. Confira o endereço e tente novamente.');
       return;
     }
     setSent(true);
