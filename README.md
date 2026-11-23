@@ -349,6 +349,26 @@ venda. Por criar dados reais, ela só executa quando
 `E2E_ALLOW_MUTATIONS=true` e as credenciais `E2E_PLATFORM_*` estiverem
 configuradas.
 
+O teste `tests/e2e/subscription-payment.spec.ts` percorre a assinatura pela
+AbacatePay: cadastro, link mágico, pagamento simulado, criação da loja pelo
+webhook, primeira senha e renovação. Ele usa caixas temporárias do mail.tm,
+precisa do site publicado (`E2E_BASE_URL`), de `E2E_ALLOW_MUTATIONS=true` e de
+`E2E_PAYMENT_FLOW=true`, e só funciona com a AbacatePay em modo de
+desenvolvimento. No GitHub, rode pelo workflow manual **E2E pagamento**. Cada
+execução cria uma loja `Loja E2E Pagamento …` em produção; apague-a depois.
+
+### Criar acessos de demonstração
+
+`scripts/create-demo-accesses.mjs` cria administrador, vendedor e cliente para
+uma loja existente (`DEMO_COMPANY_ID`) ou nova (`DEMO_COMPANY_NAME`). Sem
+`--apply`, só valida e mostra a prévia. Exige a chave secreta do Supabase no
+ambiente do terminal:
+
+```bash
+node --env-file=.env.local scripts/create-demo-accesses.mjs
+node --env-file=.env.local scripts/create-demo-accesses.mjs --apply
+```
+
 ## Principais rotas
 
 | Rota | Descrição |
