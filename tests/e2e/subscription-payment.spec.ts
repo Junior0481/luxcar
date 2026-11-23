@@ -114,7 +114,7 @@ test('assinatura paga pela AbacatePay cria a loja e a renovação adia o vencime
   const password = `Senha-${run}!a`;
   await test.step('dono cria a senha pelo link de recuperação', async () => {
     await page.getByRole('status').getByRole('link', { name: 'Esqueceu sua senha?' }).click();
-    await page.getByLabel('Email').fill(inbox.address);
+    await page.getByLabel('Email', { exact: true }).fill(inbox.address);
     await page.getByRole('button', { name: 'Enviar link de recuperação' }).click();
     // O Supabase aceita 1 email por minuto por endereço; o link mágico pode ter saído há menos que isso.
     const waitNotice = page.getByRole('alert').filter({ hasText: 'aguarde 1 minuto' });
@@ -125,7 +125,7 @@ test('assinatura paga pela AbacatePay cria a loja e a renovação adia o vencime
     }
     await expect(page.getByRole('status')).toContainText('enviaremos um link');
     await page.goto(await waitForAuthLink(inbox.token, 1));
-    await page.getByLabel('Nova senha').fill(password);
+    await page.getByLabel('Nova senha', { exact: true }).fill(password);
     await page.getByLabel('Confirmar nova senha').fill(password);
     await page.getByRole('button', { name: /Salvar|Atualizar|Definir/ }).click();
     await expect(page.getByRole('status')).toContainText('Senha atualizada');
@@ -137,7 +137,7 @@ test('assinatura paga pela AbacatePay cria a loja e a renovação adia o vencime
     await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
     await expect.poll(async () => {
       await page.goto('/dashboard/settings?aba=assinatura');
-      return page.getByRole('button', { name: /Pagar R\$/ }).isVisible({ timeout: 8_000 }).catch(() => false);
+      return page.getByRole('button', { name: /Pagar R\$/ }).waitFor({ timeout: 15_000 }).then(() => true, () => false);
     }, { timeout: 90_000, intervals: [2_000] }).toBe(true);
   });
 
