@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import {
   BarChart3,
+  AlertTriangle,
   Building2,
   Car,
   CreditCard,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCompany } from '../../../contexts/CompanyContext';
+import { getCompanySubscription, subscriptionNotice, type SubscriptionNotice } from '../../../services/subscription.service';
 import { ThemeToggle } from '../ThemeToggle';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -49,6 +51,16 @@ export function DashboardLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [notice, setNotice] = useState<SubscriptionNotice>(null);
+
+  useEffect(() => {
+    if (!profile?.company_id || profile.role === 'platform_admin') { setNotice(null); return; }
+    let active = true;
+    getCompanySubscription()
+      .then((subscription) => { if (active) setNotice(subscriptionNotice(subscription)); })
+      .catch((error) => console.error('Error loading subscription:', error));
+    return () => { active = false; };
+  }, [profile?.company_id, profile?.role, location.pathname]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -82,6 +94,24 @@ export function DashboardLayout() {
   }
 
   if (!user || !profile) return null;
+
+  if (notice?.kind === 'blocked') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <section role="alert" className="w-full max-w-lg space-y-4 rounded-2xl border border-destructive/30 bg-card p-6 shadow-lux-md">
+          <p className="text-sm font-medium text-destructive">Assinatura bloqueada</p>
+          <h1 className="text-2xl font-semibold text-foreground">O acesso da loja foi bloqueado por falta de pagamento</h1>
+          <p className="text-sm leading-6 text-muted-foreground">
+            O prazo de 7 dias após o vencimento terminou. Assim que o pagamento for confirmado, o acesso volta automaticamente.
+            Fale com a equipe LuxCar para regularizar.
+          </p>
+          <Button type="button" variant="outline" onClick={async () => { await signOut(); navigate('/auth/login', { replace: true }); }}>
+            Sair da conta
+          </Button>
+        </section>
+      </main>
+    );
+  }
 
   if (!profile.company_id && profile.role !== 'platform_admin') {
     return (
@@ -194,6 +224,16 @@ export function DashboardLayout() {
       </aside>
 
       <main className="min-w-0 flex-[999_1_560px] p-4 sm:p-6 md:px-8 md:pb-12 md:pt-7">
+        {notice ? (
+          <div role="status" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-foreground">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+            <p>
+              {notice.kind === 'due_today'
+                ? 'Sua assinatura LuxCar vence hoje. Faça o pagamento para manter o acesso sem interrupção.'
+                : `Pagamento da assinatura em atraso. ${notice.daysLeft === 1 ? 'Resta 1 dia' : `Restam ${notice.daysLeft} dias`} para regularizar antes do bloqueio.`}
+            </p>
+          </div>
+        ) : null}
         <Outlet />
       </main>
     </div>

@@ -4,7 +4,6 @@ import { authorizeAction } from './authorization.ts';
 const platformActions = [
   'platform_overview',
   'set_company_status',
-  'update_subscription',
   'confirm_renewal_payment',
   'mark_owner_access_delivered',
   'mark_onboarding_ready',

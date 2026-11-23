@@ -7,7 +7,6 @@ type AuthorizationResult =
 const actionAccess = new Map<string, AccessLevel>([
   ['platform_overview', 'platform_admin'],
   ['set_company_status', 'platform_admin'],
-  ['update_subscription', 'platform_admin'],
   ['confirm_renewal_payment', 'platform_admin'],
   ['mark_owner_access_delivered', 'platform_admin'],
   ['mark_onboarding_ready', 'platform_admin'],

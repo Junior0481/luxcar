@@ -126,48 +126,31 @@ Deno.serve(async (request) => {
       return json({ company });
     }
 
-    if (body.action === 'update_subscription') {
-      const { companyId, subscriptionStatus, billingCycle, currentPeriodEnd, graceEndsAt } = body;
-      if (!companyId || !['active', 'past_due', 'cancelled'].includes(subscriptionStatus) || !['monthly', 'annual'].includes(billingCycle)) {
-        return json({ error: 'Dados da assinatura inválidos.' }, 400);
-      }
-      if (currentPeriodEnd && !Number.isFinite(Date.parse(currentPeriodEnd))) return json({ error: 'Data de renovação inválida.' }, 400);
-      if (graceEndsAt && !Number.isFinite(Date.parse(graceEndsAt))) return json({ error: 'Data de tolerância inválida.' }, 400);
-      if (subscriptionStatus === 'past_due' && !graceEndsAt) return json({ error: 'Informe o fim do período de tolerância para uma assinatura em atraso.' }, 400);
-      const updates = {
-        subscription_status: subscriptionStatus, billing_cycle: billingCycle,
-        current_period_end: currentPeriodEnd || null,
-        grace_ends_at: subscriptionStatus === 'past_due' ? graceEndsAt : null,
-        cancelled_at: subscriptionStatus === 'cancelled' ? new Date().toISOString() : null
-      };
-      const { data: company, error } = await service.from('companies').update(updates).eq('id', companyId).select('id, name, subscription_status').single();
-      if (error || !company) return json({ error: error?.message || 'Concessionária não encontrada.' }, 404);
-      const auditError = await logPlatformAction('subscription_updated', company.id, updates);
-      if (auditError) return json({ error: `Assinatura atualizada, mas a auditoria falhou: ${auditError.message}` }, 500);
-      return json({ company });
-    }
-
     if (body.action === 'confirm_renewal_payment') {
-      const { companyId, paymentReference, amount, periodEnd } = body;
+      const { companyId, paymentReference, amount } = body;
       const parsedAmount = amount === '' || amount === null || amount === undefined ? null : Number(amount);
-      const parsedEnd = Date.parse(periodEnd);
-      if (!companyId || !paymentReference?.trim() || !Number.isFinite(parsedEnd) || (parsedAmount !== null && (!Number.isFinite(parsedAmount) || parsedAmount < 0))) {
-        return json({ error: 'Informe uma referência de pagamento e uma data de renovação válida.' }, 400);
+      if (!companyId || !paymentReference?.trim() || (parsedAmount !== null && (!Number.isFinite(parsedAmount) || parsedAmount < 0))) {
+        return json({ error: 'Informe uma referência de pagamento e um valor válido.' }, 400);
       }
       const { data: company, error: companyError } = await service.from('companies').select('id, name, billing_cycle, current_period_end').eq('id', companyId).single();
       if (companyError || !company) return json({ error: 'Concessionária não encontrada.' }, 404);
       const now = new Date();
-      const periodStart = company.current_period_end && Date.parse(company.current_period_end) > now.getTime() ? company.current_period_end : now.toISOString();
-      if (parsedEnd <= Date.parse(periodStart)) return json({ error: 'A nova data de renovação precisa ser posterior ao início do período.' }, 400);
+      const cycle = company.billing_cycle === 'annual' ? 'annual' as const : 'monthly' as const;
+      // Renewal keeps the original due day; a lapse longer than one cycle restarts the period today.
+      let periodStart = company.current_period_end || now.toISOString();
+      let periodEnd = addBillingPeriod(new Date(periodStart), cycle);
+      if (Date.parse(periodEnd) <= now.getTime()) {
+        periodStart = now.toISOString();
+        periodEnd = addBillingPeriod(now, cycle);
+      }
       const { data: payment, error: paymentError } = await service.from('subscription_payments').insert({
         company_id: company.id, payment_reference: paymentReference.trim(), amount: parsedAmount,
-        period_start: periodStart, period_end: new Date(parsedEnd).toISOString(),
+        period_start: periodStart, period_end: periodEnd,
         status: 'confirmed', confirmed_by: user.id, confirmed_at: now.toISOString()
       }).select('*').single();
       if (paymentError || !payment) return json({ error: paymentError?.message || 'Não foi possível registrar o pagamento.' }, 500);
       const { error: updateError } = await service.from('companies').update({
-        subscription_status: 'active', current_period_end: payment.period_end,
-        grace_ends_at: null, cancelled_at: null
+        current_period_end: payment.period_end, cancelled_at: null
       }).eq('id', company.id);
       if (updateError) {
         await service.from('subscription_payments').delete().eq('id', payment.id);
@@ -175,7 +158,7 @@ Deno.serve(async (request) => {
       }
       const auditError = await logPlatformAction('subscription_payment_confirmed', company.id, {
         payment_id: payment.id, payment_reference: payment.payment_reference, amount: payment.amount,
-        period_start: payment.period_start, period_end: payment.period_end
+        period_start: payment.period_start, period_end: payment.period_end, manual: true
       });
       if (auditError) return json({ error: `Renovação concluída, mas a auditoria falhou: ${auditError.message}` }, 500);
       return json({ payment });
