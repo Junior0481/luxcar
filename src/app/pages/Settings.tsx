@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { supabase } from '../../lib/supabase';
-import { AlertCircle, Bell, Car, CheckCircle, Database, Palette, Shield, Upload, User } from 'lucide-react';
+import { AlertCircle, Bell, Car, CheckCircle, CreditCard, Database, Palette, Shield, Upload, User } from 'lucide-react';
+import { SubscriptionPanel } from '../components/SubscriptionPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -55,7 +56,10 @@ const primaryColorWarning = (value: string) => {
 export function Settings() {
   const { profile, user, refreshProfile, loading } = useAuth();
   const { company } = useCompany();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('aba') === 'assinatura' || params.has('pagamento') ? 'subscription' : 'profile';
+  });
   const [saving, setSaving] = useState(false);
   const [uploadingBrandAsset, setUploadingBrandAsset] = useState<'logo' | 'favicon' | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
@@ -78,6 +82,7 @@ export function Settings() {
   const tabs = [
     { id: 'profile', label: 'Perfil', desc: 'Dados da conta', icon: User },
     ...(profile?.role === 'administrador' ? [{ id: 'branding', label: 'Marca', desc: 'Identidade white label', icon: Palette }] : []),
+    ...(profile?.role === 'administrador' && profile.company_id ? [{ id: 'subscription', label: 'Assinatura', desc: 'Plano, vencimento e pagamento', icon: CreditCard }] : []),
     { id: 'security', label: 'Segurança', desc: 'Acesso e senha', icon: Shield },
     { id: 'notifications', label: 'Notificações', desc: 'Alertas da operação', icon: Bell },
     { id: 'system', label: 'Sistema', desc: 'Dados e backup', icon: Database }
@@ -517,7 +522,9 @@ export function Settings() {
                 </div>
               )}
 
-              <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row">
+              {activeTab === 'subscription' && user && <SubscriptionPanel ctx={tenantContextFromProfile(user.id, profile)} />}
+
+              {activeTab !== 'subscription' && <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row">
                 <Button onClick={handleSave} disabled={saving || !!uploadingBrandAsset}>
                   {saving ? 'Salvando...' : 'Salvar alterações'}
                 </Button>
@@ -534,7 +541,7 @@ export function Settings() {
                 >
                   Cancelar
                 </Button>
-              </div>
+              </div>}
             </CardContent>
           </Card>
         </section>

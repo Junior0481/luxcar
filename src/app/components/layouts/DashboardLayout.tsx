@@ -232,6 +232,9 @@ export function DashboardLayout() {
                 ? 'Sua assinatura LuxCar vence hoje. Faça o pagamento para manter o acesso sem interrupção.'
                 : `Pagamento da assinatura em atraso. ${notice.daysLeft === 1 ? 'Resta 1 dia' : `Restam ${notice.daysLeft} dias`} para regularizar antes do bloqueio.`}
             </p>
+            {profile.role === 'administrador' ? (
+              <NavLink to="/dashboard/settings?aba=assinatura" className="ml-auto shrink-0 font-medium text-primary underline-offset-4 hover:underline">Pagar agora</NavLink>
+            ) : null}
           </div>
         ) : null}
         <Outlet />
