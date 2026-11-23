@@ -229,7 +229,7 @@ export function DashboardLayout() {
         </SheetContent>
       </Sheet>
 
-      <aside className="hidden w-[232px] flex-none flex-col gap-5 border-r border-sidebar-border bg-sidebar px-[14px] py-5 md:flex md:min-h-screen">
+      <aside className="hidden w-[232px] flex-none flex-col gap-5 border-r border-sidebar-border bg-sidebar px-[14px] py-5 md:sticky md:top-0 md:flex md:h-screen md:overflow-y-auto">
         {renderBrand()}
         {renderNavigation()}
         {renderAccountActions()}
