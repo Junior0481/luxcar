@@ -79,3 +79,13 @@ export async function createRenewalCharge(companyId?: string): Promise<Charge> {
   }
   return data as Charge;
 }
+
+const RECENT_PAYMENT_MS = 15 * 60 * 1000;
+
+/** Verdadeiro quando algum pagamento foi confirmado há pouco (o webhook já processou a volta do checkout). */
+export function hasRecentPayment(payments: SubscriptionPayment[], now = new Date()): boolean {
+  return payments.some((payment) => {
+    const confirmed = Date.parse(payment.confirmed_at || payment.created_at);
+    return Number.isFinite(confirmed) && now.getTime() - confirmed >= -60_000 && now.getTime() - confirmed <= RECENT_PAYMENT_MS;
+  });
+}

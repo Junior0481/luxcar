@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CreditCard, LoaderCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
@@ -6,6 +6,7 @@ import {
   createRenewalCharge,
   getCompanyPlan,
   getCompanySubscription,
+  hasRecentPayment,
   listSubscriptionPayments,
   subscriptionNotice,
   type CompanySubscription,
@@ -21,6 +22,10 @@ const date = (value: string | null | undefined) => value ? new Date(value).toLoc
 const statusLabel: Record<string, string> = { active: 'Ativa', past_due: 'Em atraso', blocked: 'Bloqueada', cancelled: 'Cancelada' };
 
 type Usage = { vehicles: number; administrators: number; sellers: number };
+type Confirmation = 'waiting' | 'confirmed' | 'timeout' | null;
+
+const POLL_MS = 3000;
+const POLL_ATTEMPTS = 20;
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
   const percent = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100;
@@ -43,7 +48,17 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
-  const paymentConfirmed = new URLSearchParams(window.location.search).get('pagamento') === 'confirmado';
+  const [usageError, setUsageError] = useState('');
+  const [confirmation, setConfirmation] = useState<Confirmation>(() =>
+    new URLSearchParams(window.location.search).get('pagamento') === 'confirmado' ? 'waiting' : null
+  );
+
+  const refreshBilling = useCallback(async () => {
+    const [loadedSubscription, history] = await Promise.all([getCompanySubscription(), listSubscriptionPayments(ctx.companyId!)]);
+    setSubscription(loadedSubscription);
+    setPayments(history);
+    return history;
+  }, [ctx.companyId]);
 
   useEffect(() => {
     if (!ctx.companyId) return;
@@ -58,14 +73,19 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
           listSubscriptionPayments(ctx.companyId!)
         ]);
         if (!active) return;
-        const members = team.data || [];
         setSubscription(loadedSubscription);
         setPlan(loadedPlan);
-        setUsage({
-          vehicles,
-          administrators: members.filter((member) => member.role === 'administrador').length,
-          sellers: members.filter((member) => member.role === 'vendedor').length
-        });
+        if (team.error) {
+          setUsage(null);
+          setUsageError('Não foi possível carregar a equipe para mostrar o uso do plano. Recarregue a página para tentar de novo.');
+        } else {
+          const members = team.data || [];
+          setUsage({
+            vehicles,
+            administrators: members.filter((member) => member.role === 'administrador').length,
+            sellers: members.filter((member) => member.role === 'vendedor').length
+          });
+        }
         setPayments(history);
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar a assinatura.');
@@ -75,6 +95,37 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
     })();
     return () => { active = false; };
   }, [ctx.companyId]);
+
+  // Na volta do checkout, o webhook pode chegar alguns segundos depois: consulta até o pagamento aparecer.
+  useEffect(() => {
+    if (confirmation !== 'waiting' || loading || !ctx.companyId) return;
+    if (hasRecentPayment(payments)) {
+      setConfirmation('confirmed');
+      return;
+    }
+    let attempts = 0;
+    const timer = window.setInterval(async () => {
+      attempts += 1;
+      const history = await refreshBilling().catch(() => null);
+      if (history && hasRecentPayment(history)) {
+        window.clearInterval(timer);
+        setConfirmation('confirmed');
+      } else if (attempts >= POLL_ATTEMPTS) {
+        window.clearInterval(timer);
+        setConfirmation('timeout');
+      }
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [confirmation, loading, ctx.companyId, payments, refreshBilling]);
+
+  // Tira o ?pagamento=confirmado da URL para o aviso não voltar ao recarregar.
+  useEffect(() => {
+    if (confirmation !== 'confirmed' && confirmation !== 'timeout') return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('pagamento')) return;
+    url.searchParams.delete('pagamento');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [confirmation]);
 
   const pay = async () => {
     setPaying(true);
@@ -96,7 +147,9 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
 
   return (
     <div className="space-y-6">
-      {paymentConfirmed && <p role="status" className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm">Pagamento enviado. Assim que a AbacatePay confirmar, o novo vencimento aparece aqui.</p>}
+      {confirmation === 'waiting' && <p role="status" className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" />Aguardando a confirmação do pagamento pela AbacatePay…</p>}
+      {confirmation === 'confirmed' && <p role="status" className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm">Pagamento confirmado. Próximo vencimento: {date(subscription.current_period_end)}.</p>}
+      {confirmation === 'timeout' && <p role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm">O pagamento ainda não foi confirmado. Isso pode levar alguns minutos; recarregue a página mais tarde para ver o novo vencimento.</p>}
       {notice?.kind === 'due_today' && <p role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm">Sua assinatura vence hoje.</p>}
       {notice?.kind === 'grace' && <p role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm">Pagamento em atraso: {notice.daysLeft === 1 ? 'resta 1 dia' : `restam ${notice.daysLeft} dias`} para regularizar antes do bloqueio.</p>}
       {error && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
@@ -121,6 +174,7 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
         <p className="text-sm text-muted-foreground">O pagamento renova a assinatura no mesmo dia do vencimento atual.</p>
       </div>
 
+      {usageError && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{usageError}</p>}
       {usage && (
         <section className="space-y-3" aria-labelledby="plan-usage-heading">
           <h3 id="plan-usage-heading" className="font-medium">Uso do plano</h3>

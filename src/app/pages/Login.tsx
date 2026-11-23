@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { AlertCircle, Lock, Mail } from 'lucide-react';
+import { AlertCircle, CheckCircle, Lock, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -14,6 +14,7 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const paymentReturned = new URLSearchParams(window.location.search).get('pagamento') === 'confirmado';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,12 @@ export function Login() {
         <CardDescription>Use o e-mail cadastrado pela sua loja.</CardDescription>
       </CardHeader>
       <CardContent>
+        {paymentReturned && (
+          <div role="status" className="mb-4 space-y-2 rounded-2xl border border-primary/20 bg-accent p-4">
+            <p className="flex items-center gap-2 font-medium text-accent-foreground"><CheckCircle className="size-5 shrink-0 text-primary" />Pagamento recebido.</p>
+            <p className="text-sm text-muted-foreground">Sua loja é liberada assim que a AbacatePay confirmar, normalmente em segundos. No primeiro acesso, crie sua senha em <Link to="/auth/forgot-password" className="font-medium text-primary hover:underline">Esqueceu sua senha?</Link> usando o email do cadastro.</p>
+          </div>
+        )}
         {error && (
           <div className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
