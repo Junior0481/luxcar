@@ -7,6 +7,8 @@ import { VehicleForm } from "../components/VehicleForm";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { EmptyState } from "../components/ui/empty-state";
 import { PageHeader } from "../components/ui/page-header";
 import { Skeleton } from "../components/ui/skeleton";
@@ -44,6 +46,10 @@ export function Vehicles() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [fuelFilter, setFuelFilter] = useState("all");
+  const [transmissionFilter, setTransmissionFilter] = useState("all");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
@@ -54,7 +60,7 @@ export function Vehicles() {
 
   useEffect(() => {
     filterVehicles();
-  }, [searchTerm, statusFilter, vehicles]);
+  }, [searchTerm, statusFilter, fuelFilter, transmissionFilter, minPrice, maxPrice, vehicles]);
 
   const loadVehicles = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
@@ -102,8 +108,24 @@ export function Vehicles() {
       filtered = filtered.filter((v) => v.status === statusFilter);
     }
 
+    if (fuelFilter !== "all") filtered = filtered.filter((v) => v.fuel_type === fuelFilter);
+    if (transmissionFilter !== "all") filtered = filtered.filter((v) => v.transmission === transmissionFilter);
+    if (minPrice) filtered = filtered.filter((v) => Number(v.sale_price) >= Number(minPrice));
+    if (maxPrice) filtered = filtered.filter((v) => Number(v.sale_price) <= Number(maxPrice));
+
     setFilteredVehicles(filtered);
   };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setFuelFilter("all");
+    setTransmissionFilter("all");
+    setMinPrice("");
+    setMaxPrice("");
+  };
+
+  const hasFilters = searchTerm !== "" || statusFilter !== "all" || fuelFilter !== "all" || transmissionFilter !== "all" || minPrice !== "" || maxPrice !== "";
 
   const confirmDelete = async () => {
     if (!vehicleToDelete) return;
@@ -180,6 +202,48 @@ export function Vehicles() {
         </div>
       </div>
 
+      <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="space-y-2">
+          <Label htmlFor="vehicle-fuel-filter">Combustível</Label>
+          <Select value={fuelFilter} onValueChange={setFuelFilter}>
+            <SelectTrigger id="vehicle-fuel-filter"><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="gasolina">Gasolina</SelectItem>
+              <SelectItem value="etanol">Etanol</SelectItem>
+              <SelectItem value="flex">Flex</SelectItem>
+              <SelectItem value="diesel">Diesel</SelectItem>
+              <SelectItem value="eletrico">Elétrico</SelectItem>
+              <SelectItem value="hibrido">Híbrido</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="vehicle-transmission-filter">Câmbio</Label>
+          <Select value={transmissionFilter} onValueChange={setTransmissionFilter}>
+            <SelectTrigger id="vehicle-transmission-filter"><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="automatica">Automático</SelectItem>
+              <SelectItem value="manual">Manual</SelectItem>
+              <SelectItem value="automatizada">Automatizado</SelectItem>
+              <SelectItem value="cvt">CVT</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="vehicle-min-price">Preço mínimo</Label>
+          <Input id="vehicle-min-price" type="number" min="0" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} placeholder="R$ 0" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="vehicle-max-price">Preço máximo</Label>
+          <Input id="vehicle-max-price" type="number" min="0" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Sem limite" />
+        </div>
+        <div className="flex items-end">
+          <Button type="button" variant="outline" className="w-full" onClick={clearFilters} disabled={!hasFilters}>Limpar filtros</Button>
+        </div>
+      </div>
+
       {error ? (
         <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -198,12 +262,12 @@ export function Vehicles() {
         <EmptyState
           title="Nenhum veículo encontrado"
           description={
-            searchTerm || statusFilter !== "all"
+            hasFilters
               ? "Ajuste os filtros para encontrar o carro certo no estoque."
               : "Adicione o primeiro veículo e comece a organizar sua vitrine comercial."
           }
           action={
-            !searchTerm && statusFilter === "all" && isAdmin ? (
+            !hasFilters && isAdmin ? (
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="size-4" />
                 Adicionar veículo
