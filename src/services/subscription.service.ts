@@ -43,3 +43,39 @@ export function subscriptionNotice(subscription: CompanySubscription | null, now
   }
   return null;
 }
+
+export type SubscriptionPayment = {
+  id: string;
+  payment_reference: string | null;
+  amount: number | null;
+  period_start: string;
+  period_end: string;
+  status: string;
+  confirmed_at: string | null;
+  created_at: string;
+};
+
+export type Charge = { url: string; amount: number; plan: string; cycle: 'monthly' | 'annual'; reused: boolean };
+
+/** Histórico de pagamentos da assinatura (administrador da loja ou da plataforma). */
+export async function listSubscriptionPayments(companyId: string): Promise<SubscriptionPayment[]> {
+  const { data, error } = await supabase
+    .from('subscription_payments')
+    .select('id, payment_reference, amount, period_start, period_end, status, confirmed_at, created_at')
+    .eq('company_id', companyId)
+    .order('period_start', { ascending: false });
+  if (error) throw normalizeSupabaseError(error);
+  return (data as SubscriptionPayment[]) ?? [];
+}
+
+/** Gera (ou reaproveita) a cobrança AbacatePay da próxima renovação. */
+export async function createRenewalCharge(companyId?: string): Promise<Charge> {
+  const { data, error } = await supabase.functions.invoke('create-charge', { body: { kind: 'renewal', companyId } });
+  if (error || !data?.url) {
+    let message = data?.error as string | undefined;
+    const response = (error as { context?: Response } | null)?.context;
+    if (!message && response) message = (await response.clone().json().catch(() => null))?.error;
+    throw new Error(message || 'Não foi possível gerar a cobrança agora.');
+  }
+  return data as Charge;
+}
