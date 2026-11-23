@@ -1,0 +1,58 @@
+name: E2E pagamento
+
+# Fluxo completo de assinatura contra o site publicado: cadastro, link mágico, pagamento simulado
+# na AbacatePay, criação da loja pelo webhook e renovação. Roda só sob demanda porque cria uma
+# loja de teste em produção e só funciona enquanto a AbacatePay estiver em modo de desenvolvimento.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: URL do site publicado
+        default: https://luxcar-six.vercel.app
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  payment-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url }}
+      E2E_ALLOW_MUTATIONS: 'true'
+      E2E_PAYMENT_FLOW: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Sem retries: cada tentativa cria outra loja de teste.
+      - name: Payment flow
+        run: pnpm exec playwright test tests/e2e/subscription-payment.spec.ts --project=desktop-chromium --retries=0
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-payment-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
