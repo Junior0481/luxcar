@@ -79,6 +79,13 @@ Deno.serve(async (request) => {
       ]) : [{ data: [], error: null }, { data: [], error: null }, { data: [], error: null }];
       const detailError = profilesResult.error || membersResult.error || vehiclesResult.error;
       if (detailError) return json({ error: `Não foi possível carregar detalhes das concessionárias: ${detailError.message}` }, 500);
+      const requests = requestsResult.data || [];
+      const requestedPlanIds = [...new Set(requests.map((item) => item.plan).filter(Boolean))];
+      const requestPlansResult = requestedPlanIds.length
+        ? await service.from('plans').select('id,name,monthly_price,annual_price').in('id', requestedPlanIds)
+        : { data: [], error: null };
+      if (requestPlansResult.error) return json({ error: `Não foi possível carregar os planos das solicitações: ${requestPlansResult.error.message}` }, 500);
+      const requestPlans = new Map((requestPlansResult.data || []).map((plan) => [plan.id, plan]));
       const profilesById = new Map((profilesResult.data || []).map((profile) => [profile.id, profile]));
       const ownerCounts = new Map<string, number>();
       const vehicleCounts = new Map<string, number>();
@@ -96,7 +103,15 @@ Deno.serve(async (request) => {
           member_count: ownerCounts.get(company.id) || 0, vehicle_count: vehicleCounts.get(company.id) || 0,
           payments: paymentsByCompany.get(company.id) || []
         })),
-        requests: requestsResult.data || [],
+        requests: requests.map((request) => {
+          const plan = request.plan ? requestPlans.get(request.plan) : null;
+          const cycle = request.billing_cycle === 'annual' ? 'annual' : 'monthly';
+          return {
+            ...request,
+            plan_name: plan?.name || 'Plano não informado',
+            plan_amount: request.quoted_amount ?? (plan ? (cycle === 'annual' ? plan.annual_price : plan.monthly_price) : null)
+          };
+        }),
         audit: (auditResult.data || []).map((entry) => ({ ...entry, actor: entry.actor_id ? profilesById.get(entry.actor_id) || null : null }))
       });
     }
@@ -230,18 +245,46 @@ Deno.serve(async (request) => {
       }
       const resetRequest = () => service.from('subscription_requests').update({ status: 'pending_payment' }).eq('id', requestId).eq('status', 'provisioning');
 
+      const planId = subscriptionRequest.plan || 'platinum';
+      const cycle = subscriptionRequest.billing_cycle === 'annual' ? 'annual' as const : 'monthly' as const;
+      const { data: selectedPlan, error: selectedPlanError } = await service.from('plans')
+        .select('id,monthly_price,annual_price,max_vehicles,max_administrators,max_sellers').eq('id', planId).single();
+      if (selectedPlanError || !selectedPlan) {
+        await resetRequest();
+        return json({ error: 'Plano da solicitação não encontrado.' }, 400);
+      }
+      const { data: existingOwner, error: existingOwnerError } = await service.from('profiles')
+        .select('id,email,full_name,role,company_id').eq('email', subscriptionRequest.owner_email).maybeSingle();
+      if (existingOwnerError) {
+        await resetRequest();
+        return json({ error: 'Não foi possível localizar o perfil do proprietário.' }, 500);
+      }
+      if (existingOwner) {
+        const { data: existingAuth, error: existingAuthError } = await service.auth.admin.getUserById(existingOwner.id);
+        if (existingOwner.role !== 'vendedor' || existingOwner.company_id || existingAuthError
+          || !existingAuth.user?.email_confirmed_at
+          || existingAuth.user.email?.toLowerCase() !== subscriptionRequest.owner_email.toLowerCase()) {
+          await resetRequest();
+          return json({ error: 'O email já está vinculado a uma conta que não pode ser usada como proprietário.' }, 409);
+        }
+      }
       const startedAt = new Date();
-      const cycle = 'monthly' as const;
       const periodEnd = addBillingPeriod(startedAt, cycle);
       const { data: company, error: companyError } = await service.from('companies').insert({
         name: subscriptionRequest.company_name,
         slug: subscriptionRequest.slug,
         email: subscriptionRequest.owner_email,
         phone: subscriptionRequest.phone,
+        postal_code: subscriptionRequest.postal_code,
+        address: subscriptionRequest.address,
+        address_number: subscriptionRequest.address_number,
+        neighborhood: subscriptionRequest.neighborhood,
         city: subscriptionRequest.city,
         state: subscriptionRequest.state,
         status: 'active',
-        plan: 'enterprise',
+        plan: planId,
+        max_vehicles: selectedPlan.max_vehicles,
+        max_users: selectedPlan.max_administrators + selectedPlan.max_sellers,
         subscription_status: 'active', billing_cycle: cycle,
         subscription_started_at: startedAt.toISOString(), current_period_end: periodEnd
       }).select('*').single();
@@ -250,42 +293,71 @@ Deno.serve(async (request) => {
         return json({ error: companyError?.message || 'Não foi possível criar a concessionária.' }, 400);
       }
 
-      const { data: created, error: authError } = await service.auth.admin.createUser({
-        email: subscriptionRequest.owner_email,
-        password: adminPassword,
-        email_confirm: true,
-        user_metadata: { full_name: subscriptionRequest.owner_name, role: 'administrador', company_id: company.id }
-      });
-      if (authError || !created.user) {
+      let ownerUserId = existingOwner?.id;
+      let createdUserId: string | null = null;
+      if (existingOwner) {
+        const { error: profileError } = await service.from('profiles').update({
+          full_name: subscriptionRequest.owner_name, role: 'administrador', company_id: company.id
+        }).eq('id', existingOwner.id);
+        if (profileError) {
+          await service.from('companies').delete().eq('id', company.id);
+          await resetRequest();
+          return json({ error: `Não foi possível vincular o perfil do proprietário: ${profileError.message}` }, 500);
+        }
+      } else {
+        const { data: created, error: authError } = await service.auth.admin.createUser({
+          email: subscriptionRequest.owner_email,
+          password: adminPassword,
+          email_confirm: true,
+          user_metadata: { full_name: subscriptionRequest.owner_name, role: 'administrador', company_id: company.id }
+        });
+        if (authError || !created.user) {
+          await service.from('companies').delete().eq('id', company.id);
+          await resetRequest();
+          return json({ error: authError?.message || 'Não foi possível criar o acesso do proprietário.' }, 400);
+        }
+        ownerUserId = created.user.id;
+        createdUserId = created.user.id;
+
+        const profileError = await setProvisionedProfile(created.user.id, 'administrador', company.id);
+        if (profileError) {
+          await service.from('companies').delete().eq('id', company.id);
+          await resetRequest();
+          return json({ error: `Não foi possível configurar o perfil: ${profileError}` }, 500);
+        }
+      }
+      if (!ownerUserId) {
         await service.from('companies').delete().eq('id', company.id);
         await resetRequest();
-        return json({ error: authError?.message || 'Não foi possível criar o acesso do proprietário.' }, 400);
+        return json({ error: 'Não foi possível identificar a conta do proprietário.' }, 500);
       }
-
-      const profileError = await setProvisionedProfile(created.user.id, 'administrador', company.id);
-      if (profileError) {
+      const rollbackOwnerAndCompany = async () => {
+        if (existingOwner) {
+          await service.from('profiles').update({
+            full_name: existingOwner.full_name, role: existingOwner.role, company_id: existingOwner.company_id
+          }).eq('id', existingOwner.id);
+        } else if (createdUserId) {
+          await service.auth.admin.deleteUser(createdUserId);
+        }
         await service.from('companies').delete().eq('id', company.id);
-        await resetRequest();
-        return json({ error: `Não foi possível configurar o perfil: ${profileError}` }, 500);
-      }
+      };
 
-      const { error: ownerError } = await service.from('companies').update({ owner_user_id: created.user.id }).eq('id', company.id);
+      const { error: ownerError } = await service.from('companies').update({ owner_user_id: ownerUserId }).eq('id', company.id);
       if (ownerError) {
-        await service.auth.admin.deleteUser(created.user.id);
-        await service.from('companies').delete().eq('id', company.id);
+        await rollbackOwnerAndCompany();
         await resetRequest();
         return json({ error: `Não foi possível registrar o proprietário: ${ownerError.message}` }, 500);
       }
 
       const { data: initialPayment, error: initialPaymentError } = await service.from('subscription_payments').insert({
         company_id: company.id, subscription_request_id: requestId,
-        payment_reference: subscriptionRequest.payment_reference, amount: null,
+        payment_reference: subscriptionRequest.payment_reference,
+        amount: subscriptionRequest.quoted_amount ?? (cycle === 'annual' ? selectedPlan.annual_price : selectedPlan.monthly_price),
         period_start: startedAt.toISOString(), period_end: periodEnd,
         status: 'confirmed', confirmed_by: user.id, confirmed_at: startedAt.toISOString()
       }).select('id').single();
       if (initialPaymentError) {
-        await service.auth.admin.deleteUser(created.user.id);
-        await service.from('companies').delete().eq('id', company.id);
+        await rollbackOwnerAndCompany();
         await resetRequest();
         return json({ error: `Não foi possível registrar o pagamento inicial: ${initialPaymentError.message}` }, 500);
       }
@@ -294,17 +366,34 @@ Deno.serve(async (request) => {
         status: 'provisioned', payment_confirmed_at: new Date().toISOString(), company_id: company.id
       }).eq('id', requestId).eq('status', 'provisioning');
       if (requestUpdateError) {
-        await service.auth.admin.deleteUser(created.user.id);
-        await service.from('companies').delete().eq('id', company.id);
+        await service.from('subscription_payments').delete().eq('subscription_request_id', requestId);
+        await rollbackOwnerAndCompany();
         await resetRequest();
         return json({ error: `Não foi possível concluir a solicitação: ${requestUpdateError.message}` }, 500);
       }
+
+      if (existingOwner) {
+        const { error: authUpdateError } = await service.auth.admin.updateUserById(existingOwner.id, {
+          password: adminPassword,
+          user_metadata: { full_name: subscriptionRequest.owner_name, role: 'administrador', company_id: company.id }
+        });
+        if (authUpdateError) {
+          await service.from('subscription_payments').delete().eq('subscription_request_id', requestId);
+          await service.from('subscription_requests').update({
+            status: 'pending_payment', payment_confirmed_at: null, company_id: null
+          }).eq('id', requestId).eq('status', 'provisioned');
+          await rollbackOwnerAndCompany();
+          return json({ error: `Não foi possível definir o acesso do proprietário: ${authUpdateError.message}` }, 500);
+        }
+      }
+
       const auditError = await logPlatformAction('subscription_payment_confirmed', company.id, {
         payment_id: initialPayment.id, payment_reference: subscriptionRequest.payment_reference,
-        period_start: startedAt.toISOString(), period_end: periodEnd, provisioned_admin_id: created.user.id
+        plan: planId, billing_cycle: cycle,
+        period_start: startedAt.toISOString(), period_end: periodEnd, provisioned_admin_id: ownerUserId
       }, requestId);
       if (auditError) return json({ error: `Concessionária provisionada, mas o registro de auditoria falhou: ${auditError.message}` }, 500);
-      return json({ company: { id: company.id, name: company.name, slug: company.slug }, user: { id: created.user.id, email: created.user.email }, status: 'provisioned' }, 201);
+      return json({ company: { id: company.id, name: company.name, slug: company.slug }, user: { id: ownerUserId, email: subscriptionRequest.owner_email }, status: 'provisioned' }, 201);
     }
 
     if (body.action === 'create_member') {
