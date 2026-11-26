@@ -108,6 +108,8 @@ AS $$
 $$;
 
 -- What the signed-in member needs to show the subscription banner or the blocked screen.
+-- DROP first: a later migration adds a column, and CREATE OR REPLACE cannot change the row type.
+DROP FUNCTION IF EXISTS public.current_company_subscription();
 CREATE OR REPLACE FUNCTION public.current_company_subscription()
 RETURNS TABLE (
   company_id UUID,

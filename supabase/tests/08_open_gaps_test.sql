@@ -52,8 +52,8 @@ insert into storage.objects (bucket_id, name) values
 
 :as_seller_a
 select lives_ok(
-  $$insert into storage.objects (bucket_id, name) values ('vehicles', 'a0000000-0000-0000-0000-000000000001/novo.jpg')$$,
-  '(b) vendedor A faz upload no prefixo da própria loja');
+  $$insert into storage.objects (bucket_id, name) values ('vehicles', 'a0000000-0000-0000-0000-000000000001/trade-in/novo.webp')$$,
+  '(b) vendedor A envia foto de troca no prefixo da própria loja');
 select throws_ok(
   $$insert into storage.objects (bucket_id, name) values ('vehicles', 'b0000000-0000-0000-0000-000000000001/x.jpg')$$,
   '42501', null, '(b) vendedor A não faz upload no prefixo da loja B');
