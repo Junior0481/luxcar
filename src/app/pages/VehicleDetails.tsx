@@ -398,7 +398,7 @@ export function VehicleDetails() {
         />
       )}
 
-      {vehicle && canEditVehicle && <VehicleForm open={showVehicleForm} vehicle={vehicle} onClose={() => { setShowVehicleForm(false); loadVehicleDetails({ silent: true }); }} />}
+      {vehicle && canEditVehicle && <VehicleForm open={showVehicleForm} vehicle={vehicle} onClose={() => { setShowVehicleForm(false); void loadVehicleDetails({ silent: true }); }} />}
       {vehicle && <NegotiationForm open={showNegotiationForm} initialVehicle={vehicle} onClose={() => setShowNegotiationForm(false)} onCreated={(negotiationId) => navigate(`/dashboard/negotiations/${negotiationId}`)} />}
 
       <Dialog open={activePhotoIndex !== null} onOpenChange={(open) => { if (!open) setSelectedPhotoIndex(null); }}>
