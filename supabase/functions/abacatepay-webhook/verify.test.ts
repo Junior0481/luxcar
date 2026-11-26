@@ -21,6 +21,16 @@ describe('verifyWebhook', () => {
       .resolves.toMatchObject({ ok: false, status: 401, error: 'Invalid signature' });
   });
 
+  it('fails closed when the signature key is not configured', async () => {
+    await expect(verifyWebhook({ expectedSecret: 's3cret', receivedSecret: 's3cret', publicKey: undefined, signature: null, rawBody: body }))
+      .resolves.toMatchObject({ ok: false, status: 500 });
+  });
+
+  it('rejects a missing signature', async () => {
+    await expect(verifyWebhook({ expectedSecret: 's3cret', receivedSecret: 's3cret', publicKey: 'public-key', signature: null, rawBody: body }))
+      .resolves.toMatchObject({ ok: false, status: 401, error: 'Missing signature' });
+  });
+
   it('fails closed when the secret is not configured', async () => {
     await expect(verifyWebhook({ expectedSecret: undefined, receivedSecret: 'x', publicKey: undefined, signature: null, rawBody: body }))
       .resolves.toMatchObject({ ok: false, status: 500 });

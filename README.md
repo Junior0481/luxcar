@@ -357,6 +357,17 @@ precisa do site publicado (`E2E_BASE_URL`), de `E2E_ALLOW_MUTATIONS=true` e de
 desenvolvimento. No GitHub, rode pelo workflow manual **E2E pagamento**. Cada
 execução cria uma loja `Loja E2E Pagamento …` em produção; apague-a depois.
 
+### Secrets do webhook AbacatePay
+
+A Edge Function `abacatepay-webhook` falha fechada: exige
+`ABACATEPAY_WEBHOOK_SECRET` (enviado pela AbacatePay na URL ou no header
+`X-Webhook-Secret`), `ABACATEPAY_PUBLIC_KEY` (chave pública fixa da AbacatePay
+para conferir a assinatura HMAC do corpo) e `paidAmount` no evento. O LuxCar
+roda como simulação, então eventos do Modo Teste (`devMode: true`, pagamento
+simulado) são aceitos. Se um dia houver cobrança real, troque para as chaves de
+produção e defina `ABACATEPAY_REJECT_DEV_EVENTS=true` para ignorar pagamentos
+simulados.
+
 ### Criar acessos de demonstração
 
 `scripts/create-demo-accesses.mjs` cria administrador, vendedor e cliente para

@@ -10,12 +10,15 @@ export type CompanySubscription = {
   subscription_status: SubscriptionStatus;
   current_period_end: string | null;
   grace_ends_at: string | null;
+  /** Status operacional da empresa (a plataforma pode suspender). */
+  company_status?: string;
 };
 
 export type SubscriptionNotice =
   | { kind: 'due_today' }
   | { kind: 'grace'; daysLeft: number }
   | { kind: 'blocked' }
+  | { kind: 'suspended' }
   | null;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -29,7 +32,9 @@ export async function getCompanySubscription(): Promise<CompanySubscription | nu
 
 /** Aviso a mostrar no painel: dia do vencimento, dias restantes da tolerância ou bloqueio. */
 export function subscriptionNotice(subscription: CompanySubscription | null, now = new Date()): SubscriptionNotice {
-  if (!subscription || subscription.subscription_status === 'cancelled') return null;
+  if (!subscription) return null;
+  if (subscription.company_status && subscription.company_status !== 'active') return { kind: 'suspended' };
+  if (subscription.subscription_status === 'cancelled') return null;
   if (subscription.subscription_status === 'blocked') return { kind: 'blocked' };
   if (subscription.subscription_status === 'past_due' && subscription.grace_ends_at) {
     const daysLeft = Math.max(0, Math.ceil((Date.parse(subscription.grace_ends_at) - now.getTime()) / DAY_MS));
@@ -81,11 +86,59 @@ export async function createRenewalCharge(companyId?: string): Promise<Charge> {
 }
 
 const RECENT_PAYMENT_MS = 15 * 60 * 1000;
+const BASELINE_KEY = 'luxcar:checkout-baseline';
 
-/** Verdadeiro quando algum pagamento foi confirmado há pouco (o webhook já processou a volta do checkout). */
-export function hasRecentPayment(payments: SubscriptionPayment[], now = new Date()): boolean {
+/** Guarda o vencimento antes de ir ao checkout, para reconhecer a renovação na volta. */
+export function rememberCheckoutBaseline(subscription: CompanySubscription | null): void {
+  if (!subscription) return;
+  try {
+    sessionStorage.setItem(BASELINE_KEY, JSON.stringify({ companyId: subscription.company_id, periodEnd: subscription.current_period_end }));
+  } catch { /* storage indisponível: cai no critério do histórico */ }
+}
+
+export function readCheckoutBaseline(companyId: string): { periodEnd: string | null } | null {
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(BASELINE_KEY) || 'null');
+    return stored && stored.companyId === companyId ? { periodEnd: stored.periodEnd ?? null } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearCheckoutBaseline(): void {
+  try { sessionStorage.removeItem(BASELINE_KEY); } catch { /* nada a limpar */ }
+}
+
+/**
+ * Verdadeiro quando a renovação paga já foi aplicada pelo webhook: o vencimento avançou além do que
+ * era antes do checkout. Sem essa referência, exige um pagamento automático confirmado há pouco
+ * que tenha gerado o vencimento atual.
+ */
+export function isRenewalConfirmed(
+  subscription: CompanySubscription | null,
+  payments: SubscriptionPayment[],
+  baseline: { periodEnd: string | null } | null,
+  now = new Date()
+): boolean {
+  if (!subscription?.current_period_end) return false;
+  const currentEnd = Date.parse(subscription.current_period_end);
+  if (baseline) return baseline.periodEnd === null || currentEnd > Date.parse(baseline.periodEnd);
   return payments.some((payment) => {
+    if (payment.status !== 'confirmed' || !payment.payment_reference?.startsWith('abacatepay:')) return false;
+    if (Date.parse(payment.period_end) !== currentEnd) return false;
     const confirmed = Date.parse(payment.confirmed_at || payment.created_at);
     return Number.isFinite(confirmed) && now.getTime() - confirmed >= -60_000 && now.getTime() - confirmed <= RECENT_PAYMENT_MS;
   });
+}
+
+const SUBSCRIPTION_CHANGED = 'luxcar:subscription-changed';
+
+/** Avisa o layout (faixa de atraso, tela de bloqueio) que a assinatura mudou. */
+export function notifySubscriptionChanged(): void {
+  window.dispatchEvent(new Event(SUBSCRIPTION_CHANGED));
+}
+
+export function onSubscriptionChanged(listener: () => void): () => void {
+  window.addEventListener(SUBSCRIPTION_CHANGED, listener);
+  return () => window.removeEventListener(SUBSCRIPTION_CHANGED, listener);
 }

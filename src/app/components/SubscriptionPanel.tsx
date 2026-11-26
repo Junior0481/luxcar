@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CreditCard, LoaderCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
@@ -6,8 +6,12 @@ import {
   createRenewalCharge,
   getCompanyPlan,
   getCompanySubscription,
-  hasRecentPayment,
+  clearCheckoutBaseline,
+  isRenewalConfirmed,
   listSubscriptionPayments,
+  notifySubscriptionChanged,
+  readCheckoutBaseline,
+  rememberCheckoutBaseline,
   subscriptionNotice,
   type CompanySubscription,
   type Plan,
@@ -57,11 +61,14 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
     const [loadedSubscription, history] = await Promise.all([getCompanySubscription(), listSubscriptionPayments(ctx.companyId!)]);
     setSubscription(loadedSubscription);
     setPayments(history);
-    return history;
+    return { subscription: loadedSubscription, history };
   }, [ctx.companyId]);
+  // Leitura mais recente para o polling, sem reiniciar o intervalo a cada atualização.
+  const latest = useRef({ subscription, payments });
+  latest.current = { subscription, payments };
 
   useEffect(() => {
-    if (!ctx.companyId) return;
+    if (!ctx.companyId) { setLoading(false); return; }
     let active = true;
     (async () => {
       try {
@@ -96,27 +103,35 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
     return () => { active = false; };
   }, [ctx.companyId]);
 
-  // Na volta do checkout, o webhook pode chegar alguns segundos depois: consulta até o pagamento aparecer.
+  // Na volta do checkout, o webhook pode chegar alguns segundos depois: consulta até o vencimento avançar.
   useEffect(() => {
     if (confirmation !== 'waiting' || loading || !ctx.companyId) return;
-    if (hasRecentPayment(payments)) {
+    const baseline = readCheckoutBaseline(ctx.companyId);
+    const confirm = () => {
+      clearCheckoutBaseline();
       setConfirmation('confirmed');
+      notifySubscriptionChanged();
+    };
+    if (isRenewalConfirmed(latest.current.subscription, latest.current.payments, baseline)) {
+      confirm();
       return;
     }
     let attempts = 0;
+    let stopped = false;
     const timer = window.setInterval(async () => {
       attempts += 1;
-      const history = await refreshBilling().catch(() => null);
-      if (history && hasRecentPayment(history)) {
+      const result = await refreshBilling().catch(() => null);
+      if (stopped) return;
+      if (result && isRenewalConfirmed(result.subscription, result.history, baseline)) {
         window.clearInterval(timer);
-        setConfirmation('confirmed');
+        confirm();
       } else if (attempts >= POLL_ATTEMPTS) {
         window.clearInterval(timer);
         setConfirmation('timeout');
       }
     }, POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [confirmation, loading, ctx.companyId, payments, refreshBilling]);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [confirmation, loading, ctx.companyId, refreshBilling]);
 
   // Tira o ?pagamento=confirmado da URL para o aviso não voltar ao recarregar.
   useEffect(() => {
@@ -132,6 +147,7 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
     setError('');
     try {
       const charge = await createRenewalCharge();
+      rememberCheckoutBaseline(subscription);
       window.location.href = charge.url;
     } catch (payError) {
       setError(payError instanceof Error ? payError.message : 'Não foi possível gerar a cobrança.');

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import {
   BarChart3,
@@ -16,7 +16,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useCompany } from '../../../contexts/CompanyContext';
-import { getCompanySubscription, subscriptionNotice, type SubscriptionNotice } from '../../../services/subscription.service';
+import {
+  createRenewalCharge,
+  getCompanySubscription,
+  onSubscriptionChanged,
+  rememberCheckoutBaseline,
+  subscriptionNotice,
+  type CompanySubscription,
+  type SubscriptionNotice,
+} from '../../../services/subscription.service';
 import { getCompanyPlan } from '../../../services/plans.service';
 import { ThemeToggle } from '../ThemeToggle';
 import { Button } from '../ui/button';
@@ -52,17 +60,47 @@ export function DashboardLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [subscription, setSubscription] = useState<CompanySubscription | null>(null);
   const [notice, setNotice] = useState<SubscriptionNotice>(null);
   const [reportsEnabled, setReportsEnabled] = useState<boolean | null>(null);
+  const [subscriptionVersion, setSubscriptionVersion] = useState(0);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState('');
+  const hasCompany = Boolean(profile?.company_id) && profile?.role !== 'platform_admin';
+  const returningFromCheckout = new URLSearchParams(location.search).get('pagamento') === 'confirmado';
+
+  const loadSubscription = useCallback(async () => {
+    const loaded = await getCompanySubscription();
+    setSubscription(loaded);
+    const next = subscriptionNotice(loaded);
+    setNotice(next);
+    return next;
+  }, []);
+
+  // Recarrega ao navegar e quando o painel de assinatura avisa que o pagamento foi confirmado.
+  useEffect(() => onSubscriptionChanged(() => setSubscriptionVersion((version) => version + 1)), []);
 
   useEffect(() => {
-    if (!profile?.company_id || profile.role === 'platform_admin') { setNotice(null); return; }
+    if (!hasCompany) { setSubscription(null); setNotice(null); return; }
     let active = true;
-    getCompanySubscription()
-      .then((subscription) => { if (active) setNotice(subscriptionNotice(subscription)); })
-      .catch((error) => console.error('Error loading subscription:', error));
+    loadSubscription().catch((error) => { if (active) console.error('Error loading subscription:', error); });
     return () => { active = false; };
-  }, [profile?.company_id, profile?.role, location.pathname]);
+  }, [hasCompany, profile?.company_id, location.pathname, subscriptionVersion, loadSubscription]);
+
+  // Volta do checkout com a loja bloqueada: o painel de assinatura não aparece (a tela de bloqueio
+  // ocupa tudo), então o próprio layout consulta até o webhook liberar o acesso.
+  useEffect(() => {
+    if (!hasCompany || !returningFromCheckout || notice?.kind !== 'blocked') return;
+    let attempts = 0;
+    let stopped = false;
+    const timer = window.setInterval(async () => {
+      attempts += 1;
+      const next = await loadSubscription().catch(() => null);
+      if (stopped) return;
+      if (next?.kind !== 'blocked' || attempts >= 20) window.clearInterval(timer);
+    }, 3000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [hasCompany, returningFromCheckout, notice?.kind, loadSubscription]);
 
   useEffect(() => {
     if (!user || !profile?.company_id) { setReportsEnabled(null); return; }
@@ -71,7 +109,20 @@ export function DashboardLayout() {
       .then((plan) => { if (active) setReportsEnabled(plan ? plan.reports_enabled : null); })
       .catch(() => { if (active) setReportsEnabled(null); });
     return () => { active = false; };
-  }, [user?.id, profile?.company_id, profile?.role]);
+  }, [user?.id, profile?.company_id, profile?.role, subscription?.plan]);
+
+  const payBlocked = async () => {
+    setPaying(true);
+    setPayError('');
+    try {
+      const charge = await createRenewalCharge();
+      rememberCheckoutBaseline(subscription);
+      window.location.href = charge.url;
+    } catch (error) {
+      setPayError(error instanceof Error ? error.message : 'Não foi possível gerar a cobrança.');
+      setPaying(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -106,19 +157,38 @@ export function DashboardLayout() {
 
   if (!user || !profile) return null;
 
-  if (notice?.kind === 'blocked') {
+  if (notice?.kind === 'blocked' || notice?.kind === 'suspended') {
+    const suspended = notice.kind === 'suspended';
+    const canPay = !suspended && profile.role === 'administrador';
+    const signOutButton = (
+      <Button type="button" variant="outline" onClick={async () => { await signOut(); navigate('/auth/login', { replace: true }); }}>
+        Sair da conta
+      </Button>
+    );
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <section role="alert" className="w-full max-w-lg space-y-4 rounded-2xl border border-destructive/30 bg-card p-6 shadow-lux-md">
-          <p className="text-sm font-medium text-destructive">Assinatura bloqueada</p>
-          <h1 className="text-2xl font-semibold text-foreground">O acesso da loja foi bloqueado por falta de pagamento</h1>
+          <p className="text-sm font-medium text-destructive">{suspended ? 'Loja suspensa' : 'Assinatura bloqueada'}</p>
+          <h1 className="text-2xl font-semibold text-foreground">
+            {suspended ? 'O acesso da loja foi suspenso pela equipe LuxCar' : 'O acesso da loja foi bloqueado por falta de pagamento'}
+          </h1>
           <p className="text-sm leading-6 text-muted-foreground">
-            O prazo de 7 dias após o vencimento terminou. Assim que o pagamento for confirmado, o acesso volta automaticamente.
-            Fale com a equipe LuxCar para regularizar.
+            {suspended
+              ? 'Fale com a equipe LuxCar para entender o motivo e reativar a loja.'
+              : returningFromCheckout
+                ? 'Estamos aguardando a confirmação do pagamento. O acesso volta sozinho em alguns instantes.'
+                : `O prazo de 7 dias após o vencimento terminou. Assim que o pagamento for confirmado, o acesso volta automaticamente.${canPay ? '' : ' Peça ao administrador da loja para regularizar ou fale com a equipe LuxCar.'}`}
           </p>
-          <Button type="button" variant="outline" onClick={async () => { await signOut(); navigate('/auth/login', { replace: true }); }}>
-            Sair da conta
-          </Button>
+          {payError ? <p className="text-sm text-destructive">{payError}</p> : null}
+          <div className="flex flex-wrap gap-3">
+            {canPay ? (
+              <Button type="button" onClick={() => void payBlocked()} disabled={paying}>
+                <CreditCard className="mr-2 size-4" />
+                {paying ? 'Gerando cobrança...' : 'Pagar agora'}
+              </Button>
+            ) : null}
+            {signOutButton}
+          </div>
         </section>
       </main>
     );
@@ -147,7 +217,7 @@ export function DashboardLayout() {
     : [
         { label: 'Operação', items: operationItems },
         { label: 'Gestão', items: (profile.role === 'administrador' ? managementItems : [managementItems[0]])
-          .filter((item) => item.to !== '/dashboard/reports' || reportsEnabled !== false) },
+          .filter((item) => item.to !== '/dashboard/reports' || reportsEnabled === true) },
       ].filter((section) => section.items.length > 0);
 
   const handleSignOut = async () => {
