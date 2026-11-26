@@ -382,6 +382,7 @@ Deno.serve(async (request) => {
     if (body.action === 'create_member') {
       const { fullName, email, password, role } = body;
       if (!fullName || !email || !password || !['administrador', 'vendedor'].includes(role)) return json({ error: 'Dados de usuário inválidos.' }, 400);
+      if (typeof password !== 'string' || password.length < 8) return json({ error: 'A senha inicial deve ter pelo menos 8 caracteres.' }, 400);
       const { count } = await service.from('profiles').select('id', { count: 'exact', head: true }).eq('company_id', caller.company_id);
       const { data: company } = await service.from('companies').select('max_users').eq('id', caller.company_id).single();
       if (company && (count || 0) >= company.max_users) return json({ error: 'Limite de usuários do plano atingido.' }, 409);
@@ -390,14 +391,23 @@ Deno.serve(async (request) => {
         email, password, email_confirm: true,
         user_metadata: { full_name: fullName, role, company_id: caller.company_id }
       });
-      if (error) return json({ error: error.message }, 400);
+      if (error) {
+        console.error('create_member failed:', error.message);
+        const taken = /already|registered|exists/i.test(error.message);
+        return json({ error: taken ? 'Já existe uma conta com este email.' : 'Não foi possível criar o usuário. Confira os dados e tente novamente.' }, taken ? 409 : 400);
+      }
       const profileError = await setProvisionedProfile(created.user.id, role, caller.company_id);
-      if (profileError) return json({ error: `Não foi possível configurar o perfil: ${profileError}` }, 500);
+      if (profileError) {
+        console.error('create_member profile failed:', profileError);
+        const limit = profileError.match(/Limite de [^;]+? atingido\./)?.[0];
+        return json({ error: limit || 'Não foi possível configurar o perfil do usuário.' }, limit ? 409 : 500);
+      }
       return json({ user: { id: created.user.id, email: created.user.email } }, 201);
     }
 
     return json({ error: 'Ação desconhecida.' }, 400);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : 'Erro inesperado.' }, 500);
+    console.error('admin-provision failed:', error);
+    return json({ error: 'Erro inesperado. Tente novamente.' }, 500);
   }
 });

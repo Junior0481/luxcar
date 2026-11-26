@@ -86,12 +86,15 @@ Deno.serve(async (request) => {
       .select('id,monthly_price,annual_price').eq('id', values.plan).single();
     if (planError || !plan) return json({ error: 'Plano selecionado indisponível. Atualize a página e tente novamente.' }, 400);
     const amount = values.billing_cycle === 'annual' ? plan.annual_price : plan.monthly_price;
-    const { error: insertError } = await service.from('subscription_requests').insert({
-      ...values,
-      quoted_amount: amount,
-      payment_reference: null,
-      status: 'pending_payment'
-    });
+    // One pending request per email: a new submission replaces the previous one instead of
+    // piling up requests (and reserving store slugs) without paying.
+    const { data: pendingRequest } = await service.from('subscription_requests')
+      .select('id').eq('owner_email', values.owner_email).eq('status', 'pending_payment').maybeSingle();
+    const row = { ...values, quoted_amount: amount, payment_reference: null, status: 'pending_payment' };
+    const { error: insertError } = pendingRequest
+      ? await service.from('subscription_requests').update({ ...row, updated_at: new Date().toISOString() })
+        .eq('id', pendingRequest.id).eq('status', 'pending_payment')
+      : await service.from('subscription_requests').insert(row);
     if (insertError) {
       if (insertError.code === '23505') {
         const { data: existingRequest } = await service.from('subscription_requests')

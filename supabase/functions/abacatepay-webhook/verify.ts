@@ -25,14 +25,14 @@ export async function hmacBase64(key: string, body: string) {
   return btoa(String.fromCharCode(...signature));
 }
 
-/** webhookSecret in the URL proves the origin; the HMAC header proves the body was not altered. */
+/** webhookSecret (URL or X-Webhook-Secret header) proves the origin; the HMAC header proves the body was not altered. */
 export async function verifyWebhook({ expectedSecret, receivedSecret, publicKey, signature, rawBody }: VerifyInput): Promise<VerifyResult> {
   if (!expectedSecret) return { ok: false, status: 500, error: 'Webhook secret not configured' };
   if (!receivedSecret || !timingSafeEqual(receivedSecret, expectedSecret)) return { ok: false, status: 401, error: 'Unauthorized' };
-  if (publicKey) {
-    if (!signature) return { ok: false, status: 401, error: 'Missing signature' };
-    const expected = await hmacBase64(publicKey, rawBody);
-    if (!timingSafeEqual(signature, expected)) return { ok: false, status: 401, error: 'Invalid signature' };
-  }
+  // Fail closed: without the HMAC key the body could be altered in transit.
+  if (!publicKey) return { ok: false, status: 500, error: 'Webhook signature key not configured' };
+  if (!signature) return { ok: false, status: 401, error: 'Missing signature' };
+  const expected = await hmacBase64(publicKey, rawBody);
+  if (!timingSafeEqual(signature, expected)) return { ok: false, status: 401, error: 'Invalid signature' };
   return { ok: true };
 }
