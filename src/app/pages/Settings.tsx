@@ -3,13 +3,12 @@ import { useLocation } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { supabase } from '../../lib/supabase';
-import { AlertCircle, Bell, Car, CheckCircle, CreditCard, Database, Palette, Shield, Upload, User } from 'lucide-react';
+import { AlertCircle, Car, CheckCircle, CreditCard, Database, Palette, Shield, Upload, User } from 'lucide-react';
 import { SubscriptionPanel } from '../components/SubscriptionPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Switch } from '../components/ui/switch';
 import { PageHeader } from '../components/ui/page-header';
 import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -75,10 +74,6 @@ export function Settings() {
     newPassword: '',
     confirmPassword: ''
   });
-  const [notificationsForm, setNotificationsForm] = useState({
-    negotiationStatus: true,
-    linkedVehicleUpdates: true
-  });
   const [brandingForm, setBrandingForm] = useState({
     name: '', logoUrl: '', faviconUrl: '', primaryColor: '#f8a746', secondaryColor: '#111827', customDomain: ''
   });
@@ -88,7 +83,6 @@ export function Settings() {
     ...(profile?.role === 'administrador' ? [{ id: 'branding', label: 'Marca', desc: 'Identidade white label', icon: Palette }] : []),
     ...(profile?.role === 'administrador' && profile.company_id ? [{ id: 'subscription', label: 'Assinatura', desc: 'Plano, vencimento e pagamento', icon: CreditCard }] : []),
     { id: 'security', label: 'Segurança', desc: 'Acesso e senha', icon: Shield },
-    { id: 'notifications', label: 'Notificações', desc: 'Alertas da operação', icon: Bell },
     { id: 'system', label: 'Sistema', desc: 'Dados e backup', icon: Database }
   ];
   // A aba pedida pela URL só vale se o papel do usuário tiver acesso a ela.
@@ -115,19 +109,6 @@ export function Settings() {
       customDomain: company.custom_domain || ''
     });
   }, [company]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const stored = localStorage.getItem(`luxcar-notifications:${user.id}`);
-    if (!stored) return;
-
-    try {
-      setNotificationsForm(JSON.parse(stored));
-    } catch {
-      localStorage.removeItem(`luxcar-notifications:${user.id}`);
-    }
-  }, [user]);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -217,11 +198,6 @@ export function Settings() {
         showMessage('success', 'Senha atualizada.');
       }
 
-      if (activeTab === 'notifications') {
-        localStorage.setItem(`luxcar-notifications:${user.id}`, JSON.stringify(notificationsForm));
-        showMessage('success', 'Preferencias salvas.');
-      }
-
       if (activeTab === 'branding') {
         if (profile.role !== 'administrador' || !profile.company_id) throw new Error('Apenas administradores podem alterar a marca.');
         const previousAssets = [company?.logo_url, company?.favicon_url].filter((value): value is string => Boolean(value));
@@ -301,11 +277,6 @@ export function Settings() {
       showMessage('error', error.message || 'Não foi possível limpar o cache.');
     }
   };
-
-  const notificationRows = [
-    { key: 'negotiationStatus' as const, title: 'Status da negociação', desc: 'Receber alertas quando o estágio de uma negociação mudar' },
-    { key: 'linkedVehicleUpdates' as const, title: 'Veículo vinculado', desc: 'Notificar apenas sobre atualizações importantes do veículo negociado' }
-  ];
 
   if (loading) {
     return (
@@ -480,26 +451,6 @@ export function Settings() {
                     </div>
                   </div>
                 </section>
-                </div>
-              )}
-
-              {activeTab === 'notifications' && (
-                <div className="divide-y divide-border">
-                  {notificationRows.map((row) => (
-                    <div key={row.key} className="flex items-center justify-between gap-4 py-4">
-                      <div>
-                        <p className="font-medium text-foreground">{row.title}</p>
-                        <p className="text-sm text-muted-foreground">{row.desc}</p>
-                      </div>
-                      <Switch
-                        aria-label={row.title}
-                        checked={notificationsForm[row.key]}
-                        onCheckedChange={(checked) =>
-                          setNotificationsForm({ ...notificationsForm, [row.key]: checked })
-                        }
-                      />
-                    </div>
-                  ))}
                 </div>
               )}
 

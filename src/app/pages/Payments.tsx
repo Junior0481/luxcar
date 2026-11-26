@@ -3,6 +3,16 @@ import { AlertCircle, CreditCard, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Negotiation, Payment, supabase } from '../../lib/supabase';
 import { setPaymentStatus } from '../../services/payments.service';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -18,6 +28,14 @@ type PaymentRow = Payment & { negotiation?: Pick<Negotiation, 'client_name'> };
 const money = (value: number) => new Intl.NumberFormat('pt-BR', {
   style: 'currency', currency: 'BRL'
 }).format(value);
+
+const statusLabels: Record<Payment['status'], string> = {
+  pending: 'Pendente',
+  authorized: 'Autorizado',
+  paid: 'Pago',
+  cancelled: 'Cancelado',
+  refunded: 'Cancelado · estornado',
+};
 
 const parsePaymentAmount = (rawValue: string): number | null => {
   let value = rawValue.trim().replace(/[R$\s]/g, '');
@@ -48,6 +66,7 @@ export function Payments() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({ negotiationId: '', amount: '', method: 'pix' as Payment['method'] });
+  const [paymentToCancel, setPaymentToCancel] = useState<PaymentRow | null>(null);
   const isAdmin = profile?.role === 'administrador';
   const selectedNegotiation = negotiations.find((item) => item.id === form.negotiationId);
   const registeredForNegotiation = payments
@@ -125,6 +144,14 @@ export function Payments() {
     const { error } = await setPaymentStatus(id, status);
     setMessage(error ? error.message : 'Status do pagamento atualizado.');
     if (!error) await load();
+  }
+
+  // Cancelar não apaga nem desconta: o pagamento continua no total registrado, só marcado.
+  async function confirmCancel() {
+    if (!paymentToCancel) return;
+    const next = paymentToCancel.status === 'paid' ? 'refunded' : 'cancelled';
+    setPaymentToCancel(null);
+    await updateStatus(paymentToCancel.id, next);
   }
 
   if (loading) {
@@ -208,8 +235,25 @@ export function Payments() {
       ) : null}
 
       {payments.length > 0 && <Table className="min-w-[680px]"><TableHeader><TableRow><TableHead>Negociação</TableHead><TableHead>Forma</TableHead><TableHead>Data</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader><TableBody>{payments.map((payment) => <TableRow key={payment.id}>
-        <TableCell className="font-medium">{payment.negotiation?.client_name || 'Negociação'}</TableCell><TableCell className="capitalize">{payment.method}</TableCell><TableCell className="text-muted-foreground">{new Date(payment.created_at).toLocaleDateString('pt-BR')}</TableCell><TableCell className="text-right font-semibold tabular-nums">{money(payment.amount)}</TableCell><TableCell><Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'cancelled' ? 'destructive' : 'secondary'}>{payment.status}</Badge></TableCell><TableCell><div className="flex justify-end gap-2">{isAdmin && payment.status === 'pending' ? <Button size="sm" variant="secondary" onClick={() => updateStatus(payment.id, 'authorized')}>Autorizar</Button> : null}{isAdmin && ['pending', 'authorized'].includes(payment.status) ? <Button size="sm" onClick={() => updateStatus(payment.id, 'paid')}>Marcar pago</Button> : null}</div></TableCell>
+        <TableCell className="font-medium">{payment.negotiation?.client_name || 'Negociação'}</TableCell><TableCell className="capitalize">{payment.method}</TableCell><TableCell className="text-muted-foreground">{new Date(payment.created_at).toLocaleDateString('pt-BR')}</TableCell><TableCell className="text-right font-semibold tabular-nums">{money(payment.amount)}</TableCell><TableCell><Badge variant={payment.status === 'paid' ? 'default' : ['cancelled', 'refunded'].includes(payment.status) ? 'destructive' : 'secondary'}>{statusLabels[payment.status] ?? payment.status}</Badge></TableCell><TableCell><div className="flex justify-end gap-2">{isAdmin && payment.status === 'pending' ? <Button size="sm" variant="secondary" onClick={() => updateStatus(payment.id, 'authorized')}>Autorizar</Button> : null}{isAdmin && ['pending', 'authorized'].includes(payment.status) ? <Button size="sm" onClick={() => updateStatus(payment.id, 'paid')}>Marcar pago</Button> : null}{isAdmin && ['pending', 'authorized', 'paid'].includes(payment.status) ? <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setPaymentToCancel(payment)}>Cancelar</Button> : null}</div></TableCell>
       </TableRow>)}</TableBody></Table>}
+
+      <AlertDialog open={!!paymentToCancel} onOpenChange={(open) => { if (!open) setPaymentToCancel(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar pagamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O pagamento de {paymentToCancel ? money(paymentToCancel.amount) : ''}{paymentToCancel?.negotiation?.client_name ? ` de ${paymentToCancel.negotiation.client_name}` : ''} continua no total registrado, marcado como cancelado. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmCancel()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Cancelar pagamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -179,14 +179,7 @@ export async function createNegotiation(
     throw normalizeSupabaseError(error);
   }
 
-  let vq = supabase.from('vehicles').update({ status: 'em_negociacao' }).eq('id', input.vehicle_id);
-  vq = scopeToTenant(vq, ctx);
-  const { error: vErr } = await vq;
-  if (vErr) {
-    log.error('createNegotiation: falha ao marcar veículo em_negociacao', vErr);
-    throw normalizeSupabaseError(vErr);
-  }
-
+  // O trigger negotiations_sync_vehicle_status marca o veículo como em negociação.
   return data as Negotiation;
 }
 

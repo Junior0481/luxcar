@@ -23,7 +23,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatPercent, formatPhone, formatPriority, formatStage, stageLabels } from '../../lib/format';
-import { tenantContextFromProfile, updateNegotiation, updateVehicle } from '../../services';
+import { tenantContextFromProfile, updateNegotiation } from '../../services';
 
 type NegotiationWithDetails = Negotiation & {
   vehicle?: Vehicle;
@@ -155,10 +155,6 @@ export function NegotiationDetails() {
     throw new Error(error.message || 'Não foi possível finalizar a venda.');
   };
 
-  const syncVehicleForStage = async (nextStage: string, current: NegotiationWithDetails) => {
-    const nextVehicleStatus = nextStage === 'perdido' ? 'disponivel' : 'em_negociacao';
-    await updateVehicle(tenantContextFromProfile(user?.id, profile), current.vehicle_id, { status: nextVehicleStatus });
-  };
 
   const handleStageUpdate = async (newStage: string) => {
     if (!negotiation) return;
@@ -171,8 +167,8 @@ export function NegotiationDetails() {
         await finalizeSale(negotiation);
         setMessage({ type: 'success', text: 'Venda finalizada com sucesso.' });
       } else {
+        // O status do veículo acompanha o estágio por trigger no banco.
         await updateNegotiation(tenantContextFromProfile(user?.id, profile), negotiation.id, { stage: newStage as Negotiation['stage'] });
-        await syncVehicleForStage(newStage, negotiation);
         setMessage({ type: 'success', text: 'Estágio atualizado com sucesso.' });
       }
       await loadNegotiationDetails({ silent: true });

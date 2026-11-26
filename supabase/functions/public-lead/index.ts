@@ -21,9 +21,8 @@ Deno.serve(async (request) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const turnstileSecret = Deno.env.get('TURNSTILE_SECRET_KEY');
-    if (!supabaseUrl || !serviceKey || !turnstileSecret) {
-      console.error('Configuração ausente: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY ou TURNSTILE_SECRET_KEY.');
+    if (!supabaseUrl || !serviceKey) {
+      console.error('Configuração ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.');
       return json({ error: 'Serviço temporariamente indisponível.' }, 500);
     }
 
@@ -43,7 +42,8 @@ Deno.serve(async (request) => {
     const customerEmail = typeof payload.customer_email === 'string' ? payload.customer_email.trim() : '';
     const customerPhone = typeof payload.customer_phone === 'string' ? payload.customer_phone.trim() : '';
     const message = typeof payload.message === 'string' ? payload.message.trim() : '';
-    const token = typeof payload.turnstile_token === 'string' ? payload.turnstile_token.trim() : '';
+    // Campo isca do formulário: invisível para pessoas, robôs costumam preenchê-lo.
+    const honeypot = typeof payload.website === 'string' ? payload.website.trim() : '';
 
     if (!UUID_RE.test(companyId) || !UUID_RE.test(vehicleId)) {
       return json({ error: 'Empresa ou veículo inválido.' }, 400);
@@ -61,37 +61,9 @@ Deno.serve(async (request) => {
       return json({ error: 'Informe e-mail ou telefone para contato.' }, 400);
     }
     if (message.length > 2000) return json({ error: 'A mensagem excede o limite de 2000 caracteres.' }, 400);
-    if (!token || token.length > 2048) return json({ error: 'Conclua a verificação antispam.' }, 400);
-
-    const verificationBody = new URLSearchParams({ secret: turnstileSecret, response: token });
-    const remoteIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-    if (remoteIp) verificationBody.set('remoteip', remoteIp);
-
-    const verificationResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: verificationBody,
-      signal: AbortSignal.timeout(10_000)
-    });
-    if (!verificationResponse.ok) {
-      console.error('Turnstile siteverify retornou HTTP', verificationResponse.status);
-      return json({ error: 'Não foi possível validar a verificação antispam.' }, 502);
-    }
-    const verification = await verificationResponse.json();
-    if (verification.success !== true) return json({ error: 'Verificação antispam inválida. Tente novamente.' }, 403);
-
-    const allowedHostnames = Deno.env.get('ALLOWED_HOSTNAMES');
-    if (allowedHostnames !== undefined) {
-      const hostnameAllowlist = allowedHostnames
-        .split(',')
-        .map((hostname) => hostname.trim().toLowerCase())
-        .filter(Boolean);
-      const verifiedHostname = typeof verification.hostname === 'string'
-        ? verification.hostname.trim().toLowerCase()
-        : '';
-      if (!verifiedHostname || !hostnameAllowlist.includes(verifiedHostname)) {
-        return json({ error: 'Origem da verificação antispam inválida.' }, 403);
-      }
+    if (honeypot) {
+      console.warn('Lead público descartado pelo campo isca.');
+      return json({ id: crypto.randomUUID() }, 201);
     }
 
     const service = createClient(supabaseUrl, serviceKey, {

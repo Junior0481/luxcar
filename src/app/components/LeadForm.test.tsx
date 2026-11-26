@@ -1,9 +1,8 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { createLeadMock } = vi.hoisted(() => ({ createLeadMock: vi.fn() }));
-let turnstileCallback: ((token: string) => void) | undefined;
 
 vi.mock('../../services/leads.service', () => ({ createLead: createLeadMock }));
 
@@ -13,8 +12,6 @@ describe('LeadForm', () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
     createLeadMock.mockReset().mockResolvedValue({ id: 'lead-123' });
-    turnstileCallback = undefined;
-    delete window.turnstile;
   });
 
   afterEach(() => {
@@ -31,26 +28,7 @@ describe('LeadForm', () => {
         onClose={vi.fn()}
       />
     );
-    expect(screen.queryByText('Verificação antispam indisponível.')).toBeNull();
-    const script = await waitFor(() => {
-      const loadedScript = document.querySelector<HTMLScriptElement>('script[data-cloudflare-turnstile]');
-      expect(loadedScript).not.toBeNull();
-      return loadedScript!;
-    });
-
-    await act(async () => {
-      window.turnstile = {
-        render: (_container, options) => {
-          turnstileCallback = options.callback;
-          return 'widget-1';
-        },
-        remove: vi.fn(),
-        reset: vi.fn(),
-      };
-      script.dispatchEvent(new Event('load'));
-    });
-    await waitFor(() => expect(turnstileCallback).toBeTypeOf('function'));
-    await act(async () => turnstileCallback?.('valid-token'));
+    expect(screen.queryByText(/antispam/i)).toBeNull();
 
     await user.type(screen.getByLabelText('Seu Nome *'), 'Ana Silva');
     await user.type(screen.getByLabelText('Email'), 'ana@example.com');
@@ -64,7 +42,7 @@ describe('LeadForm', () => {
       customer_email: 'ana@example.com',
       customer_phone: '',
       message: '',
-      turnstile_token: 'valid-token',
+      website: '',
     });
   });
 });
