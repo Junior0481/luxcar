@@ -31,24 +31,13 @@ Aplicar apenas os arquivos numerados, em ordem crescente, com Supabase CLI em am
 27. `20261123000200_abacatepay_payments.sql` — `payment_charges` (cobranças AbacatePay de cadastro e renovação), `abacatepay_products` (produto por plano/ciclo/preço) e `subscription_payments.provider_charge_id` único; `apply_paid_charge()` (só `service_role`) cria a empresa do cadastro ou renova o período no mesmo dia do vencimento, de forma idempotente; administradores da loja leem o próprio histórico de pagamentos.
 
 28. `20261126000100_security_hardening.sql` — administrador da loja deixa de alterar cobrança, status, plano, slug e domínio próprio da empresa (só plataforma/`service_role`); `profiles.email` passa a espelhar o email de login (`auth.users`) e `apply_paid_charge` escolhe o dono por ele e exige o valor pago; empresa suspensa ou inativa perde o tenant e `current_company_subscription()` devolve `company_status`; `negotiation_agreed_price` sai da API; fotos do estoque só por administrador (troca continua aberta à loja); uma solicitação de assinatura pendente por email. **Ao aplicar, perfis com email divergente do login são realinhados.** Publique junto as Edge Functions `abacatepay-webhook`, `subscription-register` e `admin-provision`.
+29. `20261126000200_negotiation_vehicle_status.sql` — trigger `negotiations_sync_vehicle_status` mantém o status do veículo pelas negociações (nova ou em andamento → `em_negociacao`; última perdida → `disponivel`), para o vendedor mudar o estágio sem precisar editar o veículo.
 
 Após aplicar a migration 19, publique a Edge Function `admin-provision` atualizada. Ela fornece o resumo administrativo, o ciclo de renovação, suporte por link de recuperação e auditoria.
 
-## Formulário público de leads (Turnstile)
+## Formulário público de leads
 
-- Configure `TURNSTILE_SECRET_KEY` como secret das Supabase Edge Functions (`supabase secrets set TURNSTILE_SECRET_KEY=...`). Ela nunca deve ser exposta ao navegador.
-- Configure `VITE_TURNSTILE_SITE_KEY` no ambiente de build do frontend. A site key é pública e usada para renderizar o widget no formulário.
-- A função `supabase/functions/public-lead` exige o token Turnstile, uma empresa ativa e um veículo disponível pertencente à empresa antes de inserir o lead.
-
-As migrations numeradas são reexecutáveis quanto a policies/triggers (`DROP ... IF EXISTS` antes do `CREATE`); DDL de tabelas/índices usa `IF NOT EXISTS` e funções/views usam `OR REPLACE` quando compatível.
-
-## Regras e ambiguidades
-
-- Usuários da loja veem todos os leads da própria empresa, com o vendedor responsável indicado pela atribuição; vendedores veem apenas as próprias negociações e registros relacionados.
-- O formulário público insere leads sem sessão; a empresa precisa estar ativa e, quando informado, o veículo precisa pertencer à empresa indicada. Não há rate limit nem verificação anti-spam no SQL.
-- Clientes autenticados só podem ler/editar o próprio registro. O fluxo de cliente público não tem regra de ownership verificável; permanece fechado até o modelo de vínculo ser decidido.
-- Uploads de Storage preservam as regras antigas por autenticação e papel; associação do caminho do objeto ao tenant ainda não está modelada.
-- `REFERENCE_MODELO_FISICO_COMPLETO.sql` foi movido para `supabase/reference/` e reduzido aqui a marcador para evitar execução acidental.
+- A função `supabase/functions/public-lead` exige uma empresa ativa e um veículo disponível pertencente à empresa antes de inserir o lead. A verificação Turnstile foi retirada; o formulário usa só um campo isca invisível (`website`) para descartar robôs simples. `TURNSTILE_SECRET_KEY` e `VITE_TURNSTILE_SITE_KEY` não são mais usados.
 
 ## Pagamento AbacatePay (Edge Functions)
 
