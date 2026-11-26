@@ -48,6 +48,8 @@ export function VehicleDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  // Só o administrador edita o veículo (o banco já recusa a edição do vendedor).
+  const canEditVehicle = profile?.role === 'administrador';
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [costs, setCosts] = useState<VehicleCost[]>([]);
   const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
@@ -218,7 +220,7 @@ export function VehicleDetails() {
             id="vehicle-status"
             aria-label="Status do veículo"
             value={vehicle.status}
-            disabled={updatingStatus}
+            disabled={updatingStatus || !canEditVehicle}
             onChange={(event) => updateVehicleStatus(event.target.value as Vehicle['status'])}
             className="h-9 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
           >
@@ -229,9 +231,11 @@ export function VehicleDetails() {
           <Button variant="outline" onClick={sharePublicListing}>
             <Share2 className="size-4" />Compartilhar
           </Button>
-          <Button variant="outline" onClick={() => setShowVehicleForm(true)}>
-            <Pencil className="size-4" />Editar
-          </Button>
+          {canEditVehicle && (
+            <Button variant="outline" onClick={() => setShowVehicleForm(true)}>
+              <Pencil className="size-4" />Editar
+            </Button>
+          )}
           <Button onClick={() => setShowNegotiationForm(true)}>
             <Plus className="size-4" />Nova negociação
           </Button>
@@ -343,7 +347,7 @@ export function VehicleDetails() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border py-4"><CardTitle className="text-lg">Texto do anúncio</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setShowVehicleForm(true)}><Pencil className="size-4" />Editar</Button>
+          {canEditVehicle && <Button variant="outline" size="sm" onClick={() => setShowVehicleForm(true)}><Pencil className="size-4" />Editar</Button>}
         </CardHeader>
         <CardContent className="pt-4">
           <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-muted-foreground">{vehicle.description || 'Nenhum texto de anúncio cadastrado.'}</p>
@@ -358,9 +362,11 @@ export function VehicleDetails() {
             <p className="text-sm text-muted-foreground">Preço de venda</p>
             <p className="mt-1 text-[36px] font-bold leading-none tracking-tight text-foreground tabular-nums [font-family:var(--font-display)]">{brl(Number(vehicle.sale_price))}</p>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Editar preço de venda" onClick={() => setShowVehicleForm(true)}>
-            <Pencil className="size-4" />
-          </Button>
+          {canEditVehicle && (
+            <Button variant="ghost" size="icon" aria-label="Editar preço de venda" onClick={() => setShowVehicleForm(true)}>
+              <Pencil className="size-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-3 py-4">
           {[
@@ -392,7 +398,7 @@ export function VehicleDetails() {
         />
       )}
 
-      {vehicle && <VehicleForm open={showVehicleForm} vehicle={vehicle} onClose={() => { setShowVehicleForm(false); loadVehicleDetails({ silent: true }); }} />}
+      {vehicle && canEditVehicle && <VehicleForm open={showVehicleForm} vehicle={vehicle} onClose={() => { setShowVehicleForm(false); loadVehicleDetails({ silent: true }); }} />}
       {vehicle && <NegotiationForm open={showNegotiationForm} initialVehicle={vehicle} onClose={() => setShowNegotiationForm(false)} onCreated={(negotiationId) => navigate(`/dashboard/negotiations/${negotiationId}`)} />}
 
       <Dialog open={activePhotoIndex !== null} onOpenChange={(open) => { if (!open) setSelectedPhotoIndex(null); }}>
