@@ -16,10 +16,9 @@ export type CompanyBrandingUpdate = {
   favicon_url: string | null;
   primary_color: string;
   secondary_color: string;
-  custom_domain: string | null;
 };
 
-export async function updateUserProfile(profileId: string, updates: Partial<Pick<Profile, 'full_name' | 'email'>>): Promise<void> {
+export async function updateUserProfile(profileId: string, updates: Partial<Pick<Profile, 'full_name'>>): Promise<void> {
   const { error } = await supabase.from('profiles').update(updates).eq('id', profileId);
   if (error) throw normalizeSupabaseError(error);
 }

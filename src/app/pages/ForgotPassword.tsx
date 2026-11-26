@@ -7,6 +7,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 
+/** Distingue a espera curta por endereço ("after N seconds") do limite geral de envio de emails. */
+export function rateLimitMessage(error: { status?: number; message: string }): string | null {
+  const seconds = error.message.match(/after (\d+) seconds?/i)?.[1];
+  if (seconds) {
+    const wait = Number(seconds) <= 60 ? '1 minuto' : `${Math.ceil(Number(seconds) / 60)} minutos`;
+    return `Acabamos de enviar um email para este endereço. Por segurança, aguarde ${wait} e tente novamente.`;
+  }
+  if (error.status === 429 || /rate limit|security purposes/i.test(error.message)) {
+    return 'Muitos emails de recuperação foram enviados agora há pouco. Tente novamente mais tarde.';
+  }
+  return null;
+}
+
 export function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -21,12 +34,10 @@ export function ForgotPassword() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     setLoading(false);
     if (resetError) {
-      const rateLimited = resetError.status === 429 || /rate limit|security purposes|after \d+ seconds/i.test(resetError.message);
       setError(/redirect.*not allowed|not allowed.*redirect/i.test(resetError.message)
         ? 'O endereço de recuperação ainda não está liberado no Supabase. Adicione este endereço às URLs de redirecionamento permitidas: ' + redirectTo
-        : rateLimited
-          ? 'Acabamos de enviar um email para este endereço. Por segurança, aguarde 1 minuto e tente novamente.'
-          : 'Não foi possível enviar o email de recuperação. Confira o endereço e tente novamente.');
+        : rateLimitMessage(resetError)
+          ?? 'Não foi possível enviar o email de recuperação. Confira o endereço e tente novamente.');
       return;
     }
     setSent(true);

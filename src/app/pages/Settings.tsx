@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompany } from '../../contexts/CompanyContext';
 import { supabase } from '../../lib/supabase';
@@ -53,13 +54,16 @@ const primaryColorWarning = (value: string) => {
   return '';
 };
 
+const tabFromSearch = (search: string) => {
+  const params = new URLSearchParams(search);
+  return params.get('aba') === 'assinatura' || params.has('pagamento') ? 'subscription' : null;
+};
+
 export function Settings() {
   const { profile, user, refreshProfile, loading } = useAuth();
   const { company } = useCompany();
-  const [activeTab, setActiveTab] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('aba') === 'assinatura' || params.has('pagamento') ? 'subscription' : 'profile';
-  });
+  const location = useLocation();
+  const [requestedTab, setActiveTab] = useState(() => tabFromSearch(window.location.search) ?? 'profile');
   const [saving, setSaving] = useState(false);
   const [uploadingBrandAsset, setUploadingBrandAsset] = useState<'logo' | 'favicon' | null>(null);
   const [message, setMessage] = useState<MessageState>(null);
@@ -87,6 +91,14 @@ export function Settings() {
     { id: 'notifications', label: 'Notificações', desc: 'Alertas da operação', icon: Bell },
     { id: 'system', label: 'Sistema', desc: 'Dados e backup', icon: Database }
   ];
+  // A aba pedida pela URL só vale se o papel do usuário tiver acesso a ela.
+  const activeTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : 'profile';
+
+  // "Pagar agora" (?aba=assinatura) também troca a aba quando a página já está aberta.
+  useEffect(() => {
+    const tab = tabFromSearch(location.search);
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
 
   useEffect(() => {
     setProfileForm({
@@ -176,21 +188,21 @@ export function Settings() {
         if (!nextName) throw new Error('Informe o nome completo.');
         if (!nextEmail) throw new Error('Informe o email.');
 
-        const updates: Record<string, string> = {};
-        if (nextName !== profile.full_name) updates.full_name = nextName;
-        if (nextEmail !== profile.email) updates.email = nextEmail;
-
-        if (Object.keys(updates).length > 0) {
-          await updateUserProfile(profile.id, updates);
+        if (nextName !== profile.full_name) {
+          await updateUserProfile(profile.id, { full_name: nextName });
         }
 
-        if (nextEmail !== user.email) {
+        // O email do perfil acompanha o email de login, que só muda depois da confirmação.
+        const emailChanged = nextEmail.toLowerCase() !== (user.email || '').toLowerCase();
+        if (emailChanged) {
           const { error: authError } = await supabase.auth.updateUser({ email: nextEmail });
           if (authError) throw authError;
         }
 
         await refreshProfile();
-        showMessage('success', 'Perfil atualizado.');
+        showMessage('success', emailChanged
+          ? 'Perfil atualizado. Confirme o novo email pelo link enviado para concluir a troca.'
+          : 'Perfil atualizado.');
       }
 
       if (activeTab === 'security') {
@@ -218,8 +230,7 @@ export function Settings() {
           logo_url: brandingForm.logoUrl.trim() || null,
           favicon_url: brandingForm.faviconUrl.trim() || null,
           primary_color: brandingForm.primaryColor,
-          secondary_color: brandingForm.secondaryColor,
-          custom_domain: brandingForm.customDomain.trim() || null
+          secondary_color: brandingForm.secondaryColor
         });
         const nextAssets = [brandingForm.logoUrl, brandingForm.faviconUrl];
         const obsoletePaths = [...new Set(previousAssets.filter((value) => !nextAssets.includes(value)).map(storagePathFromPublicUrl).filter((value): value is string => Boolean(value)))];
@@ -432,7 +443,7 @@ export function Settings() {
                     <p className="mt-1 text-muted-foreground">Envie imagens PNG exatamente no tamanho indicado. Máximo de 2 MB por arquivo.</p>
                   </div>
                   <div className="space-y-2"><Label htmlFor="brandName">Nome da loja</Label><Input id="brandName" value={brandingForm.name} onChange={(e) => setBrandingForm({ ...brandingForm, name: e.target.value })} /></div>
-                  <div className="space-y-2"><Label htmlFor="brandDomain">Domínio personalizado</Label><Input id="brandDomain" placeholder="loja.exemplo.com.br" value={brandingForm.customDomain} onChange={(e) => setBrandingForm({ ...brandingForm, customDomain: e.target.value })} /></div>
+                  <div className="space-y-2"><Label htmlFor="brandDomain">Domínio personalizado</Label><Input id="brandDomain" placeholder="Não configurado" value={brandingForm.customDomain} readOnly aria-describedby="brandDomainHint" /><p id="brandDomainHint" className="text-xs text-muted-foreground">O domínio próprio é ativado pela equipe LuxCar depois de confirmar que ele é da loja.</p></div>
                   <div className="space-y-3 rounded-xl border border-border p-4">
                     <div><Label htmlFor="brandLogo">Logo · PNG · 512 × 256 px</Label><p className="mt-1 text-xs text-muted-foreground">Proporção horizontal 2:1, máximo 2 MB.</p></div>
                     <Input id="brandLogo" type="file" accept="image/png,.png" disabled={!!uploadingBrandAsset} onChange={(event) => { void handleBrandImageUpload('logo', event.target.files?.[0]); event.currentTarget.value = ''; }} />
