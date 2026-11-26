@@ -13,21 +13,6 @@ import {
   DialogTitle,
 } from './ui/dialog';
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (container: HTMLElement, options: {
-        sitekey: string;
-        callback: (token: string) => void;
-        'expired-callback': () => void;
-        'error-callback': () => void;
-      }) => string;
-      remove: (widgetId: string) => void;
-      reset: (widgetId?: string) => void;
-    };
-  }
-}
-
 type LeadFormProps = {
   open?: boolean;
   vehicleId: string;
@@ -40,65 +25,14 @@ const initialFormData = {
   customer_name: '',
   customer_email: '',
   customer_phone: '',
-  message: ''
+  message: '',
+  website: ''
 };
 
 export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClose }: LeadFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
-  const [turnstileError, setTurnstileError] = useState(false);
-  const turnstileContainer = useRef<HTMLDivElement>(null);
-  const turnstileWidget = useRef<string | null>(null);
-  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
-
-  // O LeadForm fica montado com o Dialog fechado (T10): o widget só existe com o
-  // conteúdo aberto, então renderiza ao abrir e é removido ao fechar.
-  useEffect(() => {
-    if (!turnstileSiteKey || !open) return;
-
-    let disposed = false;
-    const renderWidget = () => {
-      if (disposed || !turnstileContainer.current || !window.turnstile || turnstileWidget.current) return;
-      turnstileWidget.current = window.turnstile.render(turnstileContainer.current, {
-        sitekey: turnstileSiteKey,
-        callback: setTurnstileToken,
-        'expired-callback': () => setTurnstileToken(''),
-        'error-callback': () => {
-          setTurnstileToken('');
-          setTurnstileError(true);
-        },
-      });
-    };
-
-    let script = document.querySelector<HTMLScriptElement>('script[data-cloudflare-turnstile]');
-    if (window.turnstile) {
-      renderWidget();
-    } else {
-      if (!script) {
-        script = document.createElement('script');
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-        script.async = true;
-        script.defer = true;
-        script.dataset.cloudflareTurnstile = 'true';
-        document.head.appendChild(script);
-      }
-      script.addEventListener('load', renderWidget);
-      script.addEventListener('error', () => setTurnstileError(true), { once: true });
-    }
-
-    return () => {
-      disposed = true;
-      if (turnstileWidget.current) {
-        window.turnstile?.remove(turnstileWidget.current);
-        turnstileWidget.current = null;
-      }
-      script?.removeEventListener('load', renderWidget);
-      setTurnstileToken('');
-    };
-  }, [turnstileSiteKey, open]);
-
   const errorRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState(initialFormData);
@@ -130,14 +64,6 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!turnstileSiteKey) {
-      setError('A verificação antispam não está configurada. Tente novamente mais tarde.');
-      return;
-    }
-    if (!turnstileToken) {
-      setError('Conclua a verificação antispam antes de enviar.');
-      return;
-    }
     if (!formData.customer_email.trim() && !formData.customer_phone.trim()) {
       setError('Informe e-mail ou telefone para contato.');
       return;
@@ -152,7 +78,7 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
         customer_email: formData.customer_email,
         customer_phone: formData.customer_phone,
         message: formData.message,
-        turnstile_token: turnstileToken,
+        website: formData.website,
       });
 
       setSuccess(true);
@@ -164,8 +90,6 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
         message = body?.error || message;
       }
       setError(message);
-      setTurnstileToken('');
-      if (turnstileWidget.current) window.turnstile?.reset(turnstileWidget.current);
     } finally {
       setLoading(false);
     }
@@ -247,11 +171,17 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
             />
           </div>
 
-          <div className="space-y-2" aria-label="Verificação antispam">
-            <div ref={turnstileContainer} />
-            {!turnstileSiteKey && <p className="text-sm text-destructive">Verificação antispam indisponível.</p>}
-            {turnstileError && <p className="text-sm text-destructive">Não foi possível carregar a verificação antispam.</p>}
-          </div>
+          {/* Campo isca: invisível para pessoas, robôs costumam preencher. */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute left-[-9999px] h-px w-px opacity-0"
+            value={formData.website}
+            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+          />
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>

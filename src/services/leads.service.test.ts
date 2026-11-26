@@ -22,7 +22,6 @@ describe('createLead', () => {
       customer_email: 'ana@example.com',
       customer_phone: '',
       message: 'Tenho interesse',
-      turnstile_token: 'valid-token',
     });
 
     expect(invokeMock).toHaveBeenCalledWith('public-lead', {
@@ -35,7 +34,7 @@ describe('createLead', () => {
         message: 'Tenho interesse',
         source: 'website',
         status: 'new',
-        turnstile_token: 'valid-token',
+        website: '',
       },
     });
     expect(result).toEqual({ id: 'lead-123' });

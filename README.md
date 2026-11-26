@@ -139,7 +139,6 @@ flowchart LR
         storage[Storage: company-branding]
     end
 
-    turnstile[Cloudflare Turnstile]
     fipe[API FIPE]
     wa[WhatsApp]
 
@@ -148,7 +147,6 @@ flowchart LR
     platform --> auth --> plat
     public -->|public_vehicles e public_company_branding| db
     public -->|formulário de interesse| edge
-    public -. antispam .-> turnstile
     public -. contato .-> wa
     auth --> sbauth
     panel --> db
@@ -209,8 +207,8 @@ sequenceDiagram
     actor A as Admin da loja
 
     C->>V: Abre um anúncio e envia interesse
-    V->>V: Valida o Turnstile
-    V->>EF: Envia dados do lead e token
+    V->>EF: Envia dados do lead
+    EF->>DB: Confere empresa ativa e veículo disponível
     EF->>DB: Registra o lead
     S->>DB: Converte o lead em negociação
     S->>DB: Registra interações, troca e proposta

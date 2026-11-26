@@ -25,10 +25,11 @@ export type CreateLeadInput = {
   customer_phone?: string | null;
   message?: string | null;
   source?: string;
-  turnstile_token: string;
+  /** Campo isca do formulário público; vazio para pessoas. */
+  website?: string;
 };
 
-/** Cria um lead público pela Edge Function, após validação Turnstile no servidor. */
+/** Cria um lead público pela Edge Function, que valida empresa e veículo no servidor. */
 export async function createLead(input: CreateLeadInput): Promise<{ id: string }> {
   const valid = assertValid(
     validateLead({
@@ -51,7 +52,7 @@ export async function createLead(input: CreateLeadInput): Promise<{ id: string }
   };
 
   const { data, error } = await supabase.functions.invoke('public-lead', {
-    body: { ...payload, turnstile_token: input.turnstile_token },
+    body: { ...payload, website: input.website || '' },
   });
   if (error) {
     log.error('createLead falhou', error);
