@@ -4,7 +4,8 @@ import { verifyWebhook } from './verify.ts';
 // Receives AbacatePay webhooks. Deploy with --no-verify-jwt (AbacatePay sends no Supabase JWT).
 // Env: ABACATEPAY_WEBHOOK_SECRET (the secret set when creating the webhook),
 // ABACATEPAY_PUBLIC_KEY (AbacatePay's public HMAC key, required to check the body signature) and
-// ABACATEPAY_ACCEPT_DEV_EVENTS=true only while the account runs in test mode (simulated payments).
+// optional ABACATEPAY_REJECT_DEV_EVENTS=true to ignore test-mode (simulated) payments. LuxCar runs
+// as a simulation, so simulated payments are accepted by default.
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { 'Content-Type': 'application/json' }
@@ -35,9 +36,9 @@ Deno.serve(async (request) => {
     return json({ received: true, ignored: event.event ?? 'unknown' });
   }
 
-  // Test-mode events are simulated payments: never provision or renew from them in production.
+  // Test-mode events are simulated payments; switch them off when real billing starts.
   if ((event.devMode === true || checkout.devMode === true)
-    && Deno.env.get('ABACATEPAY_ACCEPT_DEV_EVENTS') !== 'true') {
+    && Deno.env.get('ABACATEPAY_REJECT_DEV_EVENTS') === 'true') {
     console.warn('Ignored test-mode webhook:', checkout.id);
     return json({ received: true, ignored: 'dev_mode' });
   }

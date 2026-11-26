@@ -362,11 +362,11 @@ execução cria uma loja `Loja E2E Pagamento …` em produção; apague-a depois
 A Edge Function `abacatepay-webhook` falha fechada: exige
 `ABACATEPAY_WEBHOOK_SECRET` (enviado pela AbacatePay na URL ou no header
 `X-Webhook-Secret`), `ABACATEPAY_PUBLIC_KEY` (chave pública fixa da AbacatePay
-para conferir a assinatura HMAC do corpo) e `paidAmount` no evento. Eventos do
-Modo Teste (`devMode: true`, pagamento simulado) são ignorados, a menos que
-`ABACATEPAY_ACCEPT_DEV_EVENTS=true`. Use essa flag só enquanto a conta estiver
-em modo de desenvolvimento (ela permite criar ou renovar loja sem pagamento
-real) e remova-a ao trocar para as chaves de produção.
+para conferir a assinatura HMAC do corpo) e `paidAmount` no evento. O LuxCar
+roda como simulação, então eventos do Modo Teste (`devMode: true`, pagamento
+simulado) são aceitos. Se um dia houver cobrança real, troque para as chaves de
+produção e defina `ABACATEPAY_REJECT_DEV_EVENTS=true` para ignorar pagamentos
+simulados.
 
 ### Criar acessos de demonstração
 
