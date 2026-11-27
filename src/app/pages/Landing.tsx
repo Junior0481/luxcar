@@ -188,7 +188,7 @@ export function Landing() {
                 <>
                   <Button asChild className="min-[340px]:col-span-2"><Link to="/auth/register">Criar minha conta</Link></Button>
                   <Button asChild variant="secondary"><Link to="/auth/login">Entrar</Link></Button>
-                  <Button asChild variant="outline"><Link to="/estoque" onClick={() => setMenuOpen(false)}>Loja de exemplo</Link></Button>
+                  <Button asChild variant="outline"><Link to="/estoque" onClick={() => setMenuOpen(false)}>Explorar vitrine</Link></Button>
                 </>
               )}
             </div>
@@ -219,7 +219,7 @@ export function Landing() {
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="bg-card text-foreground hover:bg-accent">
-                  <Link to="/estoque">Explorar loja de exemplo</Link>
+                  <Link to="/estoque">Explorar vitrine</Link>
                 </Button>
               </div>
             </div>
