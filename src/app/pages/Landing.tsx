@@ -16,7 +16,6 @@ import {
   Store,
   X
 } from 'lucide-react';
-import demoCarImg from '../../assets/login_img.png';
 import { Button } from '../components/ui/button';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Card, CardContent } from '../components/ui/card';
@@ -64,7 +63,7 @@ const demoKpis = [
 ];
 
 const demoPipeline = [
-  { vehicle: 'Mercedes-Benz C 200', client: 'Rafael Moreira', stage: 'Proposta enviada', tone: 'bg-accent text-primary-text', photo: true },
+  { vehicle: 'Mercedes-Benz C 200', client: 'Rafael Moreira', stage: 'Proposta enviada', tone: 'bg-accent text-primary-text' },
   { vehicle: 'Honda Civic EXL', client: 'Juliana Prado', stage: 'Test drive agendado', tone: 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200' },
   { vehicle: 'Jeep Compass Longitude', client: 'Carlos Lima', stage: 'Documentação', tone: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200' }
 ];
@@ -201,7 +200,7 @@ export function Landing() {
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 lg:grid-cols-[1fr_1.05fr] lg:gap-12 lg:py-20">
             <div className="min-w-0">
               <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-border-strong bg-card px-3 py-1 text-sm font-medium text-foreground">
-                <Car className="size-4 text-primary-text" aria-hidden="true" />
+                <Store className="size-4 text-primary-text" aria-hidden="true" />
                 Gestão para lojas de veículos
               </p>
               <h1 className="text-[40px] font-bold leading-[1.04] tracking-tight text-heading [font-family:var(--font-display)] sm:text-5xl xl:text-[56px]">
@@ -252,13 +251,9 @@ export function Landing() {
                 <ul className="divide-y divide-border">
                   {demoPipeline.map((item) => (
                     <li key={item.vehicle} className="flex items-center gap-3 px-4 py-3">
-                      {item.photo ? (
-                        <img src={demoCarImg} alt="" className="size-11 shrink-0 rounded-lg object-cover object-[70%_70%]" />
-                      ) : (
-                        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" aria-hidden="true">
-                          <Car className="size-5" />
-                        </span>
-                      )}
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" aria-hidden="true">
+                        <Car className="size-5" />
+                      </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-foreground">{item.vehicle}</p>
                         <p className="truncate text-xs text-muted-foreground">{item.client}</p>
