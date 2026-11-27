@@ -1,3 +1,4 @@
+import { maskPhone, PHONE_MAX_LENGTH } from '../../lib/format';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { supabase } from '../../lib/supabase';
@@ -91,7 +92,7 @@ export function ClientRegister() {
             <Label htmlFor="phone">Telefone (opcional)</Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-10" placeholder="(11) 99999-9999" />
+              <Input id="phone" type="tel" autoComplete="tel" maxLength={PHONE_MAX_LENGTH} value={phone} onChange={(e) => setPhone(maskPhone(e.target.value))} className="pl-10" placeholder="(11) 99999-9999" />
             </div>
           </div>
 

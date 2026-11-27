@@ -1,3 +1,4 @@
+import { maskPhone, PHONE_MAX_LENGTH } from '../../lib/format';
 import { FormEvent, InputHTMLAttributes, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { AlertCircle, Check, CheckCircle2, Circle, Globe, Mail, MapPin, Phone, Store, User, X } from 'lucide-react';
@@ -151,7 +152,7 @@ export function Register() {
       <Label htmlFor={key}>{label}</Label>
       <div className="relative">
         <Icon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground/65" />
-        <Input id={key} value={form[key]} onChange={(event) => update(key, event.target.value)} className="pl-10 text-foreground placeholder:text-foreground/60" {...props} />
+        <Input id={key} value={form[key]} onChange={(event) => update(key, key === 'phone' ? maskPhone(event.target.value) : event.target.value)} className="pl-10 text-foreground placeholder:text-foreground/60" {...props} />
       </div>
     </div>
   );
@@ -234,7 +235,7 @@ export function Register() {
                     <p id="site-preview" className="-mt-2 text-xs text-foreground/75 sm:col-span-2">Prévia: <span className="font-medium text-foreground">luxcar.com.br/{previewSlug || 'sua-loja'}</span></p>
                     {input('ownerName', 'Nome do proprietário *', User, { required: true, autoComplete: 'name', placeholder: 'Ex.: Maria Silva' })}
                     {input('ownerEmail', 'Email para acesso *', Mail, { type: 'email', required: true, autoComplete: 'email', placeholder: 'voce@empresa.com.br' })}
-                    {input('phone', 'Telefone (opcional)', Phone, { type: 'tel', autoComplete: 'tel', placeholder: '(11) 99999-9999' })}
+                    {input('phone', 'Telefone (opcional)', Phone, { type: 'tel', autoComplete: 'tel', maxLength: PHONE_MAX_LENGTH, placeholder: '(11) 99999-9999' })}
                     <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="postalCode">CEP *</Label>
                       <div className="relative">
