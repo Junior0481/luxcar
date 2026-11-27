@@ -243,7 +243,7 @@ export function Payments() {
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar pagamento?</AlertDialogTitle>
             <AlertDialogDescription>
-              O pagamento de {paymentToCancel ? money(paymentToCancel.amount) : ''}{paymentToCancel?.negotiation?.client_name ? ` de ${paymentToCancel.negotiation.client_name}` : ''} continua no total registrado, marcado como cancelado. Essa ação não pode ser desfeita.
+              O pagamento de {paymentToCancel ? money(paymentToCancel.amount) : ''}{paymentToCancel?.negotiation?.client_name ? ` de ${paymentToCancel.negotiation.client_name}` : ''} continua no total registrado, marcado como cancelado. Se a venda já tinha sido fechada com ele, ela é desfeita: a negociação volta à etapa anterior e o veículo volta para em negociação. Essa ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
