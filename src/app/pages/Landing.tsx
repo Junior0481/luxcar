@@ -198,13 +198,13 @@ export function Landing() {
 
       <main>
         <section className="border-b border-border bg-background text-foreground">
-          <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14 lg:py-20">
-            <div>
+          <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 lg:grid-cols-[1fr_1.05fr] lg:gap-12 lg:py-20">
+            <div className="min-w-0">
               <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-border-strong bg-card px-3 py-1 text-sm font-medium text-foreground">
                 <Car className="size-4 text-primary-text" aria-hidden="true" />
                 Gestão para lojas de veículos
               </p>
-              <h1 className="text-[44px] font-bold leading-[1.02] tracking-tight text-heading [font-family:var(--font-display)] md:text-6xl">
+              <h1 className="text-[40px] font-bold leading-[1.04] tracking-tight text-heading [font-family:var(--font-display)] sm:text-5xl xl:text-[56px]">
                 <span className="block">Sua loja no controle.</span>
                 <span className="block text-primary-text">Mais negócios fechados.</span>
               </h1>
@@ -224,7 +224,7 @@ export function Landing() {
               </div>
             </div>
 
-            <figure className="rounded-2xl border border-border bg-card p-5 shadow-lux-lg sm:p-6" aria-labelledby="landing-demo-caption">
+            <figure className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-lux-lg sm:p-6" aria-labelledby="landing-demo-caption">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Painel da loja</p>
@@ -235,13 +235,13 @@ export function Landing() {
                 </figcaption>
               </div>
 
-              <dl className="mt-5 grid grid-cols-1 gap-3 min-[420px]:grid-cols-3">
+              <dl className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
                 {demoKpis.map((kpi) => (
-                  <div key={kpi.label} className="rounded-xl border border-border bg-background p-4">
+                  <div key={kpi.label} className="rounded-xl border border-border bg-background p-3 sm:p-4">
                     <dt className="text-xs font-medium text-muted-foreground">{kpi.label}</dt>
                     <dd className="mt-2 flex items-baseline gap-1.5">
-                      <span className={`text-3xl font-bold tabular-nums [font-family:var(--font-display)] ${kpi.highlight ? 'text-primary-text' : 'text-foreground'}`}>{kpi.value}</span>
-                      <span className="text-xs text-muted-foreground">{kpi.unit}</span>
+                      <span className={`text-2xl font-bold tabular-nums [font-family:var(--font-display)] sm:text-3xl ${kpi.highlight ? 'text-primary-text' : 'text-foreground'}`}>{kpi.value}</span>
+                      <span className="sr-only text-xs text-muted-foreground sm:not-sr-only">{kpi.unit}</span>
                     </dd>
                   </div>
                 ))}
