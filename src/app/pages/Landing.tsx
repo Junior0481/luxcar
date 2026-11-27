@@ -6,15 +6,17 @@ import {
   Car,
   Check,
   ChevronDown,
+  Clock,
   Globe,
   Handshake,
   LayoutDashboard,
   Menu,
   Palette,
   Shield,
-  Sparkles,
+  Store,
   X
 } from 'lucide-react';
+import demoCarImg from '../../assets/login_img.png';
 import { Button } from '../components/ui/button';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Card, CardContent } from '../components/ui/card';
@@ -54,6 +56,25 @@ const features = [
   }
 ];
 
+// Prévia do hero: dados ilustrativos, sempre identificados como demonstração.
+const demoKpis = [
+  { label: 'Veículos em estoque', value: '32', unit: 'veículos' },
+  { label: 'Negociações abertas', value: '18', unit: 'oportunidades' },
+  { label: 'Vendas no mês', value: '8', unit: 'veículos', highlight: true }
+];
+
+const demoPipeline = [
+  { vehicle: 'Mercedes-Benz C 200', client: 'Rafael Moreira', stage: 'Proposta enviada', tone: 'bg-accent text-primary-text', photo: true },
+  { vehicle: 'Honda Civic EXL', client: 'Juliana Prado', stage: 'Test drive agendado', tone: 'bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-200' },
+  { vehicle: 'Jeep Compass Longitude', client: 'Carlos Lima', stage: 'Documentação', tone: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200' }
+];
+
+const benefits = [
+  { icon: Car, title: 'Estoque organizado', desc: 'Fotos, preço, custos e status de cada veículo.' },
+  { icon: Handshake, title: 'Negociações acompanhadas', desc: 'Cada cliente na etapa certa, com a próxima ação.' },
+  { icon: Store, title: 'Vitrine com sua marca', desc: 'Seus carros publicados com o nome e as cores da loja.' }
+];
+
 const subscriptionFeatures = [
   'Estoque, veículos e custos',
   'Pipeline de vendas, leads e negociações',
@@ -70,7 +91,7 @@ const faqs = [
   },
   {
     q: 'A plataforma é white label?',
-    a: 'A base já foi pensada para white label. As próximas sprints aprofundam marca, domínio e configurações visuais por loja.'
+    a: 'Sim. Cada loja usa nome, logo e cores próprios no painel e na vitrine. O domínio próprio é ativado pela equipe LuxCar.'
   },
   {
     q: 'Preciso instalar algo?',
@@ -84,11 +105,13 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
       <button
+        type="button"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between gap-4 p-5 text-left"
       >
         <span className="font-medium text-foreground">{q}</span>
-        <ChevronDown className={`size-5 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown aria-hidden="true" className={`size-5 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open ? <p className="px-5 pb-5 text-sm text-muted-foreground">{a}</p> : null}
     </div>
@@ -102,7 +125,7 @@ export function Landing() {
 
   const navLinks = [
     { href: '#recursos', label: 'Recursos' },
-    { href: '#whitelabel', label: 'White label' },
+    { href: '#whitelabel', label: 'Sua marca' },
     { href: '#assinatura', label: 'Assinatura' },
     { href: '#faq', label: 'FAQ' }
   ];
@@ -135,8 +158,7 @@ export function Landing() {
             ) : (
               <>
                 <Button asChild variant="ghost"><Link to="/auth/login">Entrar</Link></Button>
-                <Button asChild variant="outline"><Link to="/estoque">Ver vitrine pública</Link></Button>
-                <Button asChild><Link to="/auth/register">Falar com vendas</Link></Button>
+                <Button asChild><Link to="/auth/register">Criar minha conta</Link></Button>
               </>
             )}
             <ThemeToggle />
@@ -144,14 +166,14 @@ export function Landing() {
 
           <div className="flex items-center gap-1 md:hidden">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
-              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen} aria-controls="landing-mobile-menu">
+              {menuOpen ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
             </Button>
           </div>
         </div>
 
         {menuOpen ? (
-          <div className="border-t border-border bg-background px-4 py-4 md:hidden">
+          <div id="landing-mobile-menu" className="border-t border-border bg-background px-4 py-4 md:hidden">
             <div className="space-y-2">
               {navLinks.map((link) => (
                 <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="block py-2 text-sm text-muted-foreground">
@@ -164,9 +186,9 @@ export function Landing() {
                 <Button asChild className="min-[340px]:col-span-2"><Link to={dashboardPath}>Painel · {profile.full_name}</Link></Button>
               ) : (
                 <>
-                  <Button asChild variant="secondary" className="min-[340px]:col-span-2"><Link to="/auth/login">Entrar</Link></Button>
-                  <Button asChild variant="outline"><Link to="/estoque" onClick={() => setMenuOpen(false)}>Ver vitrine pública</Link></Button>
-                  <Button asChild><Link to="/auth/register">Falar com vendas</Link></Button>
+                  <Button asChild className="min-[340px]:col-span-2"><Link to="/auth/register">Criar minha conta</Link></Button>
+                  <Button asChild variant="secondary"><Link to="/auth/login">Entrar</Link></Button>
+                  <Button asChild variant="outline"><Link to="/estoque" onClick={() => setMenuOpen(false)}>Loja de exemplo</Link></Button>
                 </>
               )}
             </div>
@@ -175,65 +197,98 @@ export function Landing() {
       </header>
 
       <main>
-        <section className="border-b border-border bg-card text-foreground">
-          <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 lg:grid-cols-[1fr_0.9fr] lg:py-24">
-            <div className="flex flex-col justify-center">
-              <Badge variant="outline" className="mb-6 w-fit border-border-strong text-primary">
-                <Sparkles className="size-3" />
-                SaaS B2B white label para lojas automotivas
-              </Badge>
-              <h1 className="max-w-3xl text-4xl font-bold leading-[1.02] tracking-tight text-heading [font-family:var(--font-display)] md:text-6xl">
-                Venda mais carros e gerencie sua loja em uma única plataforma white label.
+        <section className="border-b border-border bg-background text-foreground">
+          <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14 lg:py-20">
+            <div>
+              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-border-strong bg-card px-3 py-1 text-sm font-medium text-foreground">
+                <Car className="size-4 text-primary-text" aria-hidden="true" />
+                Gestão para lojas de veículos
+              </p>
+              <h1 className="text-[44px] font-bold leading-[1.02] tracking-tight text-heading [font-family:var(--font-display)] md:text-6xl">
+                <span className="block">Sua loja no controle.</span>
+                <span className="block text-primary-text">Mais negócios fechados.</span>
               </h1>
-              <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-                A LuxCar organiza estoque, negociações, relatórios e equipe para transformar dados em decisão comercial.
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+                Organize estoque, negociações e resultados em um só lugar. Tenha também uma vitrine de veículos com a marca da sua loja.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
                   <Link to="/auth/register">
-                    Começar agora
-                    <ArrowRight className="size-4" />
+                    Criar minha conta
+                    <ArrowRight className="size-4" aria-hidden="true" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-border-strong bg-transparent text-foreground hover:bg-accent">
-                  <Link to="/estoque">Ver vitrine pública</Link>
+                <Button asChild size="lg" variant="outline" className="bg-card text-foreground hover:bg-accent">
+                  <Link to="/estoque">Explorar loja de exemplo</Link>
                 </Button>
               </div>
             </div>
 
-            <Card className="overflow-hidden border-border bg-surface-subtle text-foreground shadow-none">
-              <CardContent className="space-y-5 pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-subtle-foreground">Centro de comando</p>
-                    <p className="text-xl font-semibold text-heading [font-family:var(--font-display)]">Visão da loja</p>
+            <figure className="rounded-2xl border border-border bg-card p-5 shadow-lux-lg sm:p-6" aria-labelledby="landing-demo-caption">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Painel da loja</p>
+                  <p className="text-xl font-semibold text-heading [font-family:var(--font-display)]">Visão de hoje</p>
+                </div>
+                <figcaption id="landing-demo-caption" className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">
+                  Demonstração · dados fictícios
+                </figcaption>
+              </div>
+
+              <dl className="mt-5 grid grid-cols-1 gap-3 min-[420px]:grid-cols-3">
+                {demoKpis.map((kpi) => (
+                  <div key={kpi.label} className="rounded-xl border border-border bg-background p-4">
+                    <dt className="text-xs font-medium text-muted-foreground">{kpi.label}</dt>
+                    <dd className="mt-2 flex items-baseline gap-1.5">
+                      <span className={`text-3xl font-bold tabular-nums [font-family:var(--font-display)] ${kpi.highlight ? 'text-primary-text' : 'text-foreground'}`}>{kpi.value}</span>
+                      <span className="text-xs text-muted-foreground">{kpi.unit}</span>
+                    </dd>
                   </div>
-                    <Badge variant="outline" className="border-border-strong text-muted-foreground">Prévia do produto</Badge>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {['Estoque', 'Pipeline', 'Lucro'].map((label, index) => (
-                    <div key={label} className="rounded-lg border border-border-strong bg-card p-4">
-                      <p className="text-xs text-subtle-foreground">{label}</p>
-                      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">—</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="rounded-lg border border-border-strong bg-card p-4">
-                  <p className="mb-4 text-sm text-subtle-foreground">Pipeline comercial</p>
-                  <div className="space-y-3">
-                    {['Primeiro contato', 'Proposta enviada', 'Documentação'].map((stage, index) => (
-                      <div key={stage} className="flex items-center gap-3 rounded-lg border border-border bg-surface-subtle p-3">
-                        <div className="flex size-8 items-center justify-center rounded-full bg-border-strong text-sm font-semibold text-primary">{index + 1}</div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground">{stage}</p>
-                          <p className="text-xs text-subtle-foreground">Próxima ação clara para a equipe</p>
-                        </div>
+                ))}
+              </dl>
+
+              <div className="mt-5 rounded-xl border border-border">
+                <p className="border-b border-border px-4 py-3 text-sm font-medium text-foreground">Negociações em andamento</p>
+                <ul className="divide-y divide-border">
+                  {demoPipeline.map((item) => (
+                    <li key={item.vehicle} className="flex items-center gap-3 px-4 py-3">
+                      {item.photo ? (
+                        <img src={demoCarImg} alt="" className="size-11 shrink-0 rounded-lg object-cover object-[70%_70%]" />
+                      ) : (
+                        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground" aria-hidden="true">
+                          <Car className="size-5" />
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">{item.vehicle}</p>
+                        <p className="truncate text-xs text-muted-foreground">{item.client}</p>
                       </div>
-                    ))}
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${item.tone}`}>{item.stage}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="flex items-center gap-2 border-t border-border bg-accent/60 px-4 py-3 text-sm text-foreground">
+                  <Clock className="size-4 shrink-0 text-primary-text" aria-hidden="true" />
+                  <span><span className="font-semibold">Próxima ação:</span> retornar para Rafael às 14h</span>
+                </p>
+              </div>
+            </figure>
+          </div>
+
+          <div className="border-t border-border bg-card">
+            <ul className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-3" aria-label="Principais benefícios">
+              {benefits.map((benefit) => (
+                <li key={benefit.title} className="flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary-text" aria-hidden="true">
+                    <benefit.icon className="size-5" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-foreground">{benefit.title}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{benefit.desc}</p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -246,7 +301,7 @@ export function Landing() {
             {features.map((feature) => (
               <Card key={feature.title} className="lux-card-hover">
                 <CardContent className="pt-6">
-                  <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
+                  <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-accent text-primary-text">
                     <feature.icon className="size-5" />
                   </div>
                   <h3 className="text-lg font-medium">{feature.title}</h3>
@@ -273,7 +328,7 @@ export function Landing() {
               <CardContent className="space-y-4 pt-6">
                 {['Marca da loja', 'Vitrine pública', 'Equipe comercial', 'Relatórios de gestão'].map((item) => (
                   <div key={item} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
-                    <Check className="size-4 text-primary" />
+                    <Check className="size-4 text-primary-text" />
                     <span className="text-sm font-medium">{item}</span>
                   </div>
                 ))}
@@ -296,12 +351,12 @@ export function Landing() {
                 <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                   {subscriptionFeatures.map((feature) => (
                     <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="size-4 shrink-0 text-primary" />{feature}
+                      <Check className="size-4 shrink-0 text-primary-text" />{feature}
                     </li>
                   ))}
                 </ul>
               </div>
-              <Button asChild size="lg"><Link to="/auth/register">Solicitar assinatura<ArrowRight className="size-4" /></Link></Button>
+              <Button asChild size="lg"><Link to="/auth/register">Criar minha conta<ArrowRight className="size-4" aria-hidden="true" /></Link></Button>
             </CardContent>
           </Card>
         </section>
@@ -328,8 +383,8 @@ export function Landing() {
               </p>
               <Button asChild size="lg" className="mt-8">
                 <Link to="/auth/register">
-                  Criar acesso
-                  <ArrowRight className="size-4" />
+                  Criar minha conta
+                  <ArrowRight className="size-4" aria-hidden="true" />
                 </Link>
               </Button>
             </CardContent>
