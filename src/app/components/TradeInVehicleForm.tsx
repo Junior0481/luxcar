@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase, TradeInVehicle } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { AlertCircle, LoaderCircle, Upload, Trash2 } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
 import { toast } from 'sonner';
@@ -49,6 +50,9 @@ type TradeInPhoto = { id: string; url: string; uploading: boolean; newUpload: bo
 const createTradeInPhoto = (url: string): TradeInPhoto => ({ id: crypto.randomUUID(), url, uploading: false, newUpload: false });
 
 export function TradeInVehicleForm({ open = true, negotiationId, companyId, existingTradeIn, onClose }: TradeInVehicleFormProps) {
+  const { profile } = useAuth();
+  // A avaliação é do administrador; o banco ignora esses campos quando o vendedor cadastra.
+  const isAdmin = profile?.role === 'administrador';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const errorRef = useRef<HTMLDivElement>(null);
@@ -335,16 +339,20 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
               </select>
             </div>
 
+            {isAdmin && (
             <div className="space-y-2">
               <Label htmlFor="evaluated_value">Valor Avaliado (R$)</Label>
               <Input type="number" id="evaluated_value" name="evaluated_value" value={formData.evaluated_value} onChange={handleChange} step="0.01" min="0" />
             </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="offered_value">Valor Oferecido (R$)</Label>
-              <Input type="number" id="offered_value" name="offered_value" value={formData.offered_value} onChange={handleChange} step="0.01" min="0" />
+              <Input type="number" id="offered_value" name="offered_value" value={formData.offered_value} onChange={handleChange} step="0.01" min="0" aria-describedby="offered_value_hint" />
+              <p id="offered_value_hint" className="text-xs text-muted-foreground">Sai do valor a pagar quando o administrador conclui a avaliação.</p>
             </div>
 
+            {isAdmin && (<>
             <div className="space-y-2">
               <Label htmlFor="evaluator_name">Nome do Avaliador</Label>
               <Input id="evaluator_name" name="evaluator_name" value={formData.evaluator_name} onChange={handleChange} placeholder="Ex: João Silva" />
@@ -367,6 +375,7 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
                 <span className="text-sm font-medium text-foreground">Precisa de avaliação</span>
               </label>
             </div>
+            </>)}
           </div>
 
           <div className="space-y-2">

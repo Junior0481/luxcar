@@ -38,14 +38,18 @@ function ChartTable({ caption, columns, rows }: { caption: string; columns: stri
   );
 }
 
+/** Data local (AAAA-MM-DD) no fuso do navegador; toISOString() usaria UTC e pularia o dia à noite. */
+const localISODate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
 export function Reports() {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [reportsEnabled, setReportsEnabled] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState({
-    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+    start: localISODate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+    end: localISODate(new Date())
   });
   const [metrics, setMetrics] = useState({
     totalSales: 0,
@@ -75,15 +79,17 @@ export function Reports() {
       const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.final_price || 0), 0);
       const totalProfit = sales.reduce((sum, sale) => {
         const purchasePrice = sale.vehicle?.purchase_price || 0;
-        return sum + (Number(sale.final_price || 0) - Number(purchasePrice));
+        return sum + (Number(sale.final_price || 0) - Number(purchasePrice) - Number(sale.costs_total || 0));
       }, 0);
+      // Conversão da mesma safra: negociações abertas no período que viraram venda.
+      const closedNegotiations = negotiations.filter((negotiation) => negotiation.stage === 'finalizado').length;
 
       setMetrics({
         totalSales: sales.length,
         totalRevenue,
         totalProfit,
         avgDaysToSell: 0,
-        conversionRate: negotiations.length > 0 ? (sales.length / negotiations.length) * 100 : 0
+        conversionRate: negotiations.length > 0 ? (closedNegotiations / negotiations.length) * 100 : 0
       });
 
       const salesByMonthMap = new Map<string, number>();
@@ -136,8 +142,8 @@ export function Reports() {
   const statCards = [
     { title: 'Vendas no período', value: metrics.totalSales, icon: Handshake, accent: true, description: 'Negócios fechados' },
     { title: 'Receita', value: brl(metrics.totalRevenue), icon: DollarSign, accent: false, description: 'Valor vendido' },
-    { title: 'Lucro estimado', value: brl(metrics.totalProfit), icon: TrendingUp, accent: false, description: 'Venda menos compra' },
-    { title: 'Conversão', value: formatPercent(Number.isFinite(metrics.conversionRate) ? metrics.conversionRate : 0), icon: Car, accent: false, description: 'Vendas sobre negociações' }
+    { title: 'Lucro estimado', value: brl(metrics.totalProfit), icon: TrendingUp, accent: false, description: 'Venda menos compra e custos do carro' },
+    { title: 'Conversão', value: formatPercent(Number.isFinite(metrics.conversionRate) ? metrics.conversionRate : 0), icon: Car, accent: false, description: 'Negociações do período que viraram venda' }
   ];
 
   const emptyState = (

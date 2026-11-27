@@ -2,7 +2,7 @@ import { supabase, type Negotiation, type Profile, type Sale, type Vehicle } fro
 import { normalizeSupabaseError } from '../lib/errors';
 import type { TenantContext } from './shared';
 
-export type SaleWithDetails = Sale & { vehicle?: Vehicle; seller?: Profile };
+export type SaleWithDetails = Sale & { vehicle?: Vehicle; seller?: Profile; costs_total?: number };
 
 /**
  * Relatório consolidado via RPC `report_data`, que recusa empresas cujo plano

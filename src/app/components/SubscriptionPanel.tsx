@@ -195,7 +195,7 @@ export function SubscriptionPanel({ ctx }: { ctx: TenantContext }) {
         <section className="space-y-3" aria-labelledby="plan-usage-heading">
           <h3 id="plan-usage-heading" className="font-medium">Uso do plano</h3>
           <div className="grid gap-4 sm:grid-cols-3">
-            <UsageBar label="Carros" used={usage.vehicles} limit={plan.max_vehicles} />
+            <UsageBar label="Carros em estoque" used={usage.vehicles} limit={plan.max_vehicles} />
             <UsageBar label="Vendedores" used={usage.sellers} limit={plan.max_sellers} />
             <UsageBar label="Administradores" used={usage.administrators} limit={plan.max_administrators} />
           </div>

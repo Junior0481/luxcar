@@ -30,7 +30,8 @@ export async function countCompanyVehicles(ctx: TenantContext): Promise<number> 
   const { count, error } = await supabase
     .from('vehicles')
     .select('id', { count: 'exact', head: true })
-    .eq('company_id', ctx.companyId);
+    .eq('company_id', ctx.companyId)
+    .neq('status', 'vendido'); // o limite do plano conta só o estoque
   if (error) throw normalizeSupabaseError(error);
   return count ?? 0;
 }

@@ -392,13 +392,19 @@ export function NegotiationDetails() {
                   id="negotiation-stage"
                   value={negotiation.stage}
                   onChange={(e) => handleStageUpdate(e.target.value)}
-                  disabled={updating}
+                  disabled={updating || negotiation.stage === 'finalizado'}
+                  aria-describedby={negotiation.stage === 'finalizado' ? 'negotiation-stage-locked' : undefined}
                   className="w-full h-9 px-3 rounded-md border border-input bg-input-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 >
                   {Object.entries(stageLabels).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
+                {negotiation.stage === 'finalizado' && (
+                  <p id="negotiation-stage-locked" className="text-xs text-muted-foreground">
+                    Venda fechada. Para desfazer, cancele ou estorne o pagamento em Pagamentos.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
