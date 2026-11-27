@@ -4,7 +4,13 @@ begin;
 select plan(17);
 
 -- Negociação f101 (loja A, vendedor A): sem proposta, preço acordado = vehicles.sale_price = 50000.
--- Negociação f102 (loja A, vendedor A2): proposta de 45000.
+-- Negociação f102 (loja A, vendedor A2): proposta de 45000, em outro veículo (f002).
+set local session_replication_role = replica;
+insert into public.vehicles (id, company_id, brand, model, year, purchase_price, sale_price, plate, status) values
+  ('a0000000-0000-0000-0000-00000000f002', 'a0000000-0000-0000-0000-000000000001', 'VW', 'Polo', 2021, 50000, 60000, 'AAA1A12', 'disponivel');
+update public.interaction_history set vehicle_id = 'a0000000-0000-0000-0000-00000000f002' where negotiation_id = 'a0000000-0000-0000-0000-00000000f102';
+update public.negotiations set vehicle_id = 'a0000000-0000-0000-0000-00000000f002' where id = 'a0000000-0000-0000-0000-00000000f102';
+set local session_replication_role = origin;
 update public.negotiations set offered_price = 45000 where id = 'a0000000-0000-0000-0000-00000000f102';
 
 insert into public.payments (id, company_id, negotiation_id, amount, method, status, created_by) values
@@ -51,7 +57,7 @@ select is((select (public.finalize_sale('a0000000-0000-0000-0000-00000000f101'))
 select throws_ok(
   $$insert into public.sales (company_id, negotiation_id, vehicle_id, seller_id, final_price, sale_date)
     values ('a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-00000000f101', 'a0000000-0000-0000-0000-00000000f001', 'a0000000-0000-0000-0000-0000000000a1', 1, current_date)$$,
-  '23505', null, 'P1-2: insert direto de 2ª venda (front) é barrado pelo UNIQUE');
+  '42501', null, 'insert direto em sales é barrado: venda só por finalize_sale');
 
 -- Preço acordado vindo da proposta
 select is((select (public.finalize_sale('a0000000-0000-0000-0000-00000000f102')).final_price),

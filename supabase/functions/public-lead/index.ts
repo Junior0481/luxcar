@@ -70,7 +70,8 @@ Deno.serve(async (request) => {
       auth: { autoRefreshToken: false, persistSession: false }
     });
     const [{ data: company, error: companyError }, { data: vehicle, error: vehicleError }] = await Promise.all([
-      service.from('companies').select('id').eq('id', companyId).eq('status', 'active').maybeSingle(),
+      // A view pública já esconde loja inativa ou bloqueada por falta de pagamento.
+      service.from('public_company_branding').select('id').eq('id', companyId).maybeSingle(),
       service.from('vehicles').select('id').eq('id', vehicleId).eq('company_id', companyId)
         .eq('status', 'disponivel').maybeSingle()
     ]);
