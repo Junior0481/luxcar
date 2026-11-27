@@ -254,7 +254,7 @@ export function Leads() {
             <AlertCircle className="mt-0.5 size-5 shrink-0" />
             <div>
               <p className="font-medium">Erro ao carregar leads</p>
-              <p className="text-sm text-destructive/80">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
           <Button

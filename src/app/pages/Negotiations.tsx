@@ -155,9 +155,9 @@ export function Negotiations() {
       </section>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1" aria-label="Modo de visualização">
-          <Button type="button" size="sm" variant={viewMode === 'board' ? 'secondary' : 'ghost'} aria-pressed={viewMode === 'board'} onClick={() => setViewMode('board')}><LayoutGrid className="size-4" /><span className="hidden sm:inline">Quadro</span></Button>
-          <Button type="button" size="sm" variant={viewMode === 'list' ? 'secondary' : 'ghost'} aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List className="size-4" /><span className="hidden sm:inline">Lista</span></Button>
+        <div role="group" className="flex items-center gap-1 rounded-xl border border-border bg-card p-1" aria-label="Modo de visualização">
+          <Button type="button" size="sm" variant={viewMode === 'board' ? 'secondary' : 'ghost'} aria-pressed={viewMode === 'board'} onClick={() => setViewMode('board')}><LayoutGrid className="size-4" /><span className="sr-only sm:not-sr-only">Quadro</span></Button>
+          <Button type="button" size="sm" variant={viewMode === 'list' ? 'secondary' : 'ghost'} aria-pressed={viewMode === 'list'} onClick={() => setViewMode('list')}><List className="size-4" /><span className="sr-only sm:not-sr-only">Lista</span></Button>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:justify-end">
           <div className="relative flex-1">
@@ -201,7 +201,7 @@ export function Negotiations() {
             <AlertCircle className="mt-0.5 size-5 shrink-0" />
             <div>
               <p className="font-medium">Erro ao carregar negociações</p>
-              <p className="text-sm text-destructive/80">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => loadNegotiations()} className="w-fit">

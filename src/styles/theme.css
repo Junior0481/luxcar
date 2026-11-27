@@ -13,6 +13,8 @@
   --primary: #ff7a2f;
   --primary-foreground: #170a02;
   --primary-hover: color-mix(in srgb, var(--primary) 88%, #000000);
+  /* Laranja escurecido para texto, links e ícones sobre fundo claro (contraste >= 4.5:1). */
+  --primary-text: color-mix(in srgb, var(--primary) 65%, #000000);
   --secondary: #15171a;
   --secondary-foreground: #ffffff;
   --muted: #efefed;
@@ -29,7 +31,7 @@
   --border: #e4e4e0;
   --border-strong: #d4d4cf;
   --row-divider: #e9e9e5;
-  --input: #d4d4cf;
+  --input: #878c93; /* borda de campo com contraste >= 3:1 */
   --input-background: #ffffff;
   --switch-background: #cbccd0;
   --font-weight-medium: 500;
@@ -97,6 +99,7 @@
   --primary: #ff7a2f;
   --primary-foreground: #170a02;
   --primary-hover: color-mix(in srgb, var(--primary) 82%, #ffffff);
+  --primary-text: var(--primary);
   --secondary: #14171c;
   --secondary-foreground: #e9ecf1;
   --muted: #0f1216;
@@ -113,7 +116,7 @@
   --border: #1f242b;
   --border-strong: #2a3038;
   --row-divider: #1a1e24;
-  --input: #2a3038;
+  --input: #646d79;
   --input-background: #14171c;
   --switch-background: #2a2f3a;
   --font-weight-medium: 500;
@@ -172,6 +175,7 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -356,7 +360,7 @@
   }
 
   .text-blue-600 {
-    color: var(--primary) !important;
+    color: var(--primary-text) !important;
   }
 
   .border-blue-200 {

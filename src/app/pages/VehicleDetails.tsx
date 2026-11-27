@@ -164,7 +164,7 @@ export function VehicleDetails() {
       <div role="alert" className="text-center py-12">
         <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar veículo</h2>
-        <p className="text-sm text-destructive/80 mb-6">{error}</p>
+        <p className="text-sm text-destructive mb-6">{error}</p>
         <div className="flex justify-center gap-3">
           <Button variant="outline" onClick={() => loadVehicleDetails()}>
             <RefreshCw className="size-4" />
@@ -183,7 +183,7 @@ export function VehicleDetails() {
       <div className="text-center py-12">
         <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-foreground mb-2">Veículo não encontrado</h2>
-        <Link to="/dashboard/vehicles" className="text-primary hover:underline">
+        <Link to="/dashboard/vehicles" className="text-primary-text hover:underline">
           Voltar para veículos
         </Link>
       </div>
@@ -255,12 +255,12 @@ export function VehicleDetails() {
       {activeNegotiations.length > 0 && (
         <div className="bg-primary/10 border border-primary/30 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-primary-text shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-foreground">Veículo em negociação</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Este veículo possui {pluralize(activeNegotiations.length, 'negociação ativa', 'negociações ativas')}.{' '}
-                <Link to="/dashboard/negotiations" className="text-primary underline">
+                <Link to="/dashboard/negotiations" className="text-primary-text underline">
                   Ver negociações
                 </Link>
               </p>
@@ -270,7 +270,7 @@ export function VehicleDetails() {
       )}
 
       <div className="flex flex-wrap items-start gap-6">
-      <main className="min-w-0 flex-[999_1_560px] space-y-6">
+      <section aria-label="Detalhes do veículo" className="min-w-0 flex-[999_1_560px] space-y-6">
       {photos.length > 0 && (
         <Card>
           <CardHeader>
@@ -354,7 +354,7 @@ export function VehicleDetails() {
         </CardContent>
       </Card>
 
-      </main>
+      </section>
       <aside className="min-w-0 flex-[1_1_340px]">
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0 border-b border-border py-4">

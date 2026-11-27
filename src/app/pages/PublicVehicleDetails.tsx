@@ -98,7 +98,7 @@ export function PublicVehicleDetails() {
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar veículo</h2>
-          <p className="text-sm text-destructive/80 mb-6">{error}</p>
+          <p className="text-sm text-destructive mb-6">{error}</p>
           <div className="flex justify-center gap-3">
             <Button variant="outline" onClick={() => loadVehicle()}>
               <RefreshCw className="size-4" />
@@ -144,7 +144,7 @@ export function PublicVehicleDetails() {
               <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
                 <Car className="w-6 h-6 text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground">LuxCar</h1>
+              <span className="text-2xl font-bold text-foreground">LuxCar</span>
             </Link>
             <div className="flex items-center gap-2 sm:gap-3">
               <ThemeToggle />
@@ -155,6 +155,8 @@ export function PublicVehicleDetails() {
           </div>
         </div>
       </header>
+
+      <main>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Link to="/estoque" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
@@ -249,7 +251,7 @@ export function PublicVehicleDetails() {
                 <h3 className="mb-4 text-lg font-bold text-foreground [font-family:var(--font-display)]">Interessado?</h3>
 
                 {vehicle.company_phone && (
-                  <Button asChild size="lg" className="mb-3 h-[52px] w-full bg-[#128C4A] text-white hover:bg-[#0F7A40]">
+                  <Button asChild size="lg" className="mb-3 h-[52px] w-full bg-[#0F7A40] text-white hover:bg-[#0B6634]">
                     <a
                       href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`}
                       target="_blank"
@@ -293,7 +295,7 @@ export function PublicVehicleDetails() {
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden">
-        {vehicle.company_phone ? <Button asChild className="h-12 w-full bg-[#128C4A] text-white hover:bg-[#0F7A40]"><a href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="size-5" />Chamar no WhatsApp</a></Button> : <Button className="h-12 w-full" onClick={() => setShowLeadForm(true)}><MessageCircle className="size-5" />Enviar mensagem</Button>}
+        {vehicle.company_phone ? <Button asChild className="h-12 w-full bg-[#0F7A40] text-white hover:bg-[#0B6634]"><a href={`https://wa.me/55${vehicle.company_phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="size-5" />Chamar no WhatsApp</a></Button> : <Button className="h-12 w-full" onClick={() => setShowLeadForm(true)}><MessageCircle className="size-5" />Enviar mensagem</Button>}
       </div>
       <div className="h-16 md:hidden" aria-hidden="true" />
 
@@ -306,6 +308,7 @@ export function PublicVehicleDetails() {
           onClose={() => setShowLeadForm(false)}
         />
       )}
+      </main>
     </div>
   );
 }

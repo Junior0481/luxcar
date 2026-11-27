@@ -157,7 +157,7 @@ export function Dashboard() {
             <AlertCircle className="mt-0.5 size-5 shrink-0" />
             <div>
               <p className="font-medium">Erro ao carregar dados do painel</p>
-              <p className="text-sm text-destructive/80">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => loadDashboardData()} className="w-fit">
@@ -291,7 +291,7 @@ export function Dashboard() {
                     <TableCell>
                       <Link
                         to={`/dashboard/negotiations/${negotiation.id}`}
-                        className="font-medium text-foreground transition-colors hover:text-primary"
+                        className="font-medium text-foreground transition-colors hover:text-primary-text"
                       >
                         {negotiation.client_name}
                       </Link>

@@ -51,8 +51,8 @@ export function UpdatePassword() {
   return (
     <Card className="shadow-lux-lg">
       <CardHeader>
-        <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-accent text-primary"><LockKeyhole className="size-5" /></div>
-        <CardTitle className="text-2xl">Definir nova senha</CardTitle>
+        <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-accent text-primary-text"><LockKeyhole className="size-5" /></div>
+        <CardTitle as="h1" className="text-2xl">Definir nova senha</CardTitle>
         <CardDescription>Escolha uma senha nova para sua conta LuxCar.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -71,7 +71,7 @@ export function UpdatePassword() {
             <Button type="submit" disabled={saving} className="w-full" size="lg">{saving ? 'Salvando...' : 'Salvar nova senha'}</Button>
           </form>
         ) : null}
-        {updated ? <div role="status" className="rounded-2xl border border-primary/20 bg-accent p-4"><p className="flex items-center gap-2 font-medium text-accent-foreground"><CheckCircle className="size-5 text-primary" />Senha atualizada.</p><p className="mt-2 text-sm text-muted-foreground">Redirecionando para o login...</p></div> : null}
+        {updated ? <div role="status" className="rounded-2xl border border-primary/20 bg-accent p-4"><p className="flex items-center gap-2 font-medium text-accent-foreground"><CheckCircle className="size-5 text-primary-text" />Senha atualizada.</p><p className="mt-2 text-sm text-muted-foreground">Redirecionando para o login...</p></div> : null}
       </CardContent>
     </Card>
   );

@@ -45,9 +45,9 @@ export function AuthLayout() {
 
         <div className="absolute bottom-8 left-8 right-8 z-10 max-w-xl rounded-xl border border-white/15 bg-black/85 p-6 text-white backdrop-blur-sm xl:bottom-10 xl:left-10 xl:p-7">
           <p className="text-sm font-semibold uppercase tracking-wide text-white/80">SaaS white label para lojas automotivas</p>
-          <h1 className="mt-3 text-3xl font-bold leading-tight text-white [font-family:var(--font-display)] xl:text-4xl">
+          <p className="mt-3 text-3xl font-bold leading-tight text-white [font-family:var(--font-display)] xl:text-4xl">
             Estoque, leads e vendas da sua loja em um só lugar.
-          </h1>
+          </p>
           <p className="mt-3 max-w-md text-sm text-white/85">
             Painel usado pela equipe para cadastrar carros, responder clientes e fechar negócios.
           </p>
@@ -64,7 +64,7 @@ export function AuthLayout() {
             <Link to="/" className="mb-4 inline-flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lux-md">
               <Car className="size-8" />
             </Link>
-            <h1 className="text-3xl font-medium text-foreground">LuxCar</h1>
+            <p className="text-3xl font-medium text-foreground">LuxCar</p>
             <p className="mt-2 text-muted-foreground">Centro de comando da sua loja.</p>
           </div>
 

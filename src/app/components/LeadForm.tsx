@@ -131,6 +131,7 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
             <Label htmlFor="customer_name">Seu Nome *</Label>
             <Input
               id="customer_name"
+              autoComplete="name"
               value={formData.customer_name}
               onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
               required
@@ -141,7 +142,7 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
           <div className="space-y-2">
             <Label htmlFor="customer_email">Email</Label>
             <Input
-              type="email"
+              type="email" autoComplete="email"
               id="customer_email"
               value={formData.customer_email}
               onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
@@ -153,6 +154,7 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
             <Label htmlFor="customer_phone">Telefone</Label>
             <Input
               type="tel"
+              autoComplete="tel"
               id="customer_phone"
               value={formData.customer_phone}
               onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}

@@ -212,7 +212,7 @@ export function PublicHome() {
                 </div>
               )}
               <div>
-                <h1 className="text-xl font-medium text-foreground">{company?.name || 'LuxCar'}</h1>
+                <p className="text-xl font-medium text-foreground">{company?.name || 'LuxCar'}</p>
                 <p className="text-xs text-muted-foreground">Vitrine automotiva</p>
               </div>
             </Link>
@@ -229,13 +229,15 @@ export function PublicHome() {
         </div>
       </header>
 
+      <main>
+
       <section className="lux-gradient border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:py-14">
           <div className="max-w-3xl">
             <p className="text-sm font-medium uppercase text-muted-foreground">Estoque disponível</p>
-            <h2 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-foreground [font-family:var(--font-display)] md:text-5xl">
+            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight text-foreground [font-family:var(--font-display)] md:text-5xl">
               Encontre o carro certo em uma vitrine organizada.
-            </h2>
+            </h1>
             <p className="mt-4 text-lg text-muted-foreground">
               Compare modelos, preço, ano e loja anunciante com uma experiência clara em qualquer tela.
             </p>
@@ -281,7 +283,7 @@ export function PublicHome() {
           </aside>
           <section className="min-w-0">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground"><span className="font-semibold tabular-nums text-foreground">{pluralize(filteredVehicles.length, 'veículo encontrado', 'veículos encontrados')}</span></p>
+              <p role="status" aria-live="polite" className="text-sm text-muted-foreground"><span className="font-semibold tabular-nums text-foreground">{pluralize(filteredVehicles.length, 'veículo encontrado', 'veículos encontrados')}</span></p>
               <div className="flex items-center gap-2">
                 <Label htmlFor="vehicle-sort" className="whitespace-nowrap text-sm text-muted-foreground">Ordenar</Label>
                 <Select value={sortOrder} onValueChange={setSortOrder}>
@@ -308,7 +310,7 @@ export function PublicHome() {
               <AlertCircle className="mt-0.5 size-5 shrink-0" />
               <div>
                 <p className="font-medium">Erro ao carregar catálogo</p>
-                <p className="text-sm text-destructive/80">{error}</p>
+                <p className="text-sm text-destructive">{error}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => loadVehicles()} className="w-fit">
@@ -379,6 +381,7 @@ export function PublicHome() {
           </section>
         </div>
       </div>
+      </main>
     </div>
   );
 }

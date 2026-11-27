@@ -46,15 +46,15 @@ export function ForgotPassword() {
   return (
     <Card className="shadow-lux-lg">
       <CardHeader>
-        <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-accent text-primary"><LockKeyhole className="size-5" /></div>
-        <CardTitle className="text-2xl">Recuperar senha</CardTitle>
+        <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-accent text-primary-text"><LockKeyhole className="size-5" /></div>
+        <CardTitle as="h1" className="text-2xl">Recuperar senha</CardTitle>
         <CardDescription>Informe o email da conta. Enviaremos um link seguro para definir uma nova senha.</CardDescription>
       </CardHeader>
       <CardContent>
         {error && <div role="alert" className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4"><AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" /><p className="text-sm text-destructive">{error}</p></div>}
         {sent ? (
           <div role="status" className="space-y-4 rounded-2xl border border-primary/20 bg-accent p-4">
-            <p className="flex items-center gap-2 font-medium text-accent-foreground"><CheckCircle className="size-5 text-primary" />Se o email estiver cadastrado, enviaremos um link de recuperação.</p>
+            <p className="flex items-center gap-2 font-medium text-accent-foreground"><CheckCircle className="size-5 text-primary-text" />Se o email estiver cadastrado, enviaremos um link de recuperação.</p>
             <p className="text-sm text-muted-foreground">Confira sua caixa de entrada e spam. O link leva ao formulário para criar e confirmar a nova senha.</p>
           </div>
         ) : (
@@ -66,7 +66,7 @@ export function ForgotPassword() {
             <Button type="submit" disabled={loading} className="w-full" size="lg">{loading ? 'Enviando...' : 'Enviar link de recuperação'}</Button>
           </form>
         )}
-        <p className="mt-6 text-center text-sm text-muted-foreground"><Link to="/auth/login" className="font-medium text-primary hover:underline">Voltar ao login</Link></p>
+        <p className="mt-6 text-center text-sm text-muted-foreground"><Link to="/auth/login" className="font-medium text-primary-text hover:underline">Voltar ao login</Link></p>
       </CardContent>
     </Card>
   );

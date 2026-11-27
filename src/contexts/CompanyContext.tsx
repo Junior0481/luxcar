@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { Company, supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { setBrandTitle } from '../app/components/RouteAccessibility';
 
 type CachedBranding = { name?: string; primaryColor?: string; secondaryColor?: string; faviconUrl?: string };
 const brandingCacheKey = (host: string, userId?: string) => userId ? `luxcar:branding:user:${userId}` : `luxcar:branding:host:${host}`;
@@ -35,13 +36,20 @@ function getContrastForeground(hex: string): string {
   } else {
     return '#ffffff';
   }
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 128 ? '#0a0a0b' : '#ffffff';
+  // Escolhe o texto (quase preto ou branco) com maior razão de contraste WCAG sobre a cor da marca.
+  const channel = (value: number) => {
+    const c = value / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  const darkText = (luminance + 0.05) / (0.0033 + 0.05); // #0a0a0b
+  const lightText = 1.05 / (luminance + 0.05);
+  return darkText >= lightText ? '#0a0a0b' : '#ffffff';
 }
 
 function applyBranding(company: { name?: string; primary_color?: string; secondary_color?: string; favicon_url?: string } | null) {
   if (!company) return;
-  if (company.name) document.title = company.name;
+  setBrandTitle(company.name);
   if (company.primary_color) {
     document.documentElement.style.setProperty('--primary', company.primary_color);
     document.documentElement.style.setProperty('--primary-foreground', getContrastForeground(company.primary_color));

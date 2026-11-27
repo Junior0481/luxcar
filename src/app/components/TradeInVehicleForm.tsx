@@ -385,11 +385,11 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
             <p className="text-sm font-semibold text-foreground mb-3">Fotos do Veículo de Troca</p>
 
             <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-card hover:border-primary transition-colors">
-              <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <input type="file" id="image-upload-trade" accept="image/*" multiple disabled={loading} onChange={handleImageUpload} className="hidden" />
+              <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+              <input type="file" id="image-upload-trade" accept="image/*" multiple disabled={loading} onChange={handleImageUpload} className="peer sr-only" />
               <label
                 htmlFor="image-upload-trade"
-                className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring"
               >
                 Selecionar Fotos
               </label>
@@ -405,7 +405,7 @@ export function TradeInVehicleForm({ open = true, negotiationId, companyId, exis
                     <button
                       type="button"
                       onClick={() => removeImage(photo.id)}
-                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity"
                       aria-label={`Excluir foto ${index + 1}`}
                     >
                       <Trash2 className="w-4 h-4" />

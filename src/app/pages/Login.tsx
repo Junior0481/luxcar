@@ -34,18 +34,18 @@ export function Login() {
   return (
     <Card className="rounded-xl shadow-none">
       <CardHeader>
-        <CardTitle className="text-[34px] font-bold leading-tight [font-family:var(--font-display)]">Entrar no painel</CardTitle>
+        <CardTitle as="h1" className="text-[34px] font-bold leading-tight [font-family:var(--font-display)]">Entrar no painel</CardTitle>
         <CardDescription>Use o e-mail cadastrado pela sua loja.</CardDescription>
       </CardHeader>
       <CardContent>
         {paymentReturned && (
           <div role="status" className="mb-4 space-y-2 rounded-2xl border border-primary/20 bg-accent p-4">
-            <p className="flex items-center gap-2 font-medium text-accent-foreground"><CheckCircle className="size-5 shrink-0 text-primary" />Pagamento recebido.</p>
-            <p className="text-sm text-muted-foreground">Sua loja é liberada assim que a AbacatePay confirmar, normalmente em segundos. No primeiro acesso, crie sua senha em <Link to="/auth/forgot-password" className="font-medium text-primary hover:underline">Esqueceu sua senha?</Link> usando o email do cadastro.</p>
+            <p className="flex items-center gap-2 font-medium text-accent-foreground"><CheckCircle className="size-5 shrink-0 text-primary-text" />Pagamento recebido.</p>
+            <p className="text-sm text-muted-foreground">Sua loja é liberada assim que a AbacatePay confirmar, normalmente em segundos. No primeiro acesso, crie sua senha em <Link to="/auth/forgot-password" className="font-medium text-primary-text hover:underline">Esqueceu sua senha?</Link> usando o email do cadastro.</p>
           </div>
         )}
         {error && (
-          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
+          <div role="alert" className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
@@ -58,7 +58,7 @@ export function Login() {
               <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="email"
-                type="email"
+                type="email" autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -74,7 +74,7 @@ export function Login() {
               <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="password"
-                type="password"
+                type="password" autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -90,12 +90,12 @@ export function Login() {
         </form>
 
         <p className="mt-4 text-right text-sm">
-          <Link to="/auth/forgot-password" className="font-medium text-primary hover:underline">Esqueceu sua senha?</Link>
+          <Link to="/auth/forgot-password" className="font-medium text-primary-text hover:underline">Esqueceu sua senha?</Link>
         </p>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Sua loja ainda não usa a LuxCar?{' '}
-          <Link to="/auth/register" className="font-medium text-primary hover:underline">
+          <Link to="/auth/register" className="font-medium text-primary-text hover:underline">
             Falar com vendas
           </Link>
         </p>

@@ -27,6 +27,17 @@ const tooltipStyle = {
   color: 'var(--popover-foreground)'
 };
 
+/** Dados do gráfico em tabela para leitor de tela (o SVG do gráfico fica oculto para ele). */
+function ChartTable({ caption, columns, rows }: { caption: string; columns: string[]; rows: Array<Array<string | number>> }) {
+  return (
+    <table className="sr-only">
+      <caption>{caption}</caption>
+      <thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead>
+      <tbody>{rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => cellIndex === 0 ? <th key={cellIndex} scope="row">{cell}</th> : <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody>
+    </table>
+  );
+}
+
 export function Reports() {
   const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -201,12 +212,12 @@ export function Reports() {
       </Card>
 
       {error ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 size-5 shrink-0" />
             <div>
               <p className="font-medium">Erro ao carregar relatórios</p>
-              <p className="text-sm text-destructive/80">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => loadReports()} className="w-fit">
@@ -226,7 +237,9 @@ export function Reports() {
             </CardHeader>
             <CardContent>
               {salesByMonth.length === 0 ? emptyState : (
-                <div className="h-72 w-full">
+                <>
+                <ChartTable caption="Vendas por mês" columns={['Mês', 'Vendas']} rows={salesByMonth.map((item) => [item.month, item.vendas])} />
+                <div className="h-72 w-full" aria-hidden="true">
                   <ResponsiveContainer>
                     <LineChart data={salesByMonth}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -234,10 +247,11 @@ export function Reports() {
                       <YAxis tick={axisStyle} stroke="var(--border)" />
                       <Tooltip contentStyle={tooltipStyle} />
                       <Legend />
-                      <Line type="monotone" dataKey="vendas" stroke="var(--primary)" strokeWidth={2} name="Vendas" dot={{ fill: 'var(--primary)' }} />
+                      <Line type="monotone" dataKey="vendas" stroke="var(--primary-text)" strokeWidth={2} name="Vendas" dot={{ fill: 'var(--primary-text)' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -249,7 +263,9 @@ export function Reports() {
               </CardHeader>
               <CardContent>
                 {salesBySeller.length === 0 ? emptyState : (
-                  <div className="h-72 w-full">
+                  <>
+                  <ChartTable caption="Vendas por vendedor" columns={['Vendedor', 'Vendas']} rows={salesBySeller.map((item) => [item.name, item.count])} />
+                  <div className="h-72 w-full" aria-hidden="true">
                     <ResponsiveContainer>
                       <BarChart data={salesBySeller}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -257,10 +273,11 @@ export function Reports() {
                         <YAxis tick={axisStyle} stroke="var(--border)" />
                         <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--accent)' }} />
                         <Legend />
-                        <Bar dataKey="count" fill="var(--primary)" name="Vendas" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="count" fill="var(--primary-text)" name="Vendas" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -271,7 +288,9 @@ export function Reports() {
               </CardHeader>
               <CardContent>
                 {topVehicles.length === 0 ? emptyState : (
-                  <div className="h-80 w-full">
+                  <>
+                  <ChartTable caption="Modelos mais vendidos" columns={['Modelo', 'Vendas']} rows={topVehicles.map((item) => [item['veículo'], item.vendas])} />
+                  <div className="h-80 w-full" aria-hidden="true">
                     <ResponsiveContainer>
                       <BarChart data={topVehicles}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -283,6 +302,7 @@ export function Reports() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                  </>
                 )}
               </CardContent>
             </Card>

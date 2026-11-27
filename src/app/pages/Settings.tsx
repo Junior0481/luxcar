@@ -312,7 +312,7 @@ export function Settings() {
             : 'border-destructive/30 bg-destructive/10 text-destructive'
         )}>
           {message.type === 'success' ? (
-            <CheckCircle className="mt-0.5 size-5 shrink-0 text-primary" />
+            <CheckCircle className="mt-0.5 size-5 shrink-0 text-primary-text" />
           ) : (
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
           )}

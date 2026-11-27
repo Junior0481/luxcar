@@ -57,7 +57,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
       title={isDark ? 'Tema claro' : 'Tema escuro'}
       onClick={toggle}
-      className={`inline-flex items-center justify-center w-10 h-10 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors ${className}`}
+      className={`inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ${className}`}
     >
       <span key={mounted && isDark ? 'sun' : 'moon'} className="theme-toggle-icon inline-flex">
         {mounted && isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}

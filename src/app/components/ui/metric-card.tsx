@@ -45,7 +45,7 @@ function MetricCard({
             className={cn(
               "flex size-12 shrink-0 items-center justify-center rounded-2xl",
               accent
-                ? "bg-primary/15 text-primary ring-1 ring-primary/20"
+                ? "bg-primary/15 text-primary-text ring-1 ring-primary/20"
                 : "bg-muted text-muted-foreground",
             )}
           >
