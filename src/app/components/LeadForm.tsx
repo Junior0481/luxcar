@@ -1,3 +1,4 @@
+import { maskPhone, PHONE_MAX_LENGTH } from '../../lib/format';
 import { useEffect, useRef, useState } from 'react';
 import { createLead } from '../../services/leads.service';
 import { AlertCircle, CheckCircle } from 'lucide-react';
@@ -157,7 +158,8 @@ export function LeadForm({ open = true, vehicleId, companyId, vehicleName, onClo
               autoComplete="tel"
               id="customer_phone"
               value={formData.customer_phone}
-              onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, customer_phone: maskPhone(e.target.value) })}
+              maxLength={PHONE_MAX_LENGTH}
               placeholder="(11) 99999-9999"
             />
           </div>

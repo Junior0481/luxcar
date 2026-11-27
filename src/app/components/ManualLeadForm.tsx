@@ -1,3 +1,4 @@
+import { maskPhone, PHONE_MAX_LENGTH } from '../../lib/format';
 import { useState, useEffect, useRef } from 'react';
 import { supabase, Vehicle, Profile } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -212,7 +213,8 @@ export function ManualLeadForm({ open = true, onClose, onSuccess }: ManualLeadFo
                 type="tel"
                 id="manual_lead_phone"
                 value={formData.customer_phone}
-                onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, customer_phone: maskPhone(e.target.value) })}
+                maxLength={PHONE_MAX_LENGTH}
                 placeholder="(11) 99999-9999"
               />
             </div>

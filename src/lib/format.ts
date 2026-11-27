@@ -61,6 +61,19 @@ export const formatPhone = (value?: string | null) => {
   return value;
 };
 
+/** Máscara de digitação do telefone: só dígitos, no máximo 11 (DDD + 9 dígitos). */
+export const PHONE_MAX_LENGTH = 15; // "(11) 99999-9999"
+export const maskPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+  const split = digits.length === 11 ? 5 : 4;
+  if (rest.length <= split) return `(${ddd}) ${rest}`;
+  return `(${ddd}) ${rest.slice(0, split)}-${rest.slice(split)}`;
+};
+
 export const formatPercent = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value / 100);
 

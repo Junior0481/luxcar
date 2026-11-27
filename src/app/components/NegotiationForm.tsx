@@ -8,7 +8,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
-import { formatStage, stageLabels } from '../../lib/format';
+import { formatStage, stageLabels, maskPhone, PHONE_MAX_LENGTH } from '../../lib/format';
 import {
   Dialog,
   DialogContent,
@@ -276,7 +276,9 @@ export function NegotiationForm({ open = true, onClose, lead, initialVehicle, on
                 type="tel"
                 id="client_phone"
                 value={formData.client_phone}
-                onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, client_phone: maskPhone(e.target.value) })}
+                inputMode="tel"
+                maxLength={PHONE_MAX_LENGTH}
                 placeholder="(11) 99999-9999"
               />
             </div>
