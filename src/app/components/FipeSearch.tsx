@@ -85,7 +85,7 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
   return (
     <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
       <div className="flex items-center gap-2 mb-4">
-        <Search className="w-5 h-5 text-primary" />
+        <Search className="w-5 h-5 text-primary-text" />
         <h3 className="font-semibold text-foreground">Consultar Tabela FIPE</h3>
       </div>
 
@@ -94,7 +94,7 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
       </p>
 
       {(error || valueError) && (
-        <div className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
+        <div role="alert" className="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
           <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
           <p className="text-sm text-destructive">{valueError || error}</p>
         </div>
@@ -102,8 +102,8 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
 
       <div className="space-y-3">
         <div className="space-y-1">
-          <Label>Marca</Label>
-          <select value={selectedBrand} onChange={(e) => handleBrandChange(e.target.value)} disabled={loading} className={selectClass}>
+          <Label htmlFor="fipe-brand">Marca</Label>
+          <select id="fipe-brand" value={selectedBrand} onChange={(e) => handleBrandChange(e.target.value)} disabled={loading} className={selectClass}>
             <option value="">Selecione a marca</option>
             {brands.map((brand) => (
               <option key={brand.codigo} value={brand.codigo}>{brand.nome}</option>
@@ -113,8 +113,8 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
 
         {models.length > 0 && (
           <div className="space-y-1">
-            <Label>Modelo</Label>
-            <select value={selectedModel} onChange={(e) => handleModelChange(e.target.value)} disabled={loading} className={selectClass}>
+            <Label htmlFor="fipe-model">Modelo</Label>
+            <select id="fipe-model" value={selectedModel} onChange={(e) => handleModelChange(e.target.value)} disabled={loading} className={selectClass}>
               <option value="">Selecione o modelo</option>
               {models.map((model) => (
                 <option key={model.codigo} value={model.codigo}>{model.nome}</option>
@@ -125,8 +125,8 @@ export function FipeSearch({ onValueFound }: FipeSearchProps) {
 
         {years.length > 0 && (
           <div className="space-y-1">
-            <Label>Ano</Label>
-            <select value={selectedYear} onChange={(e) => handleYearChange(e.target.value)} disabled={loading} className={selectClass}>
+            <Label htmlFor="fipe-year">Ano</Label>
+            <select id="fipe-year" value={selectedYear} onChange={(e) => handleYearChange(e.target.value)} disabled={loading} className={selectClass}>
               <option value="">Selecione o ano</option>
               {years.map((year) => (
                 <option key={year.codigo} value={year.codigo}>{year.nome}</option>

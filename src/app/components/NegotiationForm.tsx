@@ -255,7 +255,7 @@ export function NegotiationForm({ open = true, onClose, lead, initialVehicle, on
                 </p>
               )}
               {vehicles.length === 0 && (
-                <p className="text-xs text-primary">Nenhum veículo disponível para negociação</p>
+                <p className="text-xs text-primary-text">Nenhum veículo disponível para negociação</p>
               )}
             </div>
 

@@ -69,13 +69,13 @@ export function RegisterConfirmation() {
   return (
     <Card className="w-full shadow-lux-lg">
       <CardHeader>
-        <CardTitle className="text-2xl">{status === 'success' ? 'Solicitação enviada' : 'Confirmação de email'}</CardTitle>
+        <CardTitle as="h1" className="text-2xl">{status === 'success' ? 'Solicitação enviada' : 'Confirmação de email'}</CardTitle>
         <CardDescription>Cadastro de assinatura LuxCar</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div role={status === 'error' ? 'alert' : 'status'} className="flex items-start gap-3 rounded-2xl border border-border bg-muted/40 p-4">
-          {status === 'processing' ? <LoaderCircle className="mt-0.5 size-5 shrink-0 animate-spin text-primary" />
-            : status === 'success' ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" />
+          {status === 'processing' ? <LoaderCircle className="mt-0.5 size-5 shrink-0 animate-spin text-primary-text" />
+            : status === 'success' ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary-text" />
               : <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />}
           <p className="text-sm leading-6 text-foreground/80">{message}</p>
         </div>

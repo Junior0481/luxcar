@@ -52,12 +52,12 @@ export function ClientRegister() {
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl">Criar Conta de Cliente</CardTitle>
+        <CardTitle as="h1" className="text-2xl">Criar Conta de Cliente</CardTitle>
         <CardDescription>Salve favoritos e acompanhe negociações</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
+          <div role="alert" className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-destructive">{error}</p>
           </div>
@@ -83,7 +83,7 @@ export function ClientRegister() {
             <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10" placeholder="seu@email.com" />
+              <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10" placeholder="seu@email.com" />
             </div>
           </div>
 
@@ -99,7 +99,7 @@ export function ClientRegister() {
             <Label htmlFor="password">Senha</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="pl-10" placeholder="••••••••" />
+              <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="pl-10" placeholder="••••••••" />
             </div>
             <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres</p>
           </div>
@@ -111,7 +111,7 @@ export function ClientRegister() {
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Já tem uma conta?{' '}
-          <Link to="/client/login" className="text-primary hover:underline font-medium">
+          <Link to="/client/login" className="text-primary-text hover:underline font-medium">
             Fazer login
           </Link>
         </p>

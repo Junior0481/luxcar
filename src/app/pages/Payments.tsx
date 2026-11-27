@@ -173,12 +173,12 @@ export function Payments() {
       <PageHeader icon={CreditCard} eyebrow="Financeiro" title="Pagamentos" description="Registre recebimentos vinculados às negociações da loja." />
 
       {error ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 size-5 shrink-0" />
             <div>
               <p className="font-medium">Erro ao carregar pagamentos</p>
-              <p className="text-sm text-destructive/80">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => load()} className="w-fit">

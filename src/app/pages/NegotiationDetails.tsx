@@ -208,7 +208,7 @@ export function NegotiationDetails() {
       <div role="alert" className="text-center py-12">
         <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar negociação</h2>
-        <p className="text-sm text-destructive/80 mb-6">{error}</p>
+        <p className="text-sm text-destructive mb-6">{error}</p>
         <div className="flex justify-center gap-3">
           <Button variant="outline" onClick={() => loadNegotiationDetails()}>
             <RefreshCw className="size-4" />
@@ -227,7 +227,7 @@ export function NegotiationDetails() {
       <div className="text-center py-12">
         <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-foreground mb-2">Negociação não encontrada</h2>
-        <Link to="/dashboard/negotiations" className="text-primary hover:underline">
+        <Link to="/dashboard/negotiations" className="text-primary-text hover:underline">
           Voltar para negociações
         </Link>
       </div>
@@ -309,7 +309,7 @@ export function NegotiationDetails() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {clientRows.map((row) => (
                   <div key={row.label} className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${row.accent ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${row.accent ? 'bg-primary/15 text-primary-text' : 'bg-muted text-muted-foreground'}`}>
                       <row.icon className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -387,8 +387,9 @@ export function NegotiationDetails() {
           <Card>
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">Atualizar Estágio</h3>
+                <label htmlFor="negotiation-stage" className="block font-semibold text-foreground">Atualizar Estágio</label>
                 <select
+                  id="negotiation-stage"
                   value={negotiation.stage}
                   onChange={(e) => handleStageUpdate(e.target.value)}
                   disabled={updating}
@@ -401,14 +402,15 @@ export function NegotiationDetails() {
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">Prioridade</h3>
-                <div className="flex gap-2">
+                <h3 id="negotiation-priority" className="font-semibold text-foreground">Prioridade</h3>
+                <div className="flex gap-2" role="group" aria-labelledby="negotiation-priority">
                   {(['baixa', 'media', 'alta'] as const).map((priority) => (
                     <Button
                       key={priority}
                       variant={negotiation.priority === priority ? (priority === 'alta' ? 'destructive' : 'default') : 'outline'}
                       size="sm"
                       className="flex-1 capitalize"
+                      aria-pressed={negotiation.priority === priority}
                       onClick={() => handlePriorityUpdate(priority)}
                     >
                       {formatPriority(priority)}
@@ -452,7 +454,7 @@ export function NegotiationDetails() {
                         <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">KM:</span> <span className="font-medium text-foreground">{vehicle.mileage?.toLocaleString('pt-BR')}</span></div>
                         <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Placa:</span> <span className="font-medium text-foreground">{vehicle.plate}</span></div>
                         <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Cor:</span> <span className="font-medium text-foreground capitalize">{vehicle.color}</span></div>
-                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Avaliado:</span> <span className="font-semibold text-primary">{vehicle.evaluated_value ? brl(vehicle.evaluated_value) : 'Pendente'}</span></div>
+                        <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Avaliado:</span> <span className="font-semibold text-primary-text">{vehicle.evaluated_value ? brl(vehicle.evaluated_value) : 'Pendente'}</span></div>
                         <div className="flex flex-wrap items-baseline gap-1"><span className="text-muted-foreground">Ofertado:</span> <span className="font-semibold text-foreground">{vehicle.offered_value ? brl(vehicle.offered_value) : '-'}</span></div>
                       </div>
                     </div>
@@ -473,7 +475,7 @@ export function NegotiationDetails() {
                     {negotiation.vehicle.brand} {negotiation.vehicle.model}
                   </p>
                   <p className="text-sm text-muted-foreground mb-3">{negotiation.vehicle.year}</p>
-                  <p className="text-lg font-semibold text-primary">{brl(negotiation.vehicle.sale_price)}</p>
+                  <p className="text-lg font-semibold text-primary-text">{brl(negotiation.vehicle.sale_price)}</p>
                   <Button asChild variant="secondary" className="w-full mt-4">
                     <Link to={`/dashboard/vehicles/${negotiation.vehicle.id}`}>Ver Detalhes do Veículo</Link>
                   </Button>

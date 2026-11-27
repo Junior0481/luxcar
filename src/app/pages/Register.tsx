@@ -159,7 +159,7 @@ export function Register() {
   return (
     <Card className="w-full shadow-lux-lg">
       <CardHeader className="pb-5">
-        <CardTitle className="text-2xl">Solicitar assinatura LuxCar</CardTitle>
+        <CardTitle as="h1" className="text-2xl">Solicitar assinatura LuxCar</CardTitle>
         <CardDescription>{awaitingConfirmation ? 'Confirme seu email para concluir a solicitação.' : step === 1 ? 'Escolha o plano para sua concessionária.' : 'Informe os dados da concessionária e do responsável.'}</CardDescription>
         {!awaitingConfirmation && <ol aria-label="Etapas do cadastro" className="mt-5 grid grid-cols-2 gap-3">
           {[{ number: 1, label: 'Plano' }, { number: 2, label: 'Dados da loja' }].map((item) => (
@@ -172,7 +172,7 @@ export function Register() {
       <CardContent>
         {awaitingConfirmation ? (
           <div className="space-y-4 rounded-2xl border border-primary/20 bg-accent p-5">
-            <div className="flex items-center gap-2 font-medium text-accent-foreground"><Mail className="size-5 text-primary" /> Confirme seu email</div>
+            <div className="flex items-center gap-2 font-medium text-accent-foreground"><Mail className="size-5 text-primary-text" /> Confirme seu email</div>
             <p className="text-sm leading-6 text-foreground/75">Enviamos um link para <strong>{form.ownerEmail}</strong>. Abra-o neste navegador para validar o email e registrar sua solicitação. Confira também a caixa de spam.</p>
             <Button type="button" variant="outline" disabled={loading} onClick={() => { setAwaitingConfirmation(false); setError(''); }}>
               Voltar ao cadastro
@@ -189,7 +189,7 @@ export function Register() {
                     <div className="inline-flex items-center rounded-xl border border-border bg-muted/70 p-1" role="group" aria-label="Periodicidade do plano">
                       <button type="button" aria-pressed={form.billingCycle === 'monthly'} onClick={() => update('billingCycle', 'monthly')} className={`rounded-lg px-4 py-2 text-sm font-medium ${form.billingCycle === 'monthly' ? 'bg-background text-foreground shadow-sm' : 'text-foreground/75 hover:text-foreground'}`}>Mensal</button>
                       <button type="button" aria-pressed={form.billingCycle === 'annual'} onClick={() => update('billingCycle', 'annual')} className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${form.billingCycle === 'annual' ? 'bg-background text-foreground shadow-sm' : 'text-foreground/75 hover:text-foreground'}`}>
-                        Anual <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">2 meses grátis</span>
+                        Anual <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary-text">2 meses grátis</span>
                       </button>
                     </div>
                   </div>
@@ -209,14 +209,14 @@ export function Register() {
                         <button key={plan.id} type="button" onClick={() => update('plan', plan.id)} className={`relative flex h-full min-h-[290px] w-full flex-col rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isSelected ? 'border-primary bg-primary/5 shadow-lux-sm ring-2 ring-primary/25' : 'border-border bg-card hover:border-primary/50'}`} aria-pressed={isSelected}>
                           <span className="flex w-full items-start justify-between gap-2">
                             <span className="text-lg font-semibold">{plan.name}</span>
-                            {isSelected ? <CheckCircle2 aria-label="Plano selecionado" className="size-5 shrink-0 text-primary" /> : <Circle aria-hidden="true" className="size-5 shrink-0 text-foreground/50" />}
+                            {isSelected ? <CheckCircle2 aria-label="Plano selecionado" className="size-5 shrink-0 text-primary-text" /> : <Circle aria-hidden="true" className="size-5 shrink-0 text-foreground/50" />}
                           </span>
-                          {plan.id === 'gold' && <span className="mt-2 w-fit rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary">Mais popular</span>}
+                          {plan.id === 'gold' && <span className="mt-2 w-fit rounded-full bg-primary/15 px-2.5 py-1 text-xs font-semibold text-primary-text">Mais popular</span>}
                           <span className="mt-4 block whitespace-nowrap text-[clamp(1.15rem,2vw,1.4rem)] font-bold tracking-tight">{money(price)}<span className="ml-1 text-sm font-medium text-foreground/75">/{isAnnual ? 'ano' : 'mês'}</span></span>
                           {isAnnual ? <span className="mt-1 text-xs text-foreground/75">Equivale a {money(price / 12)}/mês · economize {money(annualSavings)}</span> : <span className="mt-1 text-xs text-foreground/75">Cobrança mensal</span>}
                           <span className="my-4 block h-px w-full bg-border" />
                           <span className="grid gap-2 text-sm">
-                            {features.map((feature) => <span key={feature.label} className="flex items-center gap-2"><span className={feature.included ? 'text-primary' : 'text-destructive'}>{feature.included ? <Check aria-hidden="true" className="size-4" /> : <X aria-hidden="true" className="size-4" />}</span><span className="text-foreground/80">{feature.label}</span></span>)}
+                            {features.map((feature) => <span key={feature.label} className="flex items-center gap-2"><span className={feature.included ? 'text-primary-text' : 'text-destructive'}>{feature.included ? <Check aria-hidden="true" className="size-4" /> : <X aria-hidden="true" className="size-4" />}</span><span className="text-foreground/80">{feature.label}</span></span>)}
                           </span>
                         </button>
                       );
@@ -271,7 +271,7 @@ export function Register() {
             </form>
           </>
         )}
-        <p className="mt-6 text-center text-sm text-foreground/75">Já tem conta? <Link to="/auth/login" className="font-medium text-primary hover:underline">Entrar</Link></p>
+        <p className="mt-6 text-center text-sm text-foreground/75">Já tem conta? <Link to="/auth/login" className="font-medium text-primary-text hover:underline">Entrar</Link></p>
       </CardContent>
     </Card>
   );

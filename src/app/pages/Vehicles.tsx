@@ -250,7 +250,7 @@ export function Vehicles() {
             <AlertCircle className="mt-0.5 size-5 shrink-0" />
             <div>
               <p className="font-medium">Erro ao carregar estoque</p>
-              <p className="text-sm text-destructive/80">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => loadVehicles()} className="w-fit">
@@ -285,7 +285,7 @@ export function Vehicles() {
               const marginPct = Number(vehicle.purchase_price) ? (margin / Number(vehicle.purchase_price)) * 100 : 0;
               const daysInStock = Math.max(0, Math.floor((Date.now() - new Date(vehicle.created_at).getTime()) / 86400000));
               return <TableRow key={vehicle.id}>
-                <TableCell><Link to={`/dashboard/vehicles/${vehicle.id}`} className="flex items-center gap-3 text-foreground hover:text-primary">
+                <TableCell><Link to={`/dashboard/vehicles/${vehicle.id}`} className="flex items-center gap-3 text-foreground hover:text-primary-text">
                   {vehicle.images?.[0] ? <img src={thumbUrl(vehicle.images[0])} alt="" loading="lazy" className="size-[72px] h-12 shrink-0 rounded-md object-cover" /> : <span className="flex h-12 w-[72px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"><ImageIcon className="size-5" /></span>}
                   <span className="flex min-w-0 flex-col"><span className="truncate text-sm font-semibold">{vehicle.brand} {vehicle.model}</span><span className="truncate text-muted-foreground">{[vehicle.version, vehicle.year, vehicle.fuel_type ? formatFuel(vehicle.fuel_type) : null].filter(Boolean).join(" · ")}</span></span>
                 </Link></TableCell>

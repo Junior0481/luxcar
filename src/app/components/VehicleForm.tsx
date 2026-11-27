@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import type { Vehicle } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
-import { AlertCircle, LoaderCircle, Upload, Trash2 } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, LoaderCircle, Star, Upload, Trash2 } from "lucide-react";
 import { FipeSearch } from "./FipeSearch";
 import { FipeVehicle } from "../../hooks/useFipe";
-import { motion } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 import { toast } from "sonner";
 import { CAR_BRANDS } from "../../constants/carBrands";
 import { deleteVehicleImage, thumbUrl, uploadVehicleImage } from "../../services/storage.service";
@@ -250,6 +250,22 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
     setSelectedImageId(draggedImageId);
   };
 
+  // Alternativa ao arrastar (teclado, leitor de tela, toque): move a foto uma posição ou para a capa.
+  const [photoOrderAnnouncement, setPhotoOrderAnnouncement] = useState('');
+  const movePhotoBy = (photoId: string, target: number | 'cover') => {
+    setPhotos((current) => {
+      const from = current.findIndex((photo) => photo.id === photoId);
+      const to = target === 'cover' ? 0 : from + target;
+      if (from < 0 || to < 0 || to >= current.length || to === from) return current;
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      setPhotoOrderAnnouncement(to === 0 ? `Foto movida para a capa.` : `Foto movida para a posição ${to + 1} de ${next.length}.`);
+      return next;
+    });
+    setSelectedImageId(photoId);
+  };
+
   const handleFipeValue = (vehicleData: FipeVehicle, value: number) => {
     setFormData((current) => ({
       ...current,
@@ -440,24 +456,27 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
 
           <div className="border border-border rounded-2xl bg-muted p-5">
               <p className="text-sm font-semibold text-foreground mb-1">Fotos do Veículo</p>
-              <p className="mb-3 text-xs text-muted-foreground">Arraste as fotos para ordenar. A foto 1 será a capa exibida primeiro na vitrine.</p>
+              <p id="vehicle-photos-hint" className="mb-3 text-xs text-muted-foreground">Arraste as fotos ou use os botões de cada foto para ordenar. A foto 1 será a capa exibida primeiro na vitrine.</p>
 
             <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-card hover:border-primary transition-colors">
-              <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <input type="file" id="image-upload" accept="image/*" multiple disabled={loading} onChange={handleImageUpload} className="hidden" />
+              <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+              {/* sr-only (não hidden) para o campo continuar focável pelo teclado; o label mostra o foco. */}
+              <input type="file" id="image-upload" accept="image/*" multiple disabled={loading} onChange={handleImageUpload} className="peer sr-only" />
               <label
                 htmlFor="image-upload"
-                className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                className="cursor-pointer inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring"
               >
                 Selecionar Fotos
               </label>
               <p className="text-sm text-muted-foreground mt-3">PNG, JPG ou WEBP (máx. 15 MB cada). As fotos são otimizadas ao enviar.</p>
             </div>
 
+            <p role="status" aria-live="polite" className="sr-only">{photoOrderAnnouncement}</p>
             {photos.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+              <MotionConfig reducedMotion="user">
+              <ul aria-label="Fotos do veículo" aria-describedby="vehicle-photos-hint" className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
                 {photos.map((photo, index) => (
-                  <motion.div
+                  <motion.li
                     key={photo.id}
                     layout="position"
                     transition={{ layout: { type: 'spring', stiffness: 480, damping: 38 } }}
@@ -471,25 +490,43 @@ export function VehicleForm({ open = true, vehicle, onClose }: VehicleFormProps)
                     className={`group relative cursor-grab overflow-hidden rounded-lg border-2 transition-shadow hover:shadow-lg hover:shadow-primary/25 active:cursor-grabbing ${selectedImageId === photo.id ? 'border-primary/55 shadow-md' : 'border-border'} ${draggedImageId === photo.id ? 'z-10 opacity-75' : ''}`}
                     style={{ boxShadow: selectedImageId === photo.id ? '0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent), 0 8px 22px -12px color-mix(in srgb, var(--primary) 48%, transparent)' : undefined }}
                     data-vehicle-photo
-                    aria-label={`Foto ${index + 1}. Arraste para alterar a ordem.`}
                   >
-                    <img src={thumbUrl(photo.url)} alt={`Foto ${index + 1}`} className="h-32 w-full object-cover" draggable={false} />
+                    <img src={thumbUrl(photo.url)} alt={`Foto ${index + 1} de ${photos.length}${index === 0 ? ' (capa)' : ''}`} className="h-32 w-full object-cover" draggable={false} />
                     <div className={`absolute inset-0 transition-colors ${selectedImageId === photo.id ? 'bg-black/45' : 'bg-transparent group-hover:bg-black/25'}`} />
                     {photo.uploading && <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/65 text-xs font-medium text-white"><LoaderCircle className="size-6 animate-spin" aria-hidden="true" />Enviando foto…</div>}
-                    <span className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full border-2 border-primary/65 bg-primary/90 text-sm font-bold text-primary-foreground shadow" aria-label={`Posição ${index + 1}`}>
+                    <span className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full border-2 border-primary/65 bg-primary/90 text-sm font-bold text-primary-foreground shadow" aria-hidden="true">
                       {index + 1}
                     </span>
                     <button
                       type="button"
                       onClick={(event) => { event.stopPropagation(); removeImage(photo.id); }}
-                      className="absolute left-2 top-2 rounded-full border border-white/70 bg-black/60 p-1.5 text-white opacity-0 transition-opacity hover:bg-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                      className="absolute left-2 top-2 rounded-full border border-white/70 bg-black/60 p-1.5 text-white opacity-100 transition-opacity hover:bg-destructive focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
                       aria-label={`Excluir foto ${index + 1}`}
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-4" aria-hidden="true" />
                     </button>
-                  </motion.div>
+                    <div className="absolute inset-x-1 bottom-1 flex justify-between gap-1">
+                      {[
+                        { label: `Mover foto ${index + 1} para a esquerda`, icon: ChevronLeft, onClick: () => movePhotoBy(photo.id, -1), disabled: index === 0 },
+                        { label: `Usar foto ${index + 1} como capa`, icon: Star, onClick: () => movePhotoBy(photo.id, 'cover'), disabled: index === 0 },
+                        { label: `Mover foto ${index + 1} para a direita`, icon: ChevronRight, onClick: () => movePhotoBy(photo.id, 1), disabled: index === photos.length - 1 },
+                      ].map((action) => (
+                        <button
+                          key={action.label}
+                          type="button"
+                          onClick={(event) => { event.stopPropagation(); action.onClick(); }}
+                          disabled={action.disabled || photo.uploading}
+                          aria-label={action.label}
+                          className="flex size-7 items-center justify-center rounded-full bg-black/65 text-white hover:bg-black/80 disabled:opacity-30"
+                        >
+                          <action.icon className="size-4" aria-hidden="true" />
+                        </button>
+                      ))}
+                    </div>
+                  </motion.li>
                 ))}
-              </div>
+              </ul>
+              </MotionConfig>
             )}
           </div>
 

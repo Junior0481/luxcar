@@ -198,7 +198,7 @@ export function DashboardLayout() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <section className="w-full max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6 shadow-lux-md">
-          <p className="text-sm font-medium text-primary">Conta autenticada · {profile.role}</p>
+          <p className="text-sm font-medium text-primary-text">Conta autenticada · {profile.role}</p>
           <h1 className="text-2xl font-semibold text-foreground">Sua conta ainda não está vinculada a uma loja</h1>
           <p className="text-sm leading-6 text-muted-foreground">
             Olá, {profile.full_name}. O acesso ao painel será liberado assim que um administrador vincular sua conta à empresa.
@@ -253,7 +253,7 @@ export function DashboardLayout() {
     <nav aria-label="Navegação principal" className="flex-1 space-y-5">
       {sections.map((section) => (
         <section key={section.label}>
-          <h2 className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/45">{section.label}</h2>
+          <h2 className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/70">{section.label}</h2>
           <div className="space-y-0.5">
             {section.items.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} onClick={() => setMobileMenuOpen(false)} className={navClass}>
@@ -315,7 +315,7 @@ export function DashboardLayout() {
                 : `Pagamento da assinatura em atraso. ${notice.daysLeft === 1 ? 'Resta 1 dia' : `Restam ${notice.daysLeft} dias`} para regularizar antes do bloqueio.`}
             </p>
             {profile.role === 'administrador' ? (
-              <NavLink to="/dashboard/settings?aba=assinatura" className="ml-auto shrink-0 font-medium text-primary underline-offset-4 hover:underline">Pagar agora</NavLink>
+              <NavLink to="/dashboard/settings?aba=assinatura" className="ml-auto shrink-0 font-medium text-primary-text underline-offset-4 hover:underline">Pagar agora</NavLink>
             ) : null}
           </div>
         ) : null}
