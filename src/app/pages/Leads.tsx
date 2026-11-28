@@ -381,7 +381,12 @@ export function Leads() {
           setConvertingLead(null);
           loadLeads({ silent: true });
         }}
-        onCreated={(negotiationId) => navigate(`/dashboard/negotiations/${negotiationId}`)}
+        onCreated={(negotiationId) => {
+          const assignee = convertingLead?.assigned_to;
+          if (profile?.role === 'administrador' || !assignee || assignee === profile?.id) {
+            navigate(`/dashboard/negotiations/${negotiationId}`);
+          }
+        }}
       />
 
       <Dialog open={selectedLead !== null} onOpenChange={(open) => { if (!open) setSelectedLead(null); }}>
