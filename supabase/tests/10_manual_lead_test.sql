@@ -3,7 +3,7 @@
 --   nunca de outra. vehicle_id NULL é permitido; veículo de outra loja não.
 begin;
 \ir _fixtures.psql
-select plan(9);
+select plan(11);
 
 -- Vendedor A
 :as_seller_a
@@ -46,6 +46,19 @@ select is(rls_test.visible('select 1 from public.leads where customer_name = ''M
 :as_seller_a
 select is(rls_test.visible('select 1 from public.leads where customer_name = ''Manual admin→A2'''),
   1, 'vendedor A vê o lead da loja atribuído ao colega A2');
+
+-- A conversão por um administrador preserva a carteira do vendedor atribuído.
+:as_admin_a
+select lives_ok(
+  $$select public.convert_lead_to_negotiation(
+    'a0000000-0000-0000-0000-00000000f202',
+    'a0000000-0000-0000-0000-00000000f001'
+  )$$,
+  'administrador converte lead atribuído ao vendedor A2');
+:as_seller_a2
+select is(
+  rls_test.visible('select 1 from public.negotiations where client_name = ''Lead SA2'''),
+  1, 'vendedor A2 vê a negociação criada a partir do seu lead');
 
 select * from finish();
 rollback;

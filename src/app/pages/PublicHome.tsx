@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { AlertCircle, Calendar, Car, Gauge, MapPin, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { CAR_BRANDS } from '../../constants/carBrands';
@@ -41,6 +41,9 @@ const brl = (v: number) =>
 
 const ANY = 'all';
 
+const normalizeSearch = (value: string) =>
+  value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim().replace(/\s+/g, ' ');
+
 export function PublicHome() {
   const { company } = useCompany();
   const [vehicles, setVehicles] = useState<PublicVehicle[]>([]);
@@ -48,7 +51,17 @@ export function PublicHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('q') ?? '';
+
+  const setSearchTerm = (value: string) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (value) next.set('q', value);
+      else next.delete('q');
+      return next;
+    }, { replace: true, preventScrollReset: true });
+  };
   const [selectedBrand, setSelectedBrand] = useState(ANY);
   const [selectedCompany, setSelectedCompany] = useState(ANY);
   const [minYear, setMinYear] = useState(ANY);
@@ -111,10 +124,10 @@ export function PublicHome() {
   const filterVehicles = () => {
     let filtered = vehicles;
 
-    if (searchTerm) {
-      filtered = filtered.filter(v =>
-        v.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.model.toLowerCase().includes(searchTerm.toLowerCase())
+    const query = normalizeSearch(searchTerm);
+    if (query) {
+      filtered = filtered.filter(({ brand, model }) =>
+        normalizeSearch(`${brand} ${model}`).includes(query)
       );
     }
     if (selectedBrand !== ANY) filtered = filtered.filter(v => v.brand.toLocaleLowerCase() === selectedBrand.toLocaleLowerCase());
@@ -327,7 +340,7 @@ export function PublicHome() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {filteredVehicles.map((vehicle) => (
-              <Link key={vehicle.id} to={`/vehicles/${vehicle.id}`} className="group">
+              <Link key={vehicle.id} to={`/vehicles/${vehicle.id}`} state={{ catalogSearch: searchParams.toString() }} className="group">
                 <Card className="h-full gap-0 overflow-hidden pt-0 lux-card-hover">
                   <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                     {vehicle.images && vehicle.images.length > 0 ? (
