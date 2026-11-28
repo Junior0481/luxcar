@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import { supabase, Vehicle } from '../../lib/supabase';
 import { AlertCircle, ArrowLeft, Car, Calendar, ChevronLeft, ChevronRight, Gauge, Fuel, Settings as SettingsIcon, MapPin, Phone, MessageCircle, RefreshCw } from 'lucide-react';
 import { LeadForm } from '../components/LeadForm';
@@ -21,6 +21,9 @@ const brl = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 export function PublicVehicleDetails() {
+  const { state } = useLocation();
+  const catalogSearch = typeof state?.catalogSearch === 'string' ? state.catalogSearch : '';
+  const catalogURL = { pathname: '/estoque', search: catalogSearch };
   const { id } = useParams();
   const [vehicle, setVehicle] = useState<PublicVehicle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,7 +122,7 @@ export function PublicVehicleDetails() {
         <div className="text-center">
           <Car className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="mb-2 text-2xl font-bold text-foreground">Este anúncio não está mais disponível</h2>
-          <Button asChild><Link to="/estoque">Ver outros carros</Link></Button>
+          <Button asChild><Link to={catalogURL}>Ver outros carros</Link></Button>
         </div>
       </div>
     );
@@ -159,7 +162,7 @@ export function PublicVehicleDetails() {
       <main>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <Link to="/estoque" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
+        <Link to={catalogURL} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="w-5 h-5" />
           Voltar para a busca
         </Link>
